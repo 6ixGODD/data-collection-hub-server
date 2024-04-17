@@ -1,10 +1,9 @@
 package models
 
-// DocumentationModel Documentation Model
 type DocumentationModel struct {
-	DocumentID string `json:"_id"`        // MongoDB ObjectId
-	Title      string `json:"title"`      // Title of the document
-	Content    string `json:"content"`    // Content of the document
-	CreatedAt  string `json:"created_at"` // Create Time in ISO 8601
-	UpdatedAt  string `json:"updated_at"` // Update Time in ISO 8601
+	DocumentID string `json:"_id" bson:"_id"`               // MongoDB ObjectId
+	Title      string `json:"title" bson:"title"`           // Title of the document
+	Content    string `json:"content" bson:"content"`       // Content of the document
+	CreatedAt  string `json:"created_at" bson:"created_at"` // Create Time in ISO 8601
+	UpdatedAt  string `json:"updated_at" bson:"updated_at"` // Update Time in ISO 8601
 }

@@ -1,1 +1,5 @@
 package wire
+
+func GetMongoClient() {
+
+}
