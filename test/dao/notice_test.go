@@ -45,7 +45,7 @@ func (n NoticeDaoImpl) GetNoticeList(mongoClient *qmgo.QmgoClient, offset, limit
 
 func (n NoticeDaoImpl) GetNoticeListByType(mongoClient *qmgo.QmgoClient, noticeType string, offset, limit int64, ctx context.Context) ([]models.NoticeModel, error) {
 	var noticeList []models.NoticeModel
-	err := mongoClient.Find(ctx, bson.M{"notice_type": noticeType}).Skip(offset).Limit(limit).All(&noticeList)
+	err := mongoClient.Find(ctx, bson.M{"type": noticeType}).Skip(offset).Limit(limit).All(&noticeList)
 	if err != nil {
 		return nil, err
 	} else {
@@ -55,7 +55,9 @@ func (n NoticeDaoImpl) GetNoticeListByType(mongoClient *qmgo.QmgoClient, noticeT
 
 func (n NoticeDaoImpl) GetNoticeListByTypeAndCreatedTime(mongoClient *qmgo.QmgoClient, noticeType, startTime, endTime string, offset, limit int64, ctx context.Context) ([]models.NoticeModel, error) {
 	var noticeList []models.NoticeModel
-	err := mongoClient.Find(ctx, bson.M{"notice_type": noticeType, "created_time": bson.M{"$gte": startTime, "$lte": endTime}}).Skip(offset).Limit(limit).All(&noticeList)
+	err := mongoClient.Find(
+		ctx, bson.M{"type": noticeType, "created_at": bson.M{"$gte": startTime, "$lte": endTime}},
+	).Skip(offset).Limit(limit).All(&noticeList)
 	if err != nil {
 		return nil, err
 	} else {
@@ -65,7 +67,9 @@ func (n NoticeDaoImpl) GetNoticeListByTypeAndCreatedTime(mongoClient *qmgo.QmgoC
 
 func (n NoticeDaoImpl) GetNoticeListByTypeAndUpdatedTime(mongoClient *qmgo.QmgoClient, noticeType, startTime, endTime string, offset, limit int64, ctx context.Context) ([]models.NoticeModel, error) {
 	var noticeList []models.NoticeModel
-	err := mongoClient.Find(ctx, bson.M{"notice_type": noticeType, "updated_time": bson.M{"$gte": startTime, "$lte": endTime}}).Skip(offset).Limit(limit).All(&noticeList)
+	err := mongoClient.Find(
+		ctx, bson.M{"type": noticeType, "updated_at": bson.M{"$gte": startTime, "$lte": endTime}},
+	).Skip(offset).Limit(limit).All(&noticeList)
 	if err != nil {
 		return nil, err
 	} else {
@@ -75,7 +79,9 @@ func (n NoticeDaoImpl) GetNoticeListByTypeAndUpdatedTime(mongoClient *qmgo.QmgoC
 
 func (n NoticeDaoImpl) GetNoticeListByCreatedTime(mongoClient *qmgo.QmgoClient, startTime, endTime string, offset, limit int64, ctx context.Context) ([]models.NoticeModel, error) {
 	var noticeList []models.NoticeModel
-	err := mongoClient.Find(ctx, bson.M{"created_time": bson.M{"$gte": startTime, "$lte": endTime}}).Skip(offset).Limit(limit).All(&noticeList)
+	err := mongoClient.Find(
+		ctx, bson.M{"created_at": bson.M{"$gte": startTime, "$lte": endTime}},
+	).Skip(offset).Limit(limit).All(&noticeList)
 	if err != nil {
 		return nil, err
 	} else {
@@ -85,7 +91,9 @@ func (n NoticeDaoImpl) GetNoticeListByCreatedTime(mongoClient *qmgo.QmgoClient, 
 
 func (n NoticeDaoImpl) GetNoticeListByUpdatedTime(mongoClient *qmgo.QmgoClient, startTime, endTime string, offset, limit int64, ctx context.Context) ([]models.NoticeModel, error) {
 	var noticeList []models.NoticeModel
-	err := mongoClient.Find(ctx, bson.M{"updated_time": bson.M{"$gte": startTime, "$lte": endTime}}).Skip(offset).Limit(limit).All(&noticeList)
+	err := mongoClient.Find(
+		ctx, bson.M{"updated_at": bson.M{"$gte": startTime, "$lte": endTime}},
+	).Skip(offset).Limit(limit).All(&noticeList)
 	if err != nil {
 		return nil, err
 	} else {
@@ -95,17 +103,28 @@ func (n NoticeDaoImpl) GetNoticeListByUpdatedTime(mongoClient *qmgo.QmgoClient, 
 
 func (n NoticeDaoImpl) InsertNotice(notice *models.NoticeModel, mongoClient *qmgo.QmgoClient, ctx context.Context) error {
 	_, err := mongoClient.InsertOne(ctx, notice)
-	return err
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (n NoticeDaoImpl) UpdateNotice(notice *models.NoticeModel, mongoClient *qmgo.QmgoClient, ctx context.Context) error {
 	err := mongoClient.UpdateOne(ctx, bson.M{"_id": notice.NoticeID}, bson.M{"$set": notice})
-	return err
+	if err != nil {
+		return err
+	} else {
+		return nil
+	}
 }
 
 func (n NoticeDaoImpl) DeleteNotice(notice *models.NoticeModel, mongoClient *qmgo.QmgoClient, ctx context.Context) error {
 	err := mongoClient.RemoveId(ctx, notice.NoticeID)
-	return err
+	if err != nil {
+		return err
+	} else {
+		return nil
+	}
 }
 
 func NewNoticeDao() NoticeDao {

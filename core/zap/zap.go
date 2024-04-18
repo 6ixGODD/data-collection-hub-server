@@ -42,7 +42,7 @@ func InitLogger(logLevel string) {
 	}
 }
 
-func SyncLogger() {
+func SyncLogger() { // flush log buffer
 	if logger != nil {
 		_ = logger.Sync()
 	}

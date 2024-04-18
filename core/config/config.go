@@ -5,7 +5,7 @@ import (
 )
 
 type Config struct {
-	CORSConfig      *modules.CORSConfig
+	CasbinConfig    *modules.CasbinConfig
 	JWTConfig       *modules.JWTConfig
 	MemcachedConfig *modules.MemcachedConfig
 	MongoConfig     *modules.MongoConfig
@@ -13,9 +13,9 @@ type Config struct {
 	ZapConfig       *modules.ZapConfig
 }
 
-func GetConfig() *Config {
+func GetConfig() *Config { // Viper read ENV
 	return &Config{
-		CORSConfig:      &modules.CORSConfig{},
+		CasbinConfig:    &modules.CasbinConfig{},
 		JWTConfig:       &modules.JWTConfig{},
 		MemcachedConfig: &modules.MemcachedConfig{},
 		MongoConfig:     &modules.MongoConfig{},

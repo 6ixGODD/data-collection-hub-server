@@ -4,5 +4,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func CommonRouter(router *gin.Engine) {
+type CommonRouter struct{}
+
+// RegisterCommonRouter register common router
+func (c *CommonRouter) RegisterCommonRouter(router *gin.RouterGroup) {
 }

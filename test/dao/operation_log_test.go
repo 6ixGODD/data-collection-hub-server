@@ -24,7 +24,7 @@ type OperationLogDaoImpl struct{}
 
 func (o OperationLogDaoImpl) GetOperationLogById(operationLogId string, mongoClient *qmgo.QmgoClient, ctx context.Context) (*models.OperationLogModel, error) {
 	var operationLog models.OperationLogModel
-	err := mongoClient.Find(ctx, bson.M{"operation_log_id": operationLogId}).One(&operationLog)
+	err := mongoClient.Find(ctx, bson.M{"_id": operationLogId}).One(&operationLog)
 	if err != nil {
 		return nil, err
 	} else {
@@ -84,7 +84,9 @@ func (o OperationLogDaoImpl) GetOperationLogListByEntityUUID(mongoClient *qmgo.Q
 
 func (o OperationLogDaoImpl) GetOperationLogListByCreatedTime(mongoClient *qmgo.QmgoClient, startTime, endTime string, offset, limit int64, ctx context.Context) ([]models.OperationLogModel, error) {
 	var operationLogList []models.OperationLogModel
-	err := mongoClient.Find(ctx, bson.M{"created_time": bson.M{"$gte": startTime, "$lte": endTime}}).Skip(offset).Limit(limit).All(&operationLogList)
+	err := mongoClient.Find(
+		ctx, bson.M{"created_at": bson.M{"$gte": startTime, "$lte": endTime}},
+	).Skip(offset).Limit(limit).All(&operationLogList)
 	if err != nil {
 		return nil, err
 	} else {

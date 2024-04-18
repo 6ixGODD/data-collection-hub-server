@@ -15,7 +15,7 @@ type LoginLogDao interface {
 	GetLoginLogListByUserUUID(mongoClient *qmgo.QmgoClient, userUUID string, offset, limit int64, ctx context.Context) ([]models.LoginLogModel, error)
 	GetLoginLogListByIPAddress(mongoClient *qmgo.QmgoClient, ipAddress string, offset, limit int64, ctx context.Context) ([]models.LoginLogModel, error)
 	InsertLoginLog(loginLog *models.LoginLogModel, mongoClient *qmgo.QmgoClient, ctx context.Context) error
-	DeleteLoginLog(loginLog *models.LoginLogModel, mongoClient *qmgo.QmgoClient, ctx context.Context) error
+	DeleteLoginLog(loginLogId string, mongoClient *qmgo.QmgoClient, ctx context.Context) error
 }
 
 type LoginLogDaoImpl struct{}
@@ -76,7 +76,7 @@ func (loginLogDao *LoginLogDaoImpl) InsertLoginLog(loginLog *models.LoginLogMode
 	_, err := mongoClient.InsertOne(ctx, loginLog)
 	return err
 }
-func (loginLogDao *LoginLogDaoImpl) DeleteLoginLog(loginLog *models.LoginLogModel, mongoClient *qmgo.QmgoClient, ctx context.Context) error {
-	err := mongoClient.RemoveId(ctx, loginLog.LoginLogID)
+func (loginLogDao *LoginLogDaoImpl) DeleteLoginLog(loginLogId string, mongoClient *qmgo.QmgoClient, ctx context.Context) error {
+	err := mongoClient.RemoveId(ctx, loginLogId)
 	return err
 }

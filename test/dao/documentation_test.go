@@ -68,7 +68,7 @@ func (documentationDao *DocumentationDaoImpl) InsertDocumentation(documentation 
 }
 
 func (documentationDao *DocumentationDaoImpl) UpdateDocumentation(documentation *models.DocumentationModel, mongoClient *qmgo.QmgoClient, ctx context.Context) error {
-	err := mongoClient.UpdateOne(ctx, bson.M{"_id": documentation.DocumentID}, bson.M{"$set": documentation})
+	err := mongoClient.UpdateId(ctx, documentation.DocumentID, bson.M{"$set": documentation})
 	return err
 }
 

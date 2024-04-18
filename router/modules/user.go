@@ -4,6 +4,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func UserRouter(router *gin.Engine) {
+type UserRouter struct{}
 
+// RegisterUserRouter register user router
+func (u *UserRouter) RegisterUserRouter(router *gin.RouterGroup) {
 }

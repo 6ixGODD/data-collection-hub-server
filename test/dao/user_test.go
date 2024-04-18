@@ -35,12 +35,7 @@ func (u UserDaoImpl) GetUserById(userId string, mongoClient *qmgo.QmgoClient, ct
 
 func (u UserDaoImpl) GetUserList(mongoClient *qmgo.QmgoClient, offset, limit int64, desc bool, ctx context.Context) ([]models.UserModel, error) {
 	var users []models.UserModel
-	var err error
-	if desc {
-		err = mongoClient.Find(ctx, bson.M{}).Sort("-created_time").Skip(offset).Limit(limit).All(&users)
-	} else {
-		err = mongoClient.Find(ctx, bson.M{}).Skip(offset).Limit(limit).All(&users)
-	}
+	err := mongoClient.Find(ctx, bson.M{}).Skip(offset).Limit(limit).All(&users)
 	if err != nil {
 		return nil, err
 	} else {
@@ -50,12 +45,7 @@ func (u UserDaoImpl) GetUserList(mongoClient *qmgo.QmgoClient, offset, limit int
 
 func (u UserDaoImpl) GetUserListByOrganization(mongoClient *qmgo.QmgoClient, organization string, offset, limit int64, desc bool, ctx context.Context) ([]models.UserModel, error) {
 	var users []models.UserModel
-	var err error
-	if desc {
-		err = mongoClient.Find(ctx, bson.M{"organization": organization}).Sort("-created_time").Skip(offset).Limit(limit).All(&users)
-	} else {
-		err = mongoClient.Find(ctx, bson.M{"organization": organization}).Skip(offset).Limit(limit).All(&users)
-	}
+	err := mongoClient.Find(ctx, bson.M{"organization": organization}).Skip(offset).Limit(limit).All(&users)
 	if err != nil {
 		return nil, err
 	} else {
@@ -65,12 +55,7 @@ func (u UserDaoImpl) GetUserListByOrganization(mongoClient *qmgo.QmgoClient, org
 
 func (u UserDaoImpl) GetUserListByRole(mongoClient *qmgo.QmgoClient, role string, offset, limit int64, desc bool, ctx context.Context) ([]models.UserModel, error) {
 	var users []models.UserModel
-	var err error
-	if desc {
-		err = mongoClient.Find(ctx, bson.M{"role": role}).Sort("-created_time").Skip(offset).Limit(limit).All(&users)
-	} else {
-		err = mongoClient.Find(ctx, bson.M{"role": role}).Skip(offset).Limit(limit).All(&users)
-	}
+	err := mongoClient.Find(ctx, bson.M{"role": role}).Skip(offset).Limit(limit).All(&users)
 	if err != nil {
 		return nil, err
 	} else {
@@ -80,12 +65,7 @@ func (u UserDaoImpl) GetUserListByRole(mongoClient *qmgo.QmgoClient, role string
 
 func (u UserDaoImpl) GetUserListByCreatedTime(mongoClient *qmgo.QmgoClient, startTime, endTime string, offset, limit int64, desc bool, ctx context.Context) ([]models.UserModel, error) {
 	var users []models.UserModel
-	var err error
-	if desc {
-		err = mongoClient.Find(ctx, bson.M{"created_time": bson.M{"$gte": startTime, "$lte": endTime}}).Sort("-created_time").Skip(offset).Limit(limit).All(&users)
-	} else {
-		err = mongoClient.Find(ctx, bson.M{"created_time": bson.M{"$gte": startTime, "$lte": endTime}}).Skip(offset).Limit(limit).All(&users)
-	}
+	err := mongoClient.Find(ctx, bson.M{"created_time": bson.M{"$gte": startTime, "$lte": endTime}}).Skip(offset).Limit(limit).All(&users)
 	if err != nil {
 		return nil, err
 	} else {
@@ -95,12 +75,7 @@ func (u UserDaoImpl) GetUserListByCreatedTime(mongoClient *qmgo.QmgoClient, star
 
 func (u UserDaoImpl) GetUserListByUpdatedTime(mongoClient *qmgo.QmgoClient, startTime, endTime string, offset, limit int64, desc bool, ctx context.Context) ([]models.UserModel, error) {
 	var users []models.UserModel
-	var err error
-	if desc {
-		err = mongoClient.Find(ctx, bson.M{"updated_time": bson.M{"$gte": startTime, "$lte": endTime}}).Sort("-created_time").Skip(offset).Limit(limit).All(&users)
-	} else {
-		err = mongoClient.Find(ctx, bson.M{"updated_time": bson.M{"$gte": startTime, "$lte": endTime}}).Skip(offset).Limit(limit).All(&users)
-	}
+	err := mongoClient.Find(ctx, bson.M{"updated_time": bson.M{"$gte": startTime, "$lte": endTime}}).Skip(offset).Limit(limit).All(&users)
 	if err != nil {
 		return nil, err
 	} else {
@@ -110,22 +85,12 @@ func (u UserDaoImpl) GetUserListByUpdatedTime(mongoClient *qmgo.QmgoClient, star
 
 func (u UserDaoImpl) GetUserListByFuzzyQuery(mongoClient *qmgo.QmgoClient, query string, offset, limit int64, desc bool, ctx context.Context) ([]models.UserModel, error) {
 	var users []models.UserModel
-	var err error
-	if desc {
-		err = mongoClient.Find(ctx, bson.M{"$or": []bson.M{
-			{"user_id": bson.M{"$regex": query}},
-			{"user_name": bson.M{"$regex": query}},
-			{"organization": bson.M{"$regex": query}},
-			{"role": bson.M{"$regex": query}},
-		}}).Sort("-created_time").Skip(offset).Limit(limit).All(&users)
-	} else {
-		err = mongoClient.Find(ctx, bson.M{"$or": []bson.M{
-			{"user_id": bson.M{"$regex": query}},
-			{"user_name": bson.M{"$regex": query}},
-			{"organization": bson.M{"$regex": query}},
-			{"role": bson.M{"$regex": query}},
-		}}).Skip(offset).Limit(limit).All(&users)
-	}
+	err := mongoClient.Find(ctx, bson.M{"$or": []bson.M{
+		{"_id": bson.M{"$regex": query}},
+		{"username": bson.M{"$regex": query}},
+		{"organization:": bson.M{"$regex": query}},
+		{"role": bson.M{"$regex": query}},
+	}}).Skip(offset).Limit(limit).All(&users)
 	if err != nil {
 		return nil, err
 	} else {
@@ -139,7 +104,7 @@ func (u UserDaoImpl) InsertUser(user *models.UserModel, mongoClient *qmgo.QmgoCl
 }
 
 func (u UserDaoImpl) UpdateUser(user *models.UserModel, mongoClient *qmgo.QmgoClient, ctx context.Context) error {
-	err := mongoClient.UpdateOne(ctx, bson.M{"_id": user.UserID}, bson.M{"$set": user})
+	err := mongoClient.UpdateOne(ctx, bson.M{"user_id": user.UserID}, bson.M{"$set": user})
 	return err
 }
 
@@ -149,6 +114,6 @@ func (u UserDaoImpl) DeleteUser(user *models.UserModel, mongoClient *qmgo.QmgoCl
 }
 
 func NewUserDao() UserDao {
-	var _ UserDao = new(UserDaoImpl) // TODO: remove this line when deploying
+	var _ UserDao = new(UserDaoImpl)
 	return &UserDaoImpl{}
 }

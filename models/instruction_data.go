@@ -5,7 +5,7 @@ type InstructionDataModel struct {
 	UserUUID          string   `json:"user_uuid" bson:"user_uuid"` // User UUID
 	Username          string   `json:"username" bson:"username"`   // Username (for space-time trade-off)
 	RowUUID           string   `json:"row_uuid" bson:"row_uuid"`   // Row Data Index (UUID)
-	Row               struct { // Row Data in alpaca
+	Row               struct { // Row Data in alpaca format
 		Instruction string `json:"instruction" bson:"instruction"` // Instruction
 		Input       string `json:"input" bson:"input"`             // Input
 		Output      string `json:"output" bson:"output"`           // Output
