@@ -1,7 +1,7 @@
 package models
 
 type OperationLogModel struct {
-	OperationLogID string `json:"_id" bson:"_id"`                 // MongoDB ObjectId
+	OperationLogID string `json:"operation_log_id" bson:"_id"`    // MongoDB ObjectId
 	UserUUID       string `json:"user_uuid" bson:"user_uuid"`     // User UUID
 	Username       string `json:"username" bson:"username"`       // Username (for space-time trade-off)
 	Email          string `json:"email" bson:"email"`             // Email (for space-time trade-off)
