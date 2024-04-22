@@ -20,7 +20,7 @@ Directory structure of the project
 │    ├── viper        # Viper module
 │    ├── wire         # Wire module
 │    └── zap          # Zap logger module
-├── dao               # Data access object
+├── dal               # Data access object
 ├── docs              # Swagger API documentation
 ├── global            # Global variables
 ├── go.mod            # Go module file
@@ -53,9 +53,9 @@ Directory structure of the project
 ```
 
 ## Technology Stack
-- **Framework**:    Gin
-- **DB**:MongoDB
-- **Cache**: Redis, Memcached
+- **Framework**: Fiber
+- **DB**: MongoDB
+- **Cache**: Redis, GoMemcached
 - **Logger**: Zap
 - **Configuration**: Viper
 - **Dependency Injection**: Wire
@@ -67,6 +67,14 @@ Directory structure of the project
   - JWT
   - IP limit
   - Logger
+  - Casbin
 - **RBAC**: Casbin
 
 ## Setup
+```shell
+go mod tidy
+```
+
+## Reference
+- https://docs.gofiber.io/
+- https://github.com/goccy/go-json
