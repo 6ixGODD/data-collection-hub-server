@@ -1,7 +1,7 @@
 package modules
 
 type JWTConfig struct {
-	SecretKey            string `mapstructure:"secret_key" env:"JWT_SECRET_KEY" default:"secret"`
-	TokenExpireIn        int    `mapstructure:"token_expire_in" env:"JWT_TOKEN_EXPIRE_IN" default:"3600"`
-	RefreshTokenExpireIn int    `mapstructure:"refresh_token" env:"JWT_REFRESH_TOKEN_EXPIRE_IN" default:"7200"`
+	SecretKey            string `env:"JWT_SECRET_KEY" mapstructure:"jwt_secret_key" yaml:"jwt_secret_key" default:"secret"`
+	TokenExpireIn        int    `env:"JWT_TOKEN_EXPIRE_IN" mapstructure:"jwt_token_expire_in" yaml:"jwt_token_expire_in" default:"3600"`
+	RefreshTokenExpireIn int    `env:"JWT_REFRESH_TOKEN_EXPIRE_IN" mapstructure:"jwt_refresh_token_expire_in" yaml:"jwt_refresh_token_expire_in" default:"7200"`
 }

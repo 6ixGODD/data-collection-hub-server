@@ -5,21 +5,12 @@ import (
 )
 
 type Config struct {
-	CasbinConfig    *modules.CasbinConfig
-	JWTConfig       *modules.JWTConfig
-	MemcachedConfig *modules.MemcachedConfig
-	MongoConfig     *modules.MongoConfig
-	RedisConfig     *modules.RedisConfig
-	ZapConfig       *modules.ZapConfig
-}
-
-func GetConfig() *Config { // Viper read ENV
-	return &Config{
-		CasbinConfig:    &modules.CasbinConfig{},
-		JWTConfig:       &modules.JWTConfig{},
-		MemcachedConfig: &modules.MemcachedConfig{},
-		MongoConfig:     &modules.MongoConfig{},
-		RedisConfig:     &modules.RedisConfig{},
-		ZapConfig:       &modules.ZapConfig{},
-	}
+	BaseConfig    *modules.BaseConfig
+	CasbinConfig  *modules.CasbinConfig
+	JWTConfig     *modules.JWTConfig
+	MongoConfig   *modules.MongoConfig
+	RedisConfig   *modules.RedisConfig
+	ZapConfig     *modules.ZapConfig
+	FiberConfig   *modules.FiberConfig
+	LimiterConfig *modules.LimiterConfig
 }
