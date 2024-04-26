@@ -3,29 +3,43 @@ package mongo
 import (
 	"context"
 
+	"data-collection-hub-server/core/config/modules"
 	"github.com/qiniu/qmgo"
 )
 
-var client *qmgo.QmgoClient
+var (
+	mongoClient   *qmgo.Client
+	mongoDatabase *qmgo.Database
+	mongoConfig   *modules.MongoConfig
+)
 
-func InitMongoClient(options *qmgo.Config) *qmgo.QmgoClient {
-}
-
-func GetMongoClient(coll string) *qmgo.QmgoClient {
+func InitMongo(ctx context.Context, config *modules.MongoConfig) error {
 	var err error
-	client, err = qmgo.Open(context.Background(), &qmgo.Config{Uri: "mongodb://localhost:27017", Database: "test", Coll: coll})
-	if err != nil {
-		return nil
-	} else {
-		return client
-	}
-}
-
-func ReleaseMongo(ctx context.Context) (err error) {
-	err = client.Close(ctx)
+	mongoConfig = config
+	mongoClient, err = qmgo.NewClient(ctx, &qmgo.Config{
+		Uri:              mongoConfig.Uri,
+		ConnectTimeoutMS: &mongoConfig.ConnectTimeoutMS,
+		SocketTimeoutMS:  &mongoConfig.SocketTimeoutMS,
+		MaxPoolSize:      &mongoConfig.MaxPoolSize,
+		MinPoolSize:      &mongoConfig.MinPoolSize,
+	})
 	if err != nil {
 		return err
 	} else {
+		mongoDatabase = mongoClient.Database(config.Database)
 		return nil
 	}
+}
+
+func GetMongoDatabase() (d *qmgo.Database, e error) {
+	if mongoDatabase == nil {
+		if err := InitMongo(context.Background(), mongoConfig); err != nil {
+			return nil, err
+		}
+	}
+	return mongoDatabase, nil
+}
+
+func CloseMongo(ctx context.Context) error {
+	return mongoClient.Close(ctx)
 }

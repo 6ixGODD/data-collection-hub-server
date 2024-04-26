@@ -17,29 +17,33 @@ limitations under the License.
 */
 
 import (
-	"fmt"
 	"os"
 
+	"data-collection-hub-server/core/config"
+	"data-collection-hub-server/utils/check"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
-var cfgFile string
+var (
+	configFile string // config file path (default is $HOME/.data-collection-hub-server.yaml)
+	port       string // port to listen on (default is 3000)
+	host       string // host to listen on (default is localhost)
+	dev        bool   // run in development mode
+	logLevel   string // log level (default is info)
+)
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "data-collection-hub-server",
-	Short: "",
-	Long:  ``,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
+	Short: "Data Collection Hub Server",
+	Long:  `Data Collection Hub Server designed to collect instruction data in Stanford Alpaca format.`,
 	Run: func(cmd *cobra.Command, args []string) {
-
+		// TODO: Add your logic here
 	},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
@@ -53,36 +57,57 @@ func init() {
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.data-collection-hub-server.yaml)")
-
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	rootCmd.PersistentFlags().StringVar(
+		&configFile,
+		"config",
+		"",
+		"config file (default is $HOME/.data-collection-hub-server.yaml)",
+	)
+	rootCmd.PersistentFlags().StringVarP(
+		&port,
+		"port",
+		"p",
+		"",
+		"port to listen on (default is 8080)",
+	)
+	rootCmd.PersistentFlags().StringVarP(
+		&host,
+		"host",
+		"H",
+		"",
+		"host to listen on (default is localhost)",
+	)
+	rootCmd.PersistentFlags().BoolVarP(
+		&dev,
+		"dev",
+		"d",
+		false,
+		"run in development mode",
+	)
 }
 
-// initConfig reads in config file and ENV variables if set.
+// initConfig creates a new config object and initializes it with the values from the config file and flags.
+// priority: flags > config file > default values
 func initConfig() {
-	if cfgFile != "" {
+	cfg, err := config.NewConfig()
+	if configFile != "" {
 		// Use config file from the flag.
-		viper.SetConfigFile(cfgFile)
+		viper.SetConfigFile(configFile)
 	} else {
 		// Find home directory.
-		home, err := os.UserHomeDir()
-		cobra.CheckErr(err)
+		var home string
+		home, err = os.UserHomeDir()
 
-		// Search config in home directory with name ".data-collection-hub-server" (without extension).
 		viper.AddConfigPath(home)
 		viper.SetConfigType("yaml")
 		viper.SetConfigName(".data-collection-hub-server")
 	}
 
-	viper.AutomaticEnv() // read in environment variables that match
-
 	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
-		_, err := fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
-		if err != nil {
-			return
-		}
+	err = viper.ReadInConfig()
+	err = viper.Unmarshal(&cfg)
+	cobra.CheckErr(err)
+	if !(check.IsValidAppHost(host) && check.IsValidAppPort(port)) || (host == "" && port == "") {
+		cobra.CheckErr("Invalid host or port")
 	}
 }

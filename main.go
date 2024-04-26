@@ -1,3 +1,5 @@
+package main
+
 /*
 Copyright © 2024 BoChen SHEN 6godddddd@gmail.com
 
@@ -13,7 +15,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package main
 
 import "data-collection-hub-server/cmd"
 
