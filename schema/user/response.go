@@ -19,14 +19,14 @@ type timeRangeStatistic struct {
 }
 
 type GetInstructionDataResponse struct {
-	RowUUID   string            `json:"row_uuid"`
-	Row       instructionRow    `json:"row"`
-	Theme     string            `json:"theme"`
-	Source    string            `json:"source"`
-	Note      string            `json:"note"`
-	Status    instructionStatus `json:"status"`
-	CreatedAt string            `json:"created_at"`
-	UpdatedAt string            `json:"updated_at"`
+	InstructionDataID string            `json:"instruction_data_id"`
+	Row               instructionRow    `json:"row"`
+	Theme             string            `json:"theme"`
+	Source            string            `json:"source"`
+	Note              string            `json:"note"`
+	Status            instructionStatus `json:"status"`
+	CreatedAt         string            `json:"created_at"`
+	UpdatedAt         string            `json:"updated_at"`
 }
 
 type instructionRow struct {

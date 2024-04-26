@@ -36,10 +36,9 @@ type GetUserStatisticListResponse struct {
 }
 
 type GetInstructionDataResponse struct {
-	InstructionDataID string            `json:"_id"`
+	InstructionDataID string            `json:"instruction_data_id"`
 	UserUUID          string            `json:"user_uuid"`
 	Username          string            `json:"username"`
-	RowUUID           string            `json:"row_uuid"`
 	Row               instructionRow    `json:"row"`
 	Theme             string            `json:"theme"`
 	Source            string            `json:"source"`
