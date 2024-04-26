@@ -11,11 +11,11 @@ import (
 func TestHash(t *testing.T) {
 	a := assert.New(t)
 
-	// Test hash
+	// Test1 hash
 	hash, _ := crypt.PasswordHash("123456")
 	a.NotEmpty(hash)
 
-	// Test verify
+	// Test1 verify
 	a.True(crypt.VerifyPassword("123456", hash))
 	a.False(crypt.VerifyPassword("1234567", hash))
 }
