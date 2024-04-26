@@ -2,23 +2,26 @@ package initializer
 
 import (
 	"context"
+	"fmt"
 
 	"data-collection-hub-server/core/config"
 	"data-collection-hub-server/core/mongo"
 	"data-collection-hub-server/core/redis"
-	"data-collection-hub-server/core/zap"
+	log "data-collection-hub-server/core/zap"
 	"data-collection-hub-server/hooks"
 	"data-collection-hub-server/router"
 	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 // NewApp factory function that initializes the application and returns a fiber.App instance.
 func NewApp(appConfig config.Config) (*fiber.App, error) {
 	ctx := context.Background()
-	// Init Zap logger
-	if err := zap.InitLogger(&appConfig.ZapConfig); err != nil {
+	// Init Zap log
+	if err := log.InitLogger(&appConfig.ZapConfig); err != nil {
 		return nil, err
 	}
 	// Init MongoDB
@@ -80,10 +83,10 @@ func NewApp(appConfig config.Config) (*fiber.App, error) {
 }
 
 // Run function that initializes the application and starts the server.
-func Run(config config.Config, appHost string, appPort string) error {
+func Run(config config.Config, appHost string, appPort string) {
 	app, err := NewApp(config)
 	if err != nil {
-		return err
+		fmt.Println("App initialization failed with error: ", err)
 	}
 
 	if appHost == "" {
@@ -93,5 +96,8 @@ func Run(config config.Config, appHost string, appPort string) error {
 		appPort = config.BaseConfig.AppPort
 	}
 
-	return app.Listen(appHost + ":" + appPort)
+	log.GetLogger().Fatal(
+		"Server run failed",
+		zap.Field{Key: "error", Type: zapcore.ErrorType, Interface: app.Listen(":" + appPort)},
+	)
 }
