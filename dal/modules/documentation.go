@@ -6,6 +6,8 @@ import (
 	"data-collection-hub-server/dal"
 	"data-collection-hub-server/models"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 var documentationCollectionName = "documentation"
@@ -37,8 +39,17 @@ func (d *DocumentationDaoImpl) GetDocumentationById(documentationId string, ctx 
 	collection := d.Dao.MongoDB.Collection(documentationCollectionName)
 	err := collection.Find(ctx, bson.M{"_id": documentationId}).One(&documentation)
 	if err != nil {
+		d.Dao.Logger.Error(
+			"DocumentationDaoImpl.GetDocumentationById",
+			zap.Field{Key: "documentationId", Type: zapcore.StringType, String: documentationId},
+			zap.Field{Key: "error", Type: zapcore.ErrorType, Interface: err},
+		)
 		return nil, err
 	} else {
+		d.Dao.Logger.Info(
+			"DocumentationDaoImpl.GetDocumentationById",
+			zap.Field{Key: "documentationId", Type: zapcore.StringType, String: documentationId},
+		)
 		return &documentation, nil
 	}
 }
@@ -48,8 +59,19 @@ func (d *DocumentationDaoImpl) GetDocumentationList(offset, limit int64, ctx con
 	collection := d.Dao.MongoDB.Collection(documentationCollectionName)
 	err := collection.Find(ctx, bson.M{}).Skip(offset).Limit(limit).All(&documentationList)
 	if err != nil {
+		d.Dao.Logger.Error(
+			"DocumentationDaoImpl.GetDocumentationList",
+			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
+			zap.Field{Key: "limit", Type: zapcore.Int64Type, Integer: limit},
+			zap.Field{Key: "error", Type: zapcore.ErrorType, Interface: err},
+		)
 		return nil, err
 	} else {
+		d.Dao.Logger.Info(
+			"DocumentationDaoImpl.GetDocumentationList",
+			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
+			zap.Field{Key: "limit", Type: zapcore.Int64Type, Integer: limit},
+		)
 		return documentationList, nil
 	}
 }
@@ -59,8 +81,23 @@ func (d *DocumentationDaoImpl) GetDocumentationListByCreatedTime(startTime, endT
 	collection := d.Dao.MongoDB.Collection(documentationCollectionName)
 	err := collection.Find(ctx, bson.M{"created_at": bson.M{"$gte": startTime, "$lte": endTime}}).Skip(offset).Limit(limit).All(&documentationList)
 	if err != nil {
+		d.Dao.Logger.Error(
+			"DocumentationDaoImpl.GetDocumentationListByCreatedTime",
+			zap.Field{Key: "startTime", Type: zapcore.StringType, String: startTime},
+			zap.Field{Key: "endTime", Type: zapcore.StringType, String: endTime},
+			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
+			zap.Field{Key: "limit", Type: zapcore.Int64Type, Integer: limit},
+			zap.Field{Key: "error", Type: zapcore.ErrorType, Interface: err},
+		)
 		return nil, err
 	} else {
+		d.Dao.Logger.Info(
+			"DocumentationDaoImpl.GetDocumentationListByCreatedTime",
+			zap.Field{Key: "startTime", Type: zapcore.StringType, String: startTime},
+			zap.Field{Key: "endTime", Type: zapcore.StringType, String: endTime},
+			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
+			zap.Field{Key: "limit", Type: zapcore.Int64Type, Integer: limit},
+		)
 		return documentationList, nil
 	}
 }
@@ -70,8 +107,23 @@ func (d *DocumentationDaoImpl) GetDocumentationListByUpdatedTime(startTime, endT
 	collection := d.Dao.MongoDB.Collection(documentationCollectionName)
 	err := collection.Find(ctx, bson.M{"updated_at": bson.M{"$gte": startTime, "$lte": endTime}}).Skip(offset).Limit(limit).All(&documentationList)
 	if err != nil {
+		d.Dao.Logger.Error(
+			"DocumentationDaoImpl.GetDocumentationListByUpdatedTime",
+			zap.Field{Key: "startTime", Type: zapcore.StringType, String: startTime},
+			zap.Field{Key: "endTime", Type: zapcore.StringType, String: endTime},
+			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
+			zap.Field{Key: "limit", Type: zapcore.Int64Type, Integer: limit},
+			zap.Field{Key: "error", Type: zapcore.ErrorType, Interface: err},
+		)
 		return nil, err
 	} else {
+		d.Dao.Logger.Info(
+			"DocumentationDaoImpl.GetDocumentationListByUpdatedTime",
+			zap.Field{Key: "startTime", Type: zapcore.StringType, String: startTime},
+			zap.Field{Key: "endTime", Type: zapcore.StringType, String: endTime},
+			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
+			zap.Field{Key: "limit", Type: zapcore.Int64Type, Integer: limit},
+		)
 		return documentationList, nil
 	}
 }
@@ -79,29 +131,95 @@ func (d *DocumentationDaoImpl) GetDocumentationListByUpdatedTime(startTime, endT
 func (d *DocumentationDaoImpl) InsertDocumentation(documentation *models.DocumentationModel, ctx context.Context) error {
 	collection := d.Dao.MongoDB.Collection(documentationCollectionName)
 	_, err := collection.InsertOne(ctx, documentation)
+	if err != nil {
+		d.Dao.Logger.Error(
+			"DocumentationDaoImpl.InsertDocumentation",
+			zap.Field{Key: "documentation", Type: zapcore.ObjectMarshalerType, Interface: documentation},
+			zap.Field{Key: "error", Type: zapcore.ErrorType, Interface: err},
+		)
+	} else {
+		d.Dao.Logger.Info(
+			"DocumentationDaoImpl.InsertDocumentation",
+			zap.Field{Key: "documentation", Type: zapcore.ObjectMarshalerType, Interface: documentation},
+		)
+	}
 	return err
 }
 
 func (d *DocumentationDaoImpl) UpdateDocumentation(documentation *models.DocumentationModel, ctx context.Context) error {
 	collection := d.Dao.MongoDB.Collection(documentationCollectionName)
 	err := collection.UpdateOne(ctx, bson.M{"_id": documentation.DocumentID}, bson.M{"$set": documentation})
+	if err != nil {
+		d.Dao.Logger.Error(
+			"DocumentationDaoImpl.UpdateDocumentation",
+			zap.Field{Key: "documentation", Type: zapcore.ObjectMarshalerType, Interface: documentation},
+			zap.Field{Key: "error", Type: zapcore.ErrorType, Interface: err},
+		)
+	} else {
+		d.Dao.Logger.Info(
+			"DocumentationDaoImpl.UpdateDocumentation",
+			zap.Field{Key: "documentation", Type: zapcore.ObjectMarshalerType, Interface: documentation},
+		)
+	}
 	return err
 }
 
 func (d *DocumentationDaoImpl) DeleteDocumentation(documentation *models.DocumentationModel, ctx context.Context) error {
 	collection := d.Dao.MongoDB.Collection(documentationCollectionName)
 	err := collection.RemoveId(ctx, documentation.DocumentID)
+	if err != nil {
+		d.Dao.Logger.Error(
+			"DocumentationDaoImpl.DeleteDocumentation",
+			zap.Field{Key: "documentation", Type: zapcore.ObjectMarshalerType, Interface: documentation},
+			zap.Field{Key: "error", Type: zapcore.ErrorType, Interface: err},
+		)
+	} else {
+		d.Dao.Logger.Info(
+			"DocumentationDaoImpl.DeleteDocumentation",
+			zap.Field{Key: "documentation", Type: zapcore.ObjectMarshalerType, Interface: documentation},
+		)
+	}
 	return err
 }
 
 func (d *DocumentationDaoImpl) DeleteDocumentationListByCreatedTime(startTime, endTime string, ctx context.Context) error {
 	collection := d.Dao.MongoDB.Collection(documentationCollectionName)
-	_, err := collection.RemoveAll(ctx, bson.M{"created_at": bson.M{"$gte": startTime, "$lte": endTime}})
+	result, err := collection.RemoveAll(ctx, bson.M{"created_at": bson.M{"$gte": startTime, "$lte": endTime}})
+	if err != nil {
+		d.Dao.Logger.Error(
+			"DocumentationDaoImpl.DeleteDocumentationListByCreatedTime",
+			zap.Field{Key: "startTime", Type: zapcore.StringType, String: startTime},
+			zap.Field{Key: "endTime", Type: zapcore.StringType, String: endTime},
+			zap.Field{Key: "error", Type: zapcore.ErrorType, Interface: err},
+		)
+	} else {
+		d.Dao.Logger.Info(
+			"DocumentationDaoImpl.DeleteDocumentationListByCreatedTime",
+			zap.Field{Key: "startTime", Type: zapcore.StringType, String: startTime},
+			zap.Field{Key: "endTime", Type: zapcore.StringType, String: endTime},
+			zap.Field{Key: "result", Type: zapcore.ObjectMarshalerType, Interface: result},
+		)
+	}
 	return err
 }
 
 func (d *DocumentationDaoImpl) DeleteDocumentationListByUpdatedTime(startTime, endTime string, ctx context.Context) error {
 	collection := d.Dao.MongoDB.Collection(documentationCollectionName)
-	_, err := collection.RemoveAll(ctx, bson.M{"updated_at": bson.M{"$gte": startTime, "$lte": endTime}})
+	result, err := collection.RemoveAll(ctx, bson.M{"updated_at": bson.M{"$gte": startTime, "$lte": endTime}})
+	if err != nil {
+		d.Dao.Logger.Error(
+			"DocumentationDaoImpl.DeleteDocumentationListByUpdatedTime",
+			zap.Field{Key: "startTime", Type: zapcore.StringType, String: startTime},
+			zap.Field{Key: "endTime", Type: zapcore.StringType, String: endTime},
+			zap.Field{Key: "error", Type: zapcore.ErrorType, Interface: err},
+		)
+	} else {
+		d.Dao.Logger.Info(
+			"DocumentationDaoImpl.DeleteDocumentationListByUpdatedTime",
+			zap.Field{Key: "startTime", Type: zapcore.StringType, String: startTime},
+			zap.Field{Key: "endTime", Type: zapcore.StringType, String: endTime},
+			zap.Field{Key: "result", Type: zapcore.ObjectMarshalerType, Interface: result},
+		)
+	}
 	return err
 }
