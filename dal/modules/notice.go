@@ -3,10 +3,12 @@ package modules
 import (
 	"context"
 
+	"data-collection-hub-server/dal"
 	"data-collection-hub-server/models"
-	"github.com/qiniu/qmgo"
 	"go.mongodb.org/mongo-driver/bson"
 )
+
+var NoticeCollectionName = "notice"
 
 type NoticeDao interface {
 	GetNoticeById(noticeId string, ctx context.Context) (*models.NoticeModel, error)
@@ -21,18 +23,17 @@ type NoticeDao interface {
 	DeleteNotice(notice *models.NoticeModel, ctx context.Context) error
 }
 
-type NoticeDaoImpl struct {
-	noticeClient *qmgo.Collection
-}
+type NoticeDaoImpl struct{ *dal.Dao }
 
-func NewNoticeDao(mongoDatabase *qmgo.Database) NoticeDao {
+func NewNoticeDao(dao *dal.Dao) NoticeDao {
 	var _ NoticeDao = new(NoticeDaoImpl)
-	return &NoticeDaoImpl{noticeClient: mongoDatabase.Collection("notice")}
+	return &NoticeDaoImpl{dao}
 }
 
 func (n NoticeDaoImpl) GetNoticeById(noticeId string, ctx context.Context) (*models.NoticeModel, error) {
 	var notice models.NoticeModel
-	err := n.noticeClient.Find(ctx, bson.M{"_id": noticeId}).One(&notice)
+	collection := n.Dao.MongoDB.Collection(NoticeCollectionName)
+	err := collection.Find(ctx, bson.M{"_id": noticeId}).One(&notice)
 	if err != nil {
 		return nil, err
 	} else {
@@ -42,7 +43,8 @@ func (n NoticeDaoImpl) GetNoticeById(noticeId string, ctx context.Context) (*mod
 
 func (n NoticeDaoImpl) GetNoticeList(offset, limit int64, ctx context.Context) ([]models.NoticeModel, error) {
 	var noticeList []models.NoticeModel
-	err := n.noticeClient.Find(ctx, bson.M{}).Skip(offset).Limit(limit).All(&noticeList)
+	collection := n.Dao.MongoDB.Collection(NoticeCollectionName)
+	err := collection.Find(ctx, bson.M{}).Skip(offset).Limit(limit).All(&noticeList)
 	if err != nil {
 		return nil, err
 	} else {
@@ -52,7 +54,8 @@ func (n NoticeDaoImpl) GetNoticeList(offset, limit int64, ctx context.Context) (
 
 func (n NoticeDaoImpl) GetNoticeListByType(noticeType string, offset, limit int64, ctx context.Context) ([]models.NoticeModel, error) {
 	var noticeList []models.NoticeModel
-	err := n.noticeClient.Find(ctx, bson.M{"notice_type": noticeType}).Skip(offset).Limit(limit).All(&noticeList)
+	collection := n.Dao.MongoDB.Collection(NoticeCollectionName)
+	err := collection.Find(ctx, bson.M{"notice_type": noticeType}).Skip(offset).Limit(limit).All(&noticeList)
 	if err != nil {
 		return nil, err
 	} else {
@@ -62,7 +65,8 @@ func (n NoticeDaoImpl) GetNoticeListByType(noticeType string, offset, limit int6
 
 func (n NoticeDaoImpl) GetNoticeListByTypeAndCreatedTime(noticeType, startTime, endTime string, offset, limit int64, ctx context.Context) ([]models.NoticeModel, error) {
 	var noticeList []models.NoticeModel
-	err := n.noticeClient.Find(ctx, bson.M{"notice_type": noticeType, "created_time": bson.M{"$gte": startTime, "$lte": endTime}}).Skip(offset).Limit(limit).All(&noticeList)
+	collection := n.Dao.MongoDB.Collection(NoticeCollectionName)
+	err := collection.Find(ctx, bson.M{"notice_type": noticeType, "created_time": bson.M{"$gte": startTime, "$lte": endTime}}).Skip(offset).Limit(limit).All(&noticeList)
 	if err != nil {
 		return nil, err
 	} else {
@@ -72,7 +76,8 @@ func (n NoticeDaoImpl) GetNoticeListByTypeAndCreatedTime(noticeType, startTime, 
 
 func (n NoticeDaoImpl) GetNoticeListByTypeAndUpdatedTime(noticeType, startTime, endTime string, offset, limit int64, ctx context.Context) ([]models.NoticeModel, error) {
 	var noticeList []models.NoticeModel
-	err := n.noticeClient.Find(ctx, bson.M{"notice_type": noticeType, "updated_time": bson.M{"$gte": startTime, "$lte": endTime}}).Skip(offset).Limit(limit).All(&noticeList)
+	collection := n.Dao.MongoDB.Collection(NoticeCollectionName)
+	err := collection.Find(ctx, bson.M{"notice_type": noticeType, "updated_time": bson.M{"$gte": startTime, "$lte": endTime}}).Skip(offset).Limit(limit).All(&noticeList)
 	if err != nil {
 		return nil, err
 	} else {
@@ -82,7 +87,8 @@ func (n NoticeDaoImpl) GetNoticeListByTypeAndUpdatedTime(noticeType, startTime, 
 
 func (n NoticeDaoImpl) GetNoticeListByCreatedTime(startTime, endTime string, offset, limit int64, ctx context.Context) ([]models.NoticeModel, error) {
 	var noticeList []models.NoticeModel
-	err := n.noticeClient.Find(ctx, bson.M{"created_time": bson.M{"$gte": startTime, "$lte": endTime}}).Skip(offset).Limit(limit).All(&noticeList)
+	collection := n.Dao.MongoDB.Collection(NoticeCollectionName)
+	err := collection.Find(ctx, bson.M{"created_time": bson.M{"$gte": startTime, "$lte": endTime}}).Skip(offset).Limit(limit).All(&noticeList)
 	if err != nil {
 		return nil, err
 	} else {
@@ -92,7 +98,8 @@ func (n NoticeDaoImpl) GetNoticeListByCreatedTime(startTime, endTime string, off
 
 func (n NoticeDaoImpl) GetNoticeListByUpdatedTime(startTime, endTime string, offset, limit int64, ctx context.Context) ([]models.NoticeModel, error) {
 	var noticeList []models.NoticeModel
-	err := n.noticeClient.Find(ctx, bson.M{"updated_time": bson.M{"$gte": startTime, "$lte": endTime}}).Skip(offset).Limit(limit).All(&noticeList)
+	collection := n.Dao.MongoDB.Collection(NoticeCollectionName)
+	err := collection.Find(ctx, bson.M{"updated_time": bson.M{"$gte": startTime, "$lte": endTime}}).Skip(offset).Limit(limit).All(&noticeList)
 	if err != nil {
 		return nil, err
 	} else {
@@ -101,16 +108,19 @@ func (n NoticeDaoImpl) GetNoticeListByUpdatedTime(startTime, endTime string, off
 }
 
 func (n NoticeDaoImpl) InsertNotice(notice *models.NoticeModel, ctx context.Context) error {
-	_, err := n.noticeClient.InsertOne(ctx, notice)
+	collection := n.Dao.MongoDB.Collection(NoticeCollectionName)
+	_, err := collection.InsertOne(ctx, notice)
 	return err
 }
 
 func (n NoticeDaoImpl) UpdateNotice(notice *models.NoticeModel, ctx context.Context) error {
-	err := n.noticeClient.UpdateOne(ctx, bson.M{"_id": notice.NoticeID}, bson.M{"$set": notice})
+	collection := n.Dao.MongoDB.Collection(NoticeCollectionName)
+	err := collection.UpdateOne(ctx, bson.M{"_id": notice.NoticeID}, bson.M{"$set": notice})
 	return err
 }
 
 func (n NoticeDaoImpl) DeleteNotice(notice *models.NoticeModel, ctx context.Context) error {
-	err := n.noticeClient.RemoveId(ctx, notice.NoticeID)
+	collection := n.Dao.MongoDB.Collection(NoticeCollectionName)
+	err := collection.RemoveId(ctx, notice.NoticeID)
 	return err
 }

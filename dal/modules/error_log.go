@@ -3,10 +3,12 @@ package modules
 import (
 	"context"
 
+	"data-collection-hub-server/dal"
 	"data-collection-hub-server/models"
-	"github.com/qiniu/qmgo"
 	"go.mongodb.org/mongo-driver/bson"
 )
+
+var errorLogCollectionName = "error_log"
 
 type ErrorLogDao interface {
 	GetErrorLogById(errorLogId string, ctx context.Context) (*models.ErrorLogModel, error)
@@ -21,18 +23,17 @@ type ErrorLogDao interface {
 	DeleteErrorLog(errorLog *models.ErrorLogModel, ctx context.Context) error
 }
 
-type ErrorLogDaoImpl struct {
-	errorLogClient *qmgo.Collection
-}
+type ErrorLogDaoImpl struct{ *dal.Dao }
 
-func NewErrorLogDao(mongoDatabase *qmgo.Database) ErrorLogDao {
+func NewErrorLogDao(dao *dal.Dao) ErrorLogDao {
 	var _ ErrorLogDao = new(ErrorLogDaoImpl) // Ensure that the interface is implemented
-	return &ErrorLogDaoImpl{errorLogClient: mongoDatabase.Collection("error_log")}
+	return &ErrorLogDaoImpl{dao}
 }
 
 func (e *ErrorLogDaoImpl) GetErrorLogById(errorLogId string, ctx context.Context) (*models.ErrorLogModel, error) {
 	var errorLog models.ErrorLogModel
-	err := e.errorLogClient.Find(ctx, bson.M{"_id": errorLogId}).One(&errorLog)
+	collection := e.Dao.MongoDB.Collection(errorLogCollectionName)
+	err := collection.Find(ctx, bson.M{"_id": errorLogId}).One(&errorLog)
 	if err != nil {
 		return nil, err
 	} else {
@@ -43,10 +44,11 @@ func (e *ErrorLogDaoImpl) GetErrorLogById(errorLogId string, ctx context.Context
 func (e *ErrorLogDaoImpl) GetErrorLogList(offset, limit int64, desc bool, ctx context.Context) ([]models.ErrorLogModel, error) {
 	var errorLogList []models.ErrorLogModel
 	var err error
+	collection := e.Dao.MongoDB.Collection(errorLogCollectionName)
 	if desc {
-		err = e.errorLogClient.Find(ctx, bson.M{}).Sort("-created_at").Skip(offset).Limit(limit).All(&errorLogList)
+		err = collection.Find(ctx, bson.M{}).Sort("-created_at").Skip(offset).Limit(limit).All(&errorLogList)
 	} else {
-		err = e.errorLogClient.Find(ctx, bson.M{}).Skip(offset).Limit(limit).All(&errorLogList)
+		err = collection.Find(ctx, bson.M{}).Skip(offset).Limit(limit).All(&errorLogList)
 	}
 	if err != nil {
 		return nil, err
@@ -58,12 +60,13 @@ func (e *ErrorLogDaoImpl) GetErrorLogList(offset, limit int64, desc bool, ctx co
 func (e *ErrorLogDaoImpl) GetErrorLogListByCreatedTime(startTime, endTime string, offset, limit int64, desc bool, ctx context.Context) ([]models.ErrorLogModel, error) {
 	var errorLogList []models.ErrorLogModel
 	var err error
+	collection := e.Dao.MongoDB.Collection(errorLogCollectionName)
 	if desc {
-		err = e.errorLogClient.Find(
+		err = collection.Find(
 			ctx, bson.M{"created_at": bson.M{"$gte": startTime, "$lte": endTime}},
 		).Sort("-created_at").Skip(offset).Limit(limit).All(&errorLogList)
 	} else {
-		err = e.errorLogClient.Find(
+		err = collection.Find(
 			ctx, bson.M{"created_at": bson.M{"$gte": startTime, "$lte": endTime}},
 		).Skip(offset).Limit(limit).All(&errorLogList)
 	}
@@ -77,10 +80,11 @@ func (e *ErrorLogDaoImpl) GetErrorLogListByCreatedTime(startTime, endTime string
 func (e *ErrorLogDaoImpl) GetErrorLogListByUserUUID(userUUID string, offset, limit int64, desc bool, ctx context.Context) ([]models.ErrorLogModel, error) {
 	var errorLogList []models.ErrorLogModel
 	var err error
+	collection := e.Dao.MongoDB.Collection(errorLogCollectionName)
 	if desc {
-		err = e.errorLogClient.Find(ctx, bson.M{"user_uuid": userUUID}).Sort("-created_at").Skip(offset).Limit(limit).All(&errorLogList)
+		err = collection.Find(ctx, bson.M{"user_uuid": userUUID}).Sort("-created_at").Skip(offset).Limit(limit).All(&errorLogList)
 	} else {
-		err = e.errorLogClient.Find(ctx, bson.M{"user_uuid": userUUID}).Skip(offset).Limit(limit).All(&errorLogList)
+		err = collection.Find(ctx, bson.M{"user_uuid": userUUID}).Skip(offset).Limit(limit).All(&errorLogList)
 	}
 	if err != nil {
 		return nil, err
@@ -91,7 +95,8 @@ func (e *ErrorLogDaoImpl) GetErrorLogListByUserUUID(userUUID string, offset, lim
 
 func (e *ErrorLogDaoImpl) GetErrorLogListByIPAddress(ipAddress string, offset, limit int64, ctx context.Context) ([]models.ErrorLogModel, error) {
 	var errorLogList []models.ErrorLogModel
-	err := e.errorLogClient.Find(ctx, bson.M{"ip_address": ipAddress}).Skip(offset).Limit(limit).All(&errorLogList)
+	collection := e.Dao.MongoDB.Collection(errorLogCollectionName)
+	err := collection.Find(ctx, bson.M{"ip_address": ipAddress}).Skip(offset).Limit(limit).All(&errorLogList)
 	if err != nil {
 		return nil, err
 	} else {
@@ -101,7 +106,8 @@ func (e *ErrorLogDaoImpl) GetErrorLogListByIPAddress(ipAddress string, offset, l
 
 func (e *ErrorLogDaoImpl) GetErrorLogListByRequestURL(requestURL string, offset, limit int64, ctx context.Context) ([]models.ErrorLogModel, error) {
 	var errorLogList []models.ErrorLogModel
-	err := e.errorLogClient.Find(ctx, bson.M{"request_url": requestURL}).Skip(offset).Limit(limit).All(&errorLogList)
+	collection := e.Dao.MongoDB.Collection(errorLogCollectionName)
+	err := collection.Find(ctx, bson.M{"request_url": requestURL}).Skip(offset).Limit(limit).All(&errorLogList)
 	if err != nil {
 		return nil, err
 	} else {
@@ -111,7 +117,8 @@ func (e *ErrorLogDaoImpl) GetErrorLogListByRequestURL(requestURL string, offset,
 
 func (e *ErrorLogDaoImpl) GetErrorLogListByErrorCode(errorCode string, offset, limit int64, ctx context.Context) ([]models.ErrorLogModel, error) {
 	var errorLogList []models.ErrorLogModel
-	err := e.errorLogClient.Find(ctx, bson.M{"error_code": errorCode}).Skip(offset).Limit(limit).All(&errorLogList)
+	collection := e.Dao.MongoDB.Collection(errorLogCollectionName)
+	err := collection.Find(ctx, bson.M{"error_code": errorCode}).Skip(offset).Limit(limit).All(&errorLogList)
 	if err != nil {
 		return nil, err
 	} else {
@@ -121,7 +128,8 @@ func (e *ErrorLogDaoImpl) GetErrorLogListByErrorCode(errorCode string, offset, l
 
 func (e *ErrorLogDaoImpl) GetErrorLogListByFuzzyQuery(query string, offset, limit int64, ctx context.Context) ([]models.ErrorLogModel, error) {
 	var errorLogList []models.ErrorLogModel
-	err := e.errorLogClient.Find(ctx, bson.M{"$or": []bson.M{
+	collection := e.Dao.MongoDB.Collection(errorLogCollectionName)
+	err := collection.Find(ctx, bson.M{"$or": []bson.M{
 		{"user_uuid": bson.M{"$regex": query}},
 		{"username": bson.M{"$regex": query}},
 		{"ip_address": bson.M{"$regex": query}},
@@ -138,11 +146,13 @@ func (e *ErrorLogDaoImpl) GetErrorLogListByFuzzyQuery(query string, offset, limi
 }
 
 func (e *ErrorLogDaoImpl) InsertErrorLog(errorLog *models.ErrorLogModel, ctx context.Context) error {
-	_, err := e.errorLogClient.InsertOne(ctx, errorLog)
+	collection := e.Dao.MongoDB.Collection(errorLogCollectionName)
+	_, err := collection.InsertOne(ctx, errorLog)
 	return err
 }
 
 func (e *ErrorLogDaoImpl) DeleteErrorLog(errorLog *models.ErrorLogModel, ctx context.Context) error {
-	err := e.errorLogClient.RemoveId(ctx, errorLog.ErrorLogID)
+	collection := e.Dao.MongoDB.Collection(errorLogCollectionName)
+	err := collection.RemoveId(ctx, errorLog.ErrorLogID)
 	return err
 }

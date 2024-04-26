@@ -3,10 +3,12 @@ package modules
 import (
 	"context"
 
+	"data-collection-hub-server/dal"
 	"data-collection-hub-server/models"
-	"github.com/qiniu/qmgo"
 	"go.mongodb.org/mongo-driver/bson"
 )
+
+var loginLogCollectionName = "login_log"
 
 type LoginLogDao interface {
 	GetLoginLogById(loginLogId string, ctx context.Context) (*models.LoginLogModel, error)
@@ -18,18 +20,17 @@ type LoginLogDao interface {
 	DeleteLoginLog(loginLog *models.LoginLogModel, ctx context.Context) error
 }
 
-type LoginLogDaoImpl struct {
-	loginLogClient *qmgo.Collection
-}
+type LoginLogDaoImpl struct{ *dal.Dao }
 
-func NewLoginLogDao(mongoDatabase *qmgo.Database) LoginLogDao {
+func NewLoginLogDao(dao *dal.Dao) LoginLogDao {
 	var _ LoginLogDao = new(LoginLogDaoImpl) // Ensure that the interface is implemented
-	return &LoginLogDaoImpl{loginLogClient: mongoDatabase.Collection("login_log")}
+	return &LoginLogDaoImpl{dao}
 }
 
 func (l *LoginLogDaoImpl) GetLoginLogById(loginLogId string, ctx context.Context) (*models.LoginLogModel, error) {
 	var loginLog models.LoginLogModel
-	err := l.loginLogClient.Find(ctx, bson.M{"_id": loginLogId}).One(&loginLog)
+	collection := l.Dao.MongoDB.Collection(loginLogCollectionName)
+	err := collection.Find(ctx, bson.M{"_id": loginLogId}).One(&loginLog)
 	if err != nil {
 		return nil, err
 	} else {
@@ -38,7 +39,8 @@ func (l *LoginLogDaoImpl) GetLoginLogById(loginLogId string, ctx context.Context
 }
 func (l *LoginLogDaoImpl) GetLoginLogList(offset, limit int64, ctx context.Context) ([]models.LoginLogModel, error) {
 	var loginLogList []models.LoginLogModel
-	err := l.loginLogClient.Find(ctx, bson.M{}).Skip(offset).Limit(limit).All(&loginLogList)
+	collection := l.Dao.MongoDB.Collection(loginLogCollectionName)
+	err := collection.Find(ctx, bson.M{}).Skip(offset).Limit(limit).All(&loginLogList)
 	if err != nil {
 		return nil, err
 	} else {
@@ -47,7 +49,8 @@ func (l *LoginLogDaoImpl) GetLoginLogList(offset, limit int64, ctx context.Conte
 }
 func (l *LoginLogDaoImpl) GetLoginLogListByCreatedTime(startTime, endTime string, offset, limit int64, ctx context.Context) ([]models.LoginLogModel, error) {
 	var loginLogList []models.LoginLogModel
-	err := l.loginLogClient.Find(
+	collection := l.Dao.MongoDB.Collection(loginLogCollectionName)
+	err := collection.Find(
 		ctx, bson.M{"created_at": bson.M{"$gte": startTime, "$lte": endTime}},
 	).Skip(offset).Limit(limit).All(&loginLogList)
 	if err != nil {
@@ -58,7 +61,8 @@ func (l *LoginLogDaoImpl) GetLoginLogListByCreatedTime(startTime, endTime string
 }
 func (l *LoginLogDaoImpl) GetLoginLogListByUserUUID(userUUID string, offset, limit int64, ctx context.Context) ([]models.LoginLogModel, error) {
 	var loginLogList []models.LoginLogModel
-	err := l.loginLogClient.Find(ctx, bson.M{"user_uuid": userUUID}).Skip(offset).Limit(limit).All(&loginLogList)
+	collection := l.Dao.MongoDB.Collection(loginLogCollectionName)
+	err := collection.Find(ctx, bson.M{"user_uuid": userUUID}).Skip(offset).Limit(limit).All(&loginLogList)
 	if err != nil {
 		return nil, err
 	} else {
@@ -67,7 +71,8 @@ func (l *LoginLogDaoImpl) GetLoginLogListByUserUUID(userUUID string, offset, lim
 }
 func (l *LoginLogDaoImpl) GetLoginLogListByIPAddress(ipAddress string, offset, limit int64, ctx context.Context) ([]models.LoginLogModel, error) {
 	var loginLogList []models.LoginLogModel
-	err := l.loginLogClient.Find(ctx, bson.M{"ip_address": ipAddress}).Skip(offset).Limit(limit).All(&loginLogList)
+	collection := l.Dao.MongoDB.Collection(loginLogCollectionName)
+	err := collection.Find(ctx, bson.M{"ip_address": ipAddress}).Skip(offset).Limit(limit).All(&loginLogList)
 	if err != nil {
 		return nil, err
 	} else {
@@ -75,10 +80,12 @@ func (l *LoginLogDaoImpl) GetLoginLogListByIPAddress(ipAddress string, offset, l
 	}
 }
 func (l *LoginLogDaoImpl) InsertLoginLog(loginLog *models.LoginLogModel, ctx context.Context) error {
-	_, err := l.loginLogClient.InsertOne(ctx, loginLog)
+	collection := l.Dao.MongoDB.Collection(loginLogCollectionName)
+	_, err := collection.InsertOne(ctx, loginLog)
 	return err
 }
 func (l *LoginLogDaoImpl) DeleteLoginLog(loginLog *models.LoginLogModel, ctx context.Context) error {
-	err := l.loginLogClient.RemoveId(ctx, loginLog.LoginLogID)
+	collection := l.Dao.MongoDB.Collection(loginLogCollectionName)
+	err := collection.RemoveId(ctx, loginLog.LoginLogID)
 	return err
 }

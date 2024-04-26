@@ -3,8 +3,8 @@ package modules
 import (
 	"context"
 
+	"data-collection-hub-server/dal"
 	"data-collection-hub-server/models"
-	"github.com/qiniu/qmgo"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -21,18 +21,17 @@ type UserDao interface {
 	DeleteUser(user *models.UserModel, ctx context.Context) error
 }
 
-type UserDaoImpl struct {
-	userClient *qmgo.Collection
-}
+type UserDaoImpl struct{ *dal.Dao }
 
-func NewUserDao(mongoDatabase *qmgo.Database) UserDao {
+func NewUserDao(dao *dal.Dao) UserDao {
 	var _ UserDao = new(UserDaoImpl)
-	return &UserDaoImpl{userClient: mongoDatabase.Collection("user")}
+	return &UserDaoImpl{dao}
 }
 
 func (u UserDaoImpl) GetUserById(userId string, ctx context.Context) (*models.UserModel, error) {
 	var user models.UserModel
-	err := u.userClient.Find(ctx, bson.M{"user_id": userId}).One(&user)
+	collection := u.Dao.MongoDB.Collection("user")
+	err := collection.Find(ctx, bson.M{"user_id": userId}).One(&user)
 	if err != nil {
 		return nil, err
 	} else {
@@ -43,10 +42,11 @@ func (u UserDaoImpl) GetUserById(userId string, ctx context.Context) (*models.Us
 func (u UserDaoImpl) GetUserList(offset, limit int64, desc bool, ctx context.Context) ([]models.UserModel, error) {
 	var users []models.UserModel
 	var err error
+	collection := u.Dao.MongoDB.Collection("user")
 	if desc {
-		err = u.userClient.Find(ctx, bson.M{}).Sort("-created_time").Skip(offset).Limit(limit).All(&users)
+		err = collection.Find(ctx, bson.M{}).Sort("-created_time").Skip(offset).Limit(limit).All(&users)
 	} else {
-		err = u.userClient.Find(ctx, bson.M{}).Skip(offset).Limit(limit).All(&users)
+		err = collection.Find(ctx, bson.M{}).Skip(offset).Limit(limit).All(&users)
 	}
 	if err != nil {
 		return nil, err
@@ -58,10 +58,11 @@ func (u UserDaoImpl) GetUserList(offset, limit int64, desc bool, ctx context.Con
 func (u UserDaoImpl) GetUserListByOrganization(organization string, offset, limit int64, desc bool, ctx context.Context) ([]models.UserModel, error) {
 	var users []models.UserModel
 	var err error
+	collection := u.Dao.MongoDB.Collection("user")
 	if desc {
-		err = u.userClient.Find(ctx, bson.M{"organization": organization}).Sort("-created_time").Skip(offset).Limit(limit).All(&users)
+		err = collection.Find(ctx, bson.M{"organization": organization}).Sort("-created_time").Skip(offset).Limit(limit).All(&users)
 	} else {
-		err = u.userClient.Find(ctx, bson.M{"organization": organization}).Skip(offset).Limit(limit).All(&users)
+		err = collection.Find(ctx, bson.M{"organization": organization}).Skip(offset).Limit(limit).All(&users)
 	}
 	if err != nil {
 		return nil, err
@@ -73,10 +74,11 @@ func (u UserDaoImpl) GetUserListByOrganization(organization string, offset, limi
 func (u UserDaoImpl) GetUserListByRole(role string, offset, limit int64, desc bool, ctx context.Context) ([]models.UserModel, error) {
 	var users []models.UserModel
 	var err error
+	collection := u.Dao.MongoDB.Collection("user")
 	if desc {
-		err = u.userClient.Find(ctx, bson.M{"role": role}).Sort("-created_time").Skip(offset).Limit(limit).All(&users)
+		err = collection.Find(ctx, bson.M{"role": role}).Sort("-created_time").Skip(offset).Limit(limit).All(&users)
 	} else {
-		err = u.userClient.Find(ctx, bson.M{"role": role}).Skip(offset).Limit(limit).All(&users)
+		err = collection.Find(ctx, bson.M{"role": role}).Skip(offset).Limit(limit).All(&users)
 	}
 	if err != nil {
 		return nil, err
@@ -88,10 +90,11 @@ func (u UserDaoImpl) GetUserListByRole(role string, offset, limit int64, desc bo
 func (u UserDaoImpl) GetUserListByCreatedTime(startTime, endTime string, offset, limit int64, desc bool, ctx context.Context) ([]models.UserModel, error) {
 	var users []models.UserModel
 	var err error
+	collection := u.Dao.MongoDB.Collection("user")
 	if desc {
-		err = u.userClient.Find(ctx, bson.M{"created_time": bson.M{"$gte": startTime, "$lte": endTime}}).Sort("-created_time").Skip(offset).Limit(limit).All(&users)
+		err = collection.Find(ctx, bson.M{"created_time": bson.M{"$gte": startTime, "$lte": endTime}}).Sort("-created_time").Skip(offset).Limit(limit).All(&users)
 	} else {
-		err = u.userClient.Find(ctx, bson.M{"created_time": bson.M{"$gte": startTime, "$lte": endTime}}).Skip(offset).Limit(limit).All(&users)
+		err = collection.Find(ctx, bson.M{"created_time": bson.M{"$gte": startTime, "$lte": endTime}}).Skip(offset).Limit(limit).All(&users)
 	}
 	if err != nil {
 		return nil, err
@@ -103,10 +106,11 @@ func (u UserDaoImpl) GetUserListByCreatedTime(startTime, endTime string, offset,
 func (u UserDaoImpl) GetUserListByUpdatedTime(startTime, endTime string, offset, limit int64, desc bool, ctx context.Context) ([]models.UserModel, error) {
 	var users []models.UserModel
 	var err error
+	collection := u.Dao.MongoDB.Collection("user")
 	if desc {
-		err = u.userClient.Find(ctx, bson.M{"updated_time": bson.M{"$gte": startTime, "$lte": endTime}}).Sort("-created_time").Skip(offset).Limit(limit).All(&users)
+		err = collection.Find(ctx, bson.M{"updated_time": bson.M{"$gte": startTime, "$lte": endTime}}).Sort("-created_time").Skip(offset).Limit(limit).All(&users)
 	} else {
-		err = u.userClient.Find(ctx, bson.M{"updated_time": bson.M{"$gte": startTime, "$lte": endTime}}).Skip(offset).Limit(limit).All(&users)
+		err = collection.Find(ctx, bson.M{"updated_time": bson.M{"$gte": startTime, "$lte": endTime}}).Skip(offset).Limit(limit).All(&users)
 	}
 	if err != nil {
 		return nil, err
@@ -118,15 +122,16 @@ func (u UserDaoImpl) GetUserListByUpdatedTime(startTime, endTime string, offset,
 func (u UserDaoImpl) GetUserListByFuzzyQuery(query string, offset, limit int64, desc bool, ctx context.Context) ([]models.UserModel, error) {
 	var users []models.UserModel
 	var err error
+	collection := u.Dao.MongoDB.Collection("user")
 	if desc {
-		err = u.userClient.Find(ctx, bson.M{"$or": []bson.M{
+		err = collection.Find(ctx, bson.M{"$or": []bson.M{
 			{"user_id": bson.M{"$regex": query}},
 			{"user_name": bson.M{"$regex": query}},
 			{"organization": bson.M{"$regex": query}},
 			{"role": bson.M{"$regex": query}},
 		}}).Sort("-created_time").Skip(offset).Limit(limit).All(&users)
 	} else {
-		err = u.userClient.Find(ctx, bson.M{"$or": []bson.M{
+		err = collection.Find(ctx, bson.M{"$or": []bson.M{
 			{"user_id": bson.M{"$regex": query}},
 			{"user_name": bson.M{"$regex": query}},
 			{"organization": bson.M{"$regex": query}},
@@ -141,16 +146,19 @@ func (u UserDaoImpl) GetUserListByFuzzyQuery(query string, offset, limit int64, 
 }
 
 func (u UserDaoImpl) InsertUser(user *models.UserModel, ctx context.Context) error {
-	_, err := u.userClient.InsertOne(ctx, user)
+	collection := u.Dao.MongoDB.Collection("user")
+	_, err := collection.InsertOne(ctx, user)
 	return err
 }
 
 func (u UserDaoImpl) UpdateUser(user *models.UserModel, ctx context.Context) error {
-	err := u.userClient.UpdateOne(ctx, bson.M{"_id": user.UserID}, bson.M{"$set": user})
+	collection := u.Dao.MongoDB.Collection("user")
+	err := collection.UpdateOne(ctx, bson.M{"_id": user.UserID}, bson.M{"$set": user})
 	return err
 }
 
 func (u UserDaoImpl) DeleteUser(user *models.UserModel, ctx context.Context) error {
-	err := u.userClient.RemoveId(ctx, user.UserID)
+	collection := u.Dao.MongoDB.Collection("user")
+	err := collection.RemoveId(ctx, user.UserID)
 	return err
 }
