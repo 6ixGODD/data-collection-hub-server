@@ -25,7 +25,7 @@ Directory structure of the project
 ├── global            # Global variables
 ├── go.mod            # Go module file
 ├── go.sum 
-├── initializer       # Initializer and application factory
+├── app       # Initializer and application factory
 ├── main.go           # Main entry
 ├── middleware        # Middleware
 │    ├── cors.go      # CORS middleware

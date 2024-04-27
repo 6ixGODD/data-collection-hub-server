@@ -3,7 +3,7 @@ package dao
 import (
 	"context"
 
-	"data-collection-hub-server/models"
+	"data-collection-hub-server/internal/pkg/models"
 	"github.com/qiniu/qmgo"
 	"go.mongodb.org/mongo-driver/bson"
 )

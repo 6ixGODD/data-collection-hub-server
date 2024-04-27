@@ -19,18 +19,20 @@ limitations under the License.
 import (
 	"os"
 
-	"data-collection-hub-server/core/config"
-	"data-collection-hub-server/utils/check"
+	"data-collection-hub-server/internal/pkg/config"
+	"data-collection-hub-server/pkg/utils/check"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 var (
-	configFile string // config file path (default is $HOME/.data-collection-hub-server.yaml)
-	port       string // port to listen on (default is 3000)
-	host       string // host to listen on (default is localhost)
-	dev        bool   // run in development mode
-	logLevel   string // log level (default is info)
+	configFile  string // config file path (default is $HOME/.data-collection-hub-server.yaml)
+	port        string // port to listen on (default is 3000)
+	host        string // host to listen on (default is localhost)
+	logLevel    string // log level (default is info)
+	tls         bool   // enable tls (default is false)
+	tlsCertFile string // tls cert file path (default is "")
+	tlsKeyFile  string // tls key file path (default is "")
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -77,12 +79,30 @@ func init() {
 		"",
 		"host to listen on (default is localhost)",
 	)
-	rootCmd.PersistentFlags().BoolVarP(
-		&dev,
-		"dev",
-		"d",
+	rootCmd.PersistentFlags().StringVarP(
+		&logLevel,
+		"log-level",
+		"l",
+		"info",
+		"log level (default is info)",
+	)
+	rootCmd.PersistentFlags().BoolVar(
+		&tls,
+		"tls",
 		false,
-		"run in development mode",
+		"enable tls (default is false)",
+	)
+	rootCmd.PersistentFlags().StringVar(
+		&tlsCertFile,
+		"tls-cert-file",
+		"",
+		"tls cert file path (default is \"\")",
+	)
+	rootCmd.PersistentFlags().StringVar(
+		&tlsKeyFile,
+		"tls-key-file",
+		"",
+		"tls key file path (default is \"\")",
 	)
 }
 
