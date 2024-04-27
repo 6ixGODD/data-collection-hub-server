@@ -1,74 +1,63 @@
 # Data Collection Hub Server
-## Description
-Directory structure of the project
-```shell
+## Project Layout
+```
 .
-├── README.md         # Project README
-├── api               # API definition
-│    └── v1  
-│        ├── admin  
-│        ├── common
-│        └── user
-├── cmd               # Command line interface
-├── core              # Core module
-│    ├── config       # Configuration module
-│    │     ├── config.go
-│    │     └── modules
-│    ├── memcached    # Memcached module
-│    ├── mongo        # MongoDB module
-│    ├── redis        # Redis module
-│    ├── viper        # Viper module
-│    ├── wire         # Wire module
-│    └── zap          # Zap logger module
-├── dal               # Data access object
-├── docs              # Swagger API documentation
-├── global            # Global variables
-├── go.mod            # Go module file
-├── go.sum 
-├── app       # Initializer and application factory
-├── main.go           # Main entry
-├── middleware        # Middleware
-│    ├── cors.go      # CORS middleware
-│    ├── jwt.go       # JWT middleware
-│    ├── limit_ip.go  # IP limit middleware
-│    └── logger.go    # Logger middleware
-├── models            # Data models
-│    ├── schema       # Request and response schema
-│    │     ├── admin
-│    │     ├── common
-│    │     ├── response.go
-│    │     └── user
-├── router            # Router
-├── scheduler         # Scheduler and timer
-├── service           # Service layer
-│    ├── admin
-│    ├── common
-│    └── user
-└── utils             # Utilities
-    ├── check         # Check utilities
-    ├── crypt         # Cryptography
-    ├── ip            # IP utilities
-    ├── jwt           # JWT utilities
-    └── validate      # Validate utilities
+├── Makefile                # Makefile for build, run, test, etc.
+├── main.go                 # Entry point of the application
+├── api                     # API documentation
+├── cmd                     # Command line interface based on Cobra
+│   └── root.go             # Root command
+├── configs                 # Configuration files
+│   ├── dev                 # Development environment
+│   ├── test                # Test environment
+│   └── prob                # Production environment
+├── internal                # Internal packages
+│   ├── app                 # Application Factory
+│   └── pkg                 # Internal packages
+│       ├── api             # API Layer
+│       ├── config          # Configuration
+│       ├── dal             # Data Access Layer
+│       ├── hooks           # Hooks
+│       ├── models          # Data Models
+│       ├── router          # Router Layer
+│       ├── scheduler       # Scheduler Tasks
+│       ├── schema          # Request and Response Schema
+│       └── service         # Business Logic Layer
+├── pkg                     # Common packages
+│   ├── casbin              # Casbin RBAC
+│   ├── cron                # Cron Scheduler
+│   ├── middleware          # Middleware
+│   ├── mongo               # MongoDB
+│   ├── prometheus          # Prometheus
+│   ├── redis               # Redis
+│   ├── utils               # Utilities
+│   ├── wire                # Dependency Injection
+│   └── zap                 # Logger
+└── test                    # Test files
+    ├── api                 # API Test
+    ├── dal                 # DAL Test
+    ├── service             # Service Test
+    └── utils               # Utilities Test
+
 ```
 
-## Technology Stack
-- **Framework**: Fiber
-- **DB**: MongoDB
-- **Cache**: Redis, GoMemcached
-- **Logger**: Zap
-- **Configuration**: Viper
-- **Dependency Injection**: Wire
-- **API Documentation**: Swagger
-- **Scheduler**: Cron
-- **Command Line Interface**: Cobra
-- **Middleware**:
+## Features
+-[x] **Framework**: Fiber
+-[x] **DB**: MongoDB
+-[x] **Cache**: Redis
+-[x] **Logger**: Zap
+-[x] **Configuration**: Viper
+-[x] **Dependency Injection**: Wire
+-[x] **API Documentation**: Swagger
+-[x] **Scheduler**: Cron
+-[x] **Command Line Interface**: Cobra
+-[x] **RBAC**: Casbin
+-[x] **Middleware**:
   - CORS
   - JWT
   - IP limit
   - Logger
   - Casbin
-- **RBAC**: Casbin
 
 ## Setup
 ```shell
@@ -78,3 +67,4 @@ go mod tidy
 ## Reference
 - https://docs.gofiber.io/
 - https://github.com/goccy/go-json
+- https://github.com/golang-standards/project-layout
