@@ -3,8 +3,7 @@ package utils_test
 import (
 	"testing"
 
-	"data-collection-hub-server/utils/crypt"
-
+	"data-collection-hub-server/pkg/utils/crypt"
 	"github.com/stretchr/testify/assert"
 )
 

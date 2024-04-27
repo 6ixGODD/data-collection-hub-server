@@ -3,14 +3,14 @@ package initializer
 import (
 	"testing"
 
-	"data-collection-hub-server/core/config"
+	"data-collection-hub-server/internal/pkg/config"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestInitializer(t *testing.T) {
 	a := assert.New(t)
 	// ctx := context.Background()
-	// app, err := initializer.NewApp(ctx)
+	// app, err := app.NewApp(ctx)
 	// if err != nil {
 	// 	return
 	// }
