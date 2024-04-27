@@ -42,17 +42,17 @@
 ```
 
 ## Features
--[x] **Framework**: Fiber
--[x] **DB**: MongoDB
--[x] **Cache**: Redis
--[x] **Logger**: Zap
--[x] **Configuration**: Viper
--[x] **Dependency Injection**: Wire
--[x] **API Documentation**: Swagger
--[x] **Scheduler**: Cron
--[x] **Command Line Interface**: Cobra
--[x] **RBAC**: Casbin
--[x] **Middleware**:
+- **Framework**: Fiber
+- **DB**: MongoDB
+- **Cache**: Redis
+- **Logger**: Zap
+- **Configuration**: Viper
+- **Dependency Injection**: Wire
+- **API Documentation**: Swagger
+- **Scheduler**: Cron
+- **Command Line Interface**: Cobra
+- **RBAC**: Casbin
+- **Middleware**:
   - CORS
   - JWT
   - IP limit
