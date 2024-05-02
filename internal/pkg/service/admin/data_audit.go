@@ -9,7 +9,7 @@ type DataAuditService interface {
 }
 
 type DataAuditServiceImpl struct {
-	*service.Service
+	Service            *service.Service
 	InstructionDataDao dao.InstructionDataDao
 }
 

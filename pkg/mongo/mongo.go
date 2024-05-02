@@ -3,43 +3,56 @@ package mongo
 import (
 	"context"
 
-	"data-collection-hub-server/internal/pkg/config/modules"
 	"github.com/qiniu/qmgo"
 )
 
-var (
-	mongoClient   *qmgo.Client
-	mongoDatabase *qmgo.Database
-	mongoConfig   *modules.MongoConfig
-)
-
-func InitMongo(ctx context.Context, config *modules.MongoConfig) error {
-	var err error
-	mongoConfig = config
-	mongoClient, err = qmgo.NewClient(ctx, &qmgo.Config{
-		Uri:              mongoConfig.Uri,
-		ConnectTimeoutMS: &mongoConfig.ConnectTimeoutMS,
-		SocketTimeoutMS:  &mongoConfig.SocketTimeoutMS,
-		MaxPoolSize:      &mongoConfig.MaxPoolSize,
-		MinPoolSize:      &mongoConfig.MinPoolSize,
-	})
-	if err != nil {
-		return err
-	} else {
-		mongoDatabase = mongoClient.Database(config.Database)
-		return nil
-	}
+type Database struct {
+	MongoClient   *qmgo.Client
+	MongoDatabase *qmgo.Database
+	MongoConfig   *qmgo.Config
+	DatabaseName  string
 }
 
-func GetMongoDatabase() (d *qmgo.Database, e error) {
-	if mongoDatabase == nil {
-		if err := InitMongo(context.Background(), mongoConfig); err != nil {
+func New(ctx context.Context, config *qmgo.Config, databaseName string) (c *Database, err error) {
+	c = &Database{
+		MongoConfig:  config,
+		DatabaseName: databaseName,
+	}
+	if err := c.Init(ctx); err != nil {
+		return nil, err
+	}
+	return c, nil
+}
+
+func (d *Database) Init(ctx context.Context) error {
+	client, err := qmgo.NewClient(ctx, d.MongoConfig)
+	if err != nil {
+		return err
+	}
+	d.MongoClient = client
+	d.MongoDatabase = client.Database(d.DatabaseName)
+	return nil
+}
+
+func (d *Database) GetClient(ctx context.Context) (client *qmgo.Client, err error) {
+	if d.MongoClient == nil {
+		if err = d.Init(ctx); err != nil {
 			return nil, err
 		}
 	}
-	return mongoDatabase, nil
+	return d.MongoClient, nil
 }
 
-func CloseMongo(ctx context.Context) error {
-	return mongoClient.Close(ctx)
+func (d *Database) GetDatabase(ctx context.Context) (database *qmgo.Database, err error) {
+	if d.MongoDatabase == nil {
+		if err = d.Init(ctx); err != nil {
+			return nil, err
+		}
+	}
+	return d.MongoDatabase, nil
+
+}
+
+func (d *Database) Close(ctx context.Context) error {
+	return d.MongoClient.Close(ctx)
 }

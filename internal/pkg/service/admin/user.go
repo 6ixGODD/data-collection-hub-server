@@ -9,8 +9,8 @@ type UserService interface {
 }
 
 type UserServiceImpl struct {
-	*service.Service
-	dao.UserDao
+	Service *service.Service
+	UserDao dao.UserDao
 }
 
 func NewUserService(s *service.Service, userDaoImpl *dao.UserDaoImpl) UserService {

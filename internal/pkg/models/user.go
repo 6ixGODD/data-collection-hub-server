@@ -1,7 +1,7 @@
 package models
 
 type UserModel struct {
-	UserID       string `json:"user_id" bson:"_id"`               // MongoDB ObjectId
+	UserID       string `json:"user_id" bson:"_id"`               // MongoClient ObjectId
 	UUID         string `json:"uuid" bson:"uuid"`                 // User UUID
 	Username     string `json:"username" bson:"username"`         // Username
 	Email        string `json:"email" bson:"email"`               // Email

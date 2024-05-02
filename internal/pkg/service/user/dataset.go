@@ -9,13 +9,15 @@ type DatasetService interface {
 }
 
 type DatasetServiceImpl struct {
-	*service.Service
+	Service            *service.Service
 	instructionDataDao dao.InstructionDataDao
+	OperationLogDao    dao.OperationLogDao
 }
 
-func NewDatasetService(s *service.Service, instructionDataDaoImpl *dao.InstructionDataDaoImpl) DatasetService {
+func NewDatasetService(s *service.Service, instructionDataDaoImpl *dao.InstructionDataDaoImpl, operationLogDaoImpl *dao.OperationLogDaoImpl) DatasetService {
 	return &DatasetServiceImpl{
 		Service:            s,
 		instructionDataDao: instructionDataDaoImpl,
+		OperationLogDao:    operationLogDaoImpl,
 	}
 }

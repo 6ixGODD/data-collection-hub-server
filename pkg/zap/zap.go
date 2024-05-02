@@ -3,7 +3,6 @@ package zap
 import (
 	"context"
 
-	"data-collection-hub-server/internal/pkg/config/modules"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -15,16 +14,31 @@ const (
 	LoginTag     = "LOGIN"
 	OperationTag = "OPERATION"
 	SystemTag    = "SYSTEM"
+
+	tag       = "TAG"
+	requestID = "REQUEST_ID"
+	userID    = "USER_ID"
+	operation = "OPERATION"
 )
 
-type (
-	tagKey       struct{}
-	requestIDKey struct{}
-	userIDKey    struct{}
-	operationKey struct{}
-)
+type Logger struct {
+	Logger  *zap.Logger
+	Config  *zap.Config
+	Options []zap.Option
+}
 
-func InitLogger(config *modules.ZapConfig) (err error) {
+func New(config *zap.Config, options ...zap.Option) (l *Logger, err error) {
+	l = &Logger{
+		Config:  config,
+		Options: options,
+	}
+	if err := l.Init(); err != nil {
+		return nil, err
+	}
+	return l, nil
+}
+
+func (l *Logger) Init() error {
 	encoderConfig := zap.NewProductionEncoderConfig()
 	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 	encoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
@@ -32,39 +46,46 @@ func InitLogger(config *modules.ZapConfig) (err error) {
 	encoderConfig.EncodeDuration = zapcore.SecondsDurationEncoder
 	encoderConfig.EncodeName = zapcore.FullNameEncoder
 
-	var level zapcore.Level
-	if level, err = zapcore.ParseLevel(config.Level); err != nil {
-		level = zapcore.InfoLevel
-	}
-	var baseLogger *zap.Logger
-	baseLogger, err = zap.Config{
-		Level:            zap.NewAtomicLevelAt(level),
-		Development:      config.Development,
-		Encoding:         config.Encoding,
-		EncoderConfig:    encoderConfig,
-		OutputPaths:      config.OutputPaths,
-		ErrorOutputPaths: config.ErrorOutputPaths,
-	}.Build()
+	l.Config.EncoderConfig = encoderConfig
+	logger, err := l.Config.Build()
 	if err != nil {
 		return err
 	}
 
-	baseLogger = baseLogger.WithOptions(
-		zap.WithCaller(true),
-		zap.AddStacktrace(zap.ErrorLevel),
-		zap.AddCallerSkip(config.CallerSkip),
-	)
-	zap.ReplaceGlobals(baseLogger)
+	l.Options = append(l.Options, zap.WithCaller(true), zap.AddStacktrace(zap.ErrorLevel))
+	l.Logger = logger.WithOptions(l.Options...)
 
 	return nil
 }
 
-func SetTagInContext(ctx context.Context, tag string) context.Context {
-	return context.WithValue(ctx, tagKey{}, tag)
+func (l *Logger) GetLogger(ctx context.Context) (logger *zap.Logger, err error) {
+	var fields []zap.Field
+	if tag := l.getTagFromContext(ctx); tag != "" {
+		fields = append(fields, zap.String("tag", tag))
+	}
+	if reqID := l.getRequestIDFromContext(ctx); reqID != "" {
+		fields = append(fields, zap.String("reqID", reqID))
+	}
+	if userID := l.getUserIDFromContext(ctx); userID != "" {
+		fields = append(fields, zap.String("userID", userID))
+	}
+	if operation := l.getOperationFromContext(ctx); operation != "" {
+		fields = append(fields, zap.String("operation", operation))
+	}
+	if l.Logger == nil {
+		if err := l.Init(); err != nil {
+			return nil, err
+		}
+	}
+	return l.Logger.With(fields...), nil
 }
 
-func getTagFromContext(ctx context.Context) string {
-	if tag := ctx.Value(tagKey{}); tag != nil {
+func (l *Logger) SetTagInContext(ctx context.Context, tag string) context.Context {
+	return context.WithValue(ctx, tag, tag)
+}
+
+func (l *Logger) getTagFromContext(ctx context.Context) string {
+	if tag := ctx.Value(tag); tag != nil {
 		if tagStr, ok := tag.(string); ok {
 			return tagStr
 		}
@@ -72,12 +93,12 @@ func getTagFromContext(ctx context.Context) string {
 	return MainTag
 }
 
-func SetRequestIDInContext(ctx context.Context, requestID string) context.Context {
-	return context.WithValue(ctx, requestIDKey{}, requestID)
+func (l *Logger) SetRequestIDInContext(ctx context.Context, requestID string) context.Context {
+	return context.WithValue(ctx, requestID, requestID)
 }
 
-func getRequestIDFromContext(ctx context.Context) string {
-	if requestID := ctx.Value(requestIDKey{}); requestID != nil {
+func (l *Logger) getRequestIDFromContext(ctx context.Context) string {
+	if requestID := ctx.Value(requestID); requestID != nil {
 		if requestID, ok := requestID.(string); ok {
 			return requestID
 		}
@@ -85,12 +106,12 @@ func getRequestIDFromContext(ctx context.Context) string {
 	return ""
 }
 
-func SetUserIDWithContext(ctx context.Context, userID string) context.Context {
-	return context.WithValue(ctx, userIDKey{}, userID)
+func (l *Logger) SetUserIDWithContext(ctx context.Context, userID string) context.Context {
+	return context.WithValue(ctx, userID, userID)
 }
 
-func getUserIDFromContext(ctx context.Context) string {
-	if userID := ctx.Value(userIDKey{}); userID != nil {
+func (l *Logger) getUserIDFromContext(ctx context.Context) string {
+	if userID := ctx.Value(userID); userID != nil {
 		if userID, ok := userID.(string); ok {
 			return userID
 		}
@@ -98,32 +119,15 @@ func getUserIDFromContext(ctx context.Context) string {
 	return ""
 }
 
-func SetOperationWithContext(ctx context.Context, operation string) context.Context {
-	return context.WithValue(ctx, operationKey{}, operation)
+func (l *Logger) SetOperationWithContext(ctx context.Context, operation string) context.Context {
+	return context.WithValue(ctx, operation, operation)
 }
 
-func getOperationFromContext(ctx context.Context) string {
-	if operation := ctx.Value(operationKey{}); operation != nil {
+func (l *Logger) getOperationFromContext(ctx context.Context) string {
+	if operation := ctx.Value(operation); operation != nil {
 		if operation, ok := operation.(string); ok {
 			return operation
 		}
 	}
 	return ""
-}
-
-func GetLoggerWithContext(ctx context.Context) *zap.Logger {
-	var Fields []zap.Field
-	if tag := getTagFromContext(ctx); tag != "" {
-		Fields = append(Fields, zap.String("tag", tag))
-	}
-	if reqID := getRequestIDFromContext(ctx); reqID != "" {
-		Fields = append(Fields, zap.String("reqID", reqID))
-	}
-	if userID := getUserIDFromContext(ctx); userID != "" {
-		Fields = append(Fields, zap.String("userID", userID))
-	}
-	if operation := getOperationFromContext(ctx); operation != "" {
-		Fields = append(Fields, zap.String("operation", operation))
-	}
-	return zap.L().With(Fields...)
 }

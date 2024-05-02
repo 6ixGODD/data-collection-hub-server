@@ -1,7 +1,10 @@
 package modules
 
+import (
+	"time"
+)
+
 type JWTConfig struct {
-	SecretKey            string `mapstructure:"jwt_secret_key" yaml:"jwt_secret_key" default:"secret"`
-	TokenExpireIn        int    `mapstructure:"jwt_token_expire_in" yaml:"jwt_token_expire_in" default:"3600"`
-	RefreshTokenExpireIn int    `mapstructure:"jwt_refresh_token_expire_in" yaml:"jwt_refresh_token_expire_in" default:"7200"`
+	TokenDuration   time.Duration `mapstructure:"jwt_token_duration" yaml:"jwt_token_duration" default:"7200s"`
+	RefreshDuration time.Duration `mapstructure:"jwt_refresh_duration" yaml:"jwt_refresh_duration" default:"14400s"`
 }

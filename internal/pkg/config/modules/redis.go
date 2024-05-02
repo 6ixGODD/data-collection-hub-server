@@ -2,6 +2,8 @@ package modules
 
 import (
 	"time"
+
+	"github.com/redis/go-redis/v9"
 )
 
 type RedisConfig struct {
@@ -23,4 +25,27 @@ type RedisConfig struct {
 	MaxActiveConns  int           `mapstructure:"redis_max_active_conns" yaml:"redis_max_active_conns" default:"30m"`
 	ConnMaxIdleTime time.Duration `mapstructure:"redis_conn_max_idle_time" yaml:"redis_conn_max_idle_time" default:"30m"`
 	ConnMaxLifetime time.Duration `mapstructure:"redis_conn_max_lifetime" yaml:"redis_conn_max_lifetime" default:"-1"`
+}
+
+func (c *RedisConfig) ToRedisConfig() *redis.Options {
+	return &redis.Options{
+		Addr:            c.Addr,
+		ClientName:      c.ClientName,
+		Username:        c.Username,
+		Password:        c.Password,
+		DB:              c.DB,
+		MaxRetries:      c.MaxRetries,
+		MinRetryBackoff: c.MinRetryBackoff,
+		MaxRetryBackoff: c.MaxRetryBackoff,
+		DialTimeout:     c.DialTimeout,
+		ReadTimeout:     c.ReadTimeout,
+		WriteTimeout:    c.WriteTimeout,
+		PoolSize:        c.PoolSize,
+		PoolTimeout:     c.PoolTimeout,
+		MinIdleConns:    c.MinIdleConns,
+		MaxIdleConns:    c.MaxIdleConns,
+		MaxActiveConns:  c.MaxActiveConns,
+		ConnMaxIdleTime: c.ConnMaxIdleTime,
+		ConnMaxLifetime: c.ConnMaxLifetime,
+	}
 }

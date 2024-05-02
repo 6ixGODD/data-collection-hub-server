@@ -1,3 +1,3 @@
-package middleware
+package modules
 
 // Logger Middleware

@@ -1,57 +1,61 @@
 package redis
 
 import (
-	"data-collection-hub-server/internal/pkg/config/modules"
+	"sync"
+
 	"github.com/redis/go-redis/v9"
 	"golang.org/x/net/context"
 )
 
-var (
-	redisClient *redis.Client
-	redisConfig *modules.RedisConfig
-)
+type Cache struct {
+	RedisClient  *redis.Client
+	RedisOptions *redis.Options
+	Mutex        sync.Mutex
+}
 
-func InitRedis(ctx context.Context, config *modules.RedisConfig) (err error) {
-	redisConfig = config
-	redisClient = redis.NewClient(&redis.Options{
-		Addr:            redisConfig.Addr,
-		ClientName:      redisConfig.ClientName,
-		DB:              redisConfig.DB,
-		MaxRetries:      redisConfig.MaxRetries,
-		MinRetryBackoff: redisConfig.MinRetryBackoff,
-		MaxRetryBackoff: redisConfig.MaxRetryBackoff,
-		DialTimeout:     redisConfig.DialTimeout,
-		ReadTimeout:     redisConfig.ReadTimeout,
-		WriteTimeout:    redisConfig.WriteTimeout,
-		PoolSize:        redisConfig.PoolSize,
-		PoolTimeout:     redisConfig.PoolTimeout,
-		MinIdleConns:    redisConfig.MinIdleConns,
-		MaxIdleConns:    redisConfig.MaxIdleConns,
-		MaxActiveConns:  redisConfig.MaxActiveConns,
-		ConnMaxIdleTime: redisConfig.ConnMaxIdleTime,
-		ConnMaxLifetime: redisConfig.ConnMaxLifetime,
-		// CredentialsProvider:   nil,
-		// Username:              config.Username,
-		// Password:              config.Password,
-		// OnConnect:             nil,
-	})
-	_, err = redisClient.Ping(ctx).Result()
-	if err != nil {
+func New(ctx context.Context, options *redis.Options) (c *Cache, err error) {
+	c = &Cache{RedisOptions: options}
+	if err := c.Init(ctx); err != nil {
+		return nil, err
+	}
+	return c, nil
+}
+
+func (c *Cache) Init(ctx context.Context) error {
+	c.Mutex.Lock()
+	defer c.Mutex.Unlock()
+
+	if c.RedisClient != nil {
+		return nil
+	}
+	client := redis.NewClient(c.RedisOptions)
+	if _, err := client.Ping(ctx).Result(); err != nil {
 		return err
 	}
+	c.RedisClient = client
 	return nil
 }
 
-func getRedisClient() (r *redis.Client, e error) {
-	if redisClient == nil {
-		// retry to connect
-		if err := InitRedis(context.Background(), redisConfig); err != nil {
+func (c *Cache) GetClient(ctx context.Context) (client *redis.Client, err error) {
+	c.Mutex.Lock()
+	defer c.Mutex.Unlock()
+
+	if c.RedisClient == nil {
+		if err = c.Init(ctx); err != nil {
 			return nil, err
 		}
 	}
-	return redisClient, nil
+	return c.RedisClient, nil
 }
 
-func CloseRedis(ctx context.Context) error {
-	return redisClient.Close()
+func (c *Cache) Close() error {
+	c.Mutex.Lock()
+	defer c.Mutex.Unlock()
+
+	if c.RedisClient == nil {
+		return nil
+	}
+	err := c.RedisClient.Close()
+	c.RedisClient = nil
+	return err
 }

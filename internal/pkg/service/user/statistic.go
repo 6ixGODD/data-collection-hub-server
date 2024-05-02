@@ -9,7 +9,7 @@ type StatisticService interface {
 }
 
 type StatisticServiceImpl struct {
-	*service.Service
+	Service            *service.Service
 	instructionDataDao dao.InstructionDataDao
 }
 

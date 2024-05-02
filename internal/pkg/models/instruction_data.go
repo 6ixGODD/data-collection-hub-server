@@ -1,7 +1,7 @@
 package models
 
 type InstructionDataModel struct {
-	InstructionDataID string   `json:"instruction_data_id" bson:"_id"` // MongoDB ObjectID
+	InstructionDataID string   `json:"instruction_data_id" bson:"_id"` // MongoClient ObjectID
 	UserUUID          string   `json:"user_uuid" bson:"user_uuid"`     // User UUID
 	Username          string   `json:"username" bson:"username"`       // Username (for space-time trade-off)
 	Row               struct { // Row Data in alpaca format

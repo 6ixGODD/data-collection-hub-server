@@ -9,7 +9,7 @@ type DocumentationService interface {
 }
 
 type DocumentationServiceImpl struct {
-	*service.Service
+	Service          *service.Service
 	DocumentationDao dao.DocumentationDao
 }
 

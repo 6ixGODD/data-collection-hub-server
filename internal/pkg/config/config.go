@@ -17,24 +17,25 @@ type Config struct {
 	ZapConfig     modules.ZapConfig     `mapstructure:"zap" yaml:"zap"`
 	FiberConfig   modules.FiberConfig   `mapstructure:"fiber" yaml:"fiber"`
 	LimiterConfig modules.LimiterConfig `mapstructure:"limiter" yaml:"limiter"`
+	CorsConfig    modules.CorsConfig    `mapstructure:"cors" yaml:"cors"`
 }
 
 // NewConfig returns a new instance of Config
-func NewConfig() (cfg *Config, err error) {
-	cfg = &Config{}
-	err = setDefaults(cfg)
+func NewConfig() (config *Config, err error) {
+	config = &Config{}
+	err = Init(config)
 	if err != nil {
 		return nil, err
 	} else {
-		return cfg, nil
+		return config, nil
 	}
 }
 
-func setDefaults(cfg *Config) (err error) {
-	cfgValue := reflect.ValueOf(cfg).Elem()
+func Init(config *Config) (err error) {
+	configValue := reflect.ValueOf(config).Elem()
 
-	for i := 0; i < cfgValue.NumField(); i++ {
-		subStructValue := cfgValue.Field(i)
+	for i := 0; i < configValue.NumField(); i++ {
+		subStructValue := configValue.Field(i)
 		subStructType := subStructValue.Type()
 
 		if subStructValue.Kind() == reflect.Struct {

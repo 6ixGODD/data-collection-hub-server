@@ -1,7 +1,7 @@
 package models
 
 type DocumentationModel struct {
-	DocumentID string `json:"document_id" bson:"_id"`       // MongoDB ObjectId
+	DocumentID string `json:"document_id" bson:"_id"`       // MongoClient ObjectId
 	Title      string `json:"title" bson:"title"`           // Title of the document
 	Content    string `json:"content" bson:"content"`       // Content of the document
 	CreatedAt  string `json:"created_at" bson:"created_at"` // Create Time in ISO 8601

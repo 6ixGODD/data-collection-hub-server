@@ -9,10 +9,10 @@ type LogsService interface {
 }
 
 type LogsServiceImpl struct {
-	*service.Service
-	dao.LoginLogDao
-	dao.OperationLogDao
-	dao.ErrorLogDao
+	Service         *service.Service
+	LoginLogDao     dao.LoginLogDao
+	OperationLogDao dao.OperationLogDao
+	ErrorLogDao     dao.ErrorLogDao
 }
 
 func NewLogsService(s *service.Service, loginLogDaoImpl *dao.LoginLogDaoImpl, operationLogDaoImpl *dao.OperationLogDaoImpl, errorLogDaoImpl *dao.ErrorLogDaoImpl) LogsService {

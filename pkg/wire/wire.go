@@ -1,5 +1,0 @@
-package wire
-
-func GetMongoClient() {
-
-}

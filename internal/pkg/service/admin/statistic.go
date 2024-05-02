@@ -9,9 +9,9 @@ type StatisticService interface {
 }
 
 type StatisticServiceImpl struct {
-	*service.Service
-	dao.InstructionDataDao
-	dao.UserDao
+	Service            *service.Service
+	InstructionDataDao dao.InstructionDataDao
+	UserDao            dao.UserDao
 }
 
 func NewStatisticService(s *service.Service, instructionDataDaoImpl *dao.InstructionDataDaoImpl, userDaoImpl *dao.UserDaoImpl) StatisticService {

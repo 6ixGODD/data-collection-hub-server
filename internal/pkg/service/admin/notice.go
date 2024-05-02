@@ -9,8 +9,8 @@ type NoticeService interface {
 }
 
 type NoticeServiceImpl struct {
-	*service.Service
-	dao.NoticeDao
+	Service   *service.Service
+	NoticeDao dao.NoticeDao
 }
 
 func NewNoticeService(s *service.Service, noticeDaoImpl *dao.NoticeDaoImpl) NoticeService {

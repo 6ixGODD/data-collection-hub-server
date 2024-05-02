@@ -1,21 +1,27 @@
 package dal
 
 import (
-	"github.com/qiniu/qmgo"
-	"github.com/redis/go-redis/v9"
-	"go.uber.org/zap"
+	"context"
+
+	"data-collection-hub-server/internal/pkg/config"
+	"data-collection-hub-server/pkg/mongo"
+	"data-collection-hub-server/pkg/redis"
+	"data-collection-hub-server/pkg/zap"
 )
 
 type Dao struct {
-	MongoDB     *qmgo.Database
-	RedisClient *redis.Client
+	MongoClient *mongo.Database
+	RedisClient *redis.Cache
 	Logger      *zap.Logger
+	Config      *config.Config
 }
 
-func NewDao(mongoDB *qmgo.Database, redisClient *redis.Client, logger *zap.Logger) *Dao {
+func NewDao(ctx context.Context, mongoDB *mongo.Database, redisClient *redis.Cache, logger *zap.Logger, config config.Config) *Dao {
+	logger.SetTagInContext(ctx, zap.MongoTag)
 	return &Dao{
-		MongoDB:     mongoDB,
+		MongoClient: mongoDB,
 		RedisClient: redisClient,
 		Logger:      logger,
+		Config:      &config,
 	}
 }

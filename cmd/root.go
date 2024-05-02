@@ -26,7 +26,7 @@ import (
 )
 
 var (
-	configFile  string // config file path (default is $HOME/.data-collection-hub-server.yaml)
+	configFile  string // config file path (default is $HOME/.data-collection-hub-server.prob.yaml)
 	port        string // port to listen on (default is 3000)
 	host        string // host to listen on (default is localhost)
 	logLevel    string // log level (default is info)
@@ -63,7 +63,7 @@ func init() {
 		&configFile,
 		"config",
 		"",
-		"config file (default is $HOME/.data-collection-hub-server.yaml)",
+		"config file (default is $HOME/.data-collection-hub-server.prob.yaml)",
 	)
 	rootCmd.PersistentFlags().StringVarP(
 		&port,
