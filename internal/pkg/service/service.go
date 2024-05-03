@@ -9,14 +9,14 @@ import (
 
 // Service is the interface for the service layer.
 type Service struct {
-	Logger *zap.Logger
-	Redis  *redis.Cache
+	Logger *zap.Zap
+	Redis  *redis.Redis
 	Config *config.Config
-	Jwt    *jwt.Auth
+	Jwt    *jwt.Jwt
 }
 
 // NewService creates a new instance of Service.
-func NewService(logger *zap.Logger, redis *redis.Cache, config *config.Config, jwt *jwt.Auth) *Service {
+func NewService(logger *zap.Zap, redis *redis.Redis, config *config.Config, jwt *jwt.Jwt) *Service {
 	return &Service{
 		Logger: logger,
 		Redis:  redis,

@@ -1,4 +1,4 @@
 package prometheus
 
-type Metrics struct {
+type Prometheus struct {
 }

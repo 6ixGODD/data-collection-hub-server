@@ -8,16 +8,16 @@ import (
 type AuthService interface {
 }
 
-type AuthServiceImpl struct {
-	Service     *service.Service
-	UserDao     dao.UserDao
-	LoginLogDao dao.LoginLogDao
+type authServiceImpl struct {
+	service     *service.Service
+	userDao     dao.UserDao
+	loginLogDao dao.LoginLogDao
 }
 
-func NewAuthService(s *service.Service, userDaoImpl *dao.UserDaoImpl, loginLogDaoImpl *dao.LoginLogDaoImpl) AuthService {
-	return &AuthServiceImpl{
-		Service:     s,
-		UserDao:     userDaoImpl,
-		LoginLogDao: loginLogDaoImpl,
+func NewAuthService(s *service.Service, userDao dao.UserDao, loginLogDao dao.LoginLogDao) AuthService {
+	return &authServiceImpl{
+		service:     s,
+		userDao:     userDao,
+		loginLogDao: loginLogDao,
 	}
 }

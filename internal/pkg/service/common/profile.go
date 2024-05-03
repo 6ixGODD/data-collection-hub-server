@@ -8,14 +8,14 @@ import (
 type ProfileService interface {
 }
 
-type ProfileServiceImpl struct {
-	Service *service.Service
+type profileServiceImpl struct {
+	service *service.Service
 	userDao dao.UserDao
 }
 
-func NewProfileService(s *service.Service, userDaoImpl *dao.UserDaoImpl) ProfileService {
-	return &ProfileServiceImpl{
-		Service: s,
-		userDao: userDaoImpl,
+func NewProfileService(s *service.Service, userDao dao.UserDao) ProfileService {
+	return &profileServiceImpl{
+		service: s,
+		userDao: userDao,
 	}
 }

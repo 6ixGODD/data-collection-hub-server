@@ -21,24 +21,24 @@ const (
 	operation = "OPERATION"
 )
 
-type Logger struct {
+type Zap struct {
 	Logger  *zap.Logger
 	Config  *zap.Config
 	Options []zap.Option
 }
 
-func New(config *zap.Config, options ...zap.Option) (l *Logger, err error) {
-	l = &Logger{
+func New(config *zap.Config, options ...zap.Option) (z *Zap, err error) {
+	z = &Zap{
 		Config:  config,
 		Options: options,
 	}
-	if err := l.Init(); err != nil {
+	if err := z.Init(); err != nil {
 		return nil, err
 	}
-	return l, nil
+	return z, nil
 }
 
-func (l *Logger) Init() error {
+func (z *Zap) Init() error {
 	encoderConfig := zap.NewProductionEncoderConfig()
 	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 	encoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
@@ -46,45 +46,45 @@ func (l *Logger) Init() error {
 	encoderConfig.EncodeDuration = zapcore.SecondsDurationEncoder
 	encoderConfig.EncodeName = zapcore.FullNameEncoder
 
-	l.Config.EncoderConfig = encoderConfig
-	logger, err := l.Config.Build()
+	z.Config.EncoderConfig = encoderConfig
+	logger, err := z.Config.Build()
 	if err != nil {
 		return err
 	}
 
-	l.Options = append(l.Options, zap.WithCaller(true), zap.AddStacktrace(zap.ErrorLevel))
-	l.Logger = logger.WithOptions(l.Options...)
+	z.Options = append(z.Options, zap.WithCaller(true), zap.AddStacktrace(zap.ErrorLevel))
+	z.Logger = logger.WithOptions(z.Options...)
 
 	return nil
 }
 
-func (l *Logger) GetLogger(ctx context.Context) (logger *zap.Logger, err error) {
+func (z *Zap) GetLogger(ctx context.Context) (logger *zap.Logger, err error) {
 	var fields []zap.Field
-	if tag := l.getTagFromContext(ctx); tag != "" {
+	if tag := z.getTagFromContext(ctx); tag != "" {
 		fields = append(fields, zap.String("tag", tag))
 	}
-	if reqID := l.getRequestIDFromContext(ctx); reqID != "" {
+	if reqID := z.getRequestIDFromContext(ctx); reqID != "" {
 		fields = append(fields, zap.String("reqID", reqID))
 	}
-	if userID := l.getUserIDFromContext(ctx); userID != "" {
+	if userID := z.getUserIDFromContext(ctx); userID != "" {
 		fields = append(fields, zap.String("userID", userID))
 	}
-	if operation := l.getOperationFromContext(ctx); operation != "" {
+	if operation := z.getOperationFromContext(ctx); operation != "" {
 		fields = append(fields, zap.String("operation", operation))
 	}
-	if l.Logger == nil {
-		if err := l.Init(); err != nil {
+	if z.Logger == nil {
+		if err := z.Init(); err != nil {
 			return nil, err
 		}
 	}
-	return l.Logger.With(fields...), nil
+	return z.Logger.With(fields...), nil
 }
 
-func (l *Logger) SetTagInContext(ctx context.Context, tag string) context.Context {
+func (z *Zap) SetTagInContext(ctx context.Context, tag string) context.Context {
 	return context.WithValue(ctx, tag, tag)
 }
 
-func (l *Logger) getTagFromContext(ctx context.Context) string {
+func (z *Zap) getTagFromContext(ctx context.Context) string {
 	if tag := ctx.Value(tag); tag != nil {
 		if tagStr, ok := tag.(string); ok {
 			return tagStr
@@ -93,11 +93,11 @@ func (l *Logger) getTagFromContext(ctx context.Context) string {
 	return MainTag
 }
 
-func (l *Logger) SetRequestIDInContext(ctx context.Context, requestID string) context.Context {
+func (z *Zap) SetRequestIDInContext(ctx context.Context, requestID string) context.Context {
 	return context.WithValue(ctx, requestID, requestID)
 }
 
-func (l *Logger) getRequestIDFromContext(ctx context.Context) string {
+func (z *Zap) getRequestIDFromContext(ctx context.Context) string {
 	if requestID := ctx.Value(requestID); requestID != nil {
 		if requestID, ok := requestID.(string); ok {
 			return requestID
@@ -106,11 +106,11 @@ func (l *Logger) getRequestIDFromContext(ctx context.Context) string {
 	return ""
 }
 
-func (l *Logger) SetUserIDWithContext(ctx context.Context, userID string) context.Context {
+func (z *Zap) SetUserIDWithContext(ctx context.Context, userID string) context.Context {
 	return context.WithValue(ctx, userID, userID)
 }
 
-func (l *Logger) getUserIDFromContext(ctx context.Context) string {
+func (z *Zap) getUserIDFromContext(ctx context.Context) string {
 	if userID := ctx.Value(userID); userID != nil {
 		if userID, ok := userID.(string); ok {
 			return userID
@@ -119,11 +119,11 @@ func (l *Logger) getUserIDFromContext(ctx context.Context) string {
 	return ""
 }
 
-func (l *Logger) SetOperationWithContext(ctx context.Context, operation string) context.Context {
+func (z *Zap) SetOperationWithContext(ctx context.Context, operation string) context.Context {
 	return context.WithValue(ctx, operation, operation)
 }
 
-func (l *Logger) getOperationFromContext(ctx context.Context) string {
+func (z *Zap) getOperationFromContext(ctx context.Context) string {
 	if operation := ctx.Value(operation); operation != nil {
 		if operation, ok := operation.(string); ok {
 			return operation

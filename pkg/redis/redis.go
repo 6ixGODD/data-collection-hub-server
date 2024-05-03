@@ -7,56 +7,56 @@ import (
 	"golang.org/x/net/context"
 )
 
-type Cache struct {
+type Redis struct {
 	RedisClient  *redis.Client
-	RedisOptions *redis.Options
-	Mutex        sync.Mutex
-	Ctx          context.Context
+	redisOptions *redis.Options
+	mutex        sync.Mutex
+	ctx          context.Context
 }
 
-func New(ctx context.Context, options *redis.Options) (c *Cache, err error) {
-	c = &Cache{RedisOptions: options, Ctx: ctx}
-	if err := c.Init(); err != nil {
+func New(ctx context.Context, options *redis.Options) (r *Redis, err error) {
+	r = &Redis{redisOptions: options, ctx: ctx}
+	if err := r.Init(); err != nil {
 		return nil, err
 	}
-	return c, nil
+	return r, nil
 }
 
-func (c *Cache) Init() error {
-	c.Mutex.Lock()
-	defer c.Mutex.Unlock()
+func (r *Redis) Init() error {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
 
-	if c.RedisClient != nil {
+	if r.RedisClient != nil {
 		return nil
 	}
-	client := redis.NewClient(c.RedisOptions)
-	if _, err := client.Ping(c.Ctx).Result(); err != nil {
+	client := redis.NewClient(r.redisOptions)
+	if _, err := client.Ping(r.ctx).Result(); err != nil {
 		return err
 	}
-	c.RedisClient = client
+	r.RedisClient = client
 	return nil
 }
 
-func (c *Cache) GetClient() (client *redis.Client, err error) {
-	c.Mutex.Lock()
-	defer c.Mutex.Unlock()
+func (r *Redis) GetClient() (client *redis.Client, err error) {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
 
-	if c.RedisClient == nil {
-		if err = c.Init(); err != nil {
+	if r.RedisClient == nil {
+		if err = r.Init(); err != nil {
 			return nil, err
 		}
 	}
-	return c.RedisClient, nil
+	return r.RedisClient, nil
 }
 
-func (c *Cache) Close() error {
-	c.Mutex.Lock()
-	defer c.Mutex.Unlock()
+func (r *Redis) Close() error {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
 
-	if c.RedisClient == nil {
+	if r.RedisClient == nil {
 		return nil
 	}
-	err := c.RedisClient.Close()
-	c.RedisClient = nil
+	err := r.RedisClient.Close()
+	r.RedisClient = nil
 	return err
 }

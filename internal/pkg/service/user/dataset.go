@@ -8,16 +8,16 @@ import (
 type DatasetService interface {
 }
 
-type DatasetServiceImpl struct {
-	Service            *service.Service
+type datasetServiceImpl struct {
+	service            *service.Service
 	instructionDataDao dao.InstructionDataDao
-	OperationLogDao    dao.OperationLogDao
+	operationLogDao    dao.OperationLogDao
 }
 
-func NewDatasetService(s *service.Service, instructionDataDaoImpl *dao.InstructionDataDaoImpl, operationLogDaoImpl *dao.OperationLogDaoImpl) DatasetService {
-	return &DatasetServiceImpl{
-		Service:            s,
-		instructionDataDao: instructionDataDaoImpl,
-		OperationLogDao:    operationLogDaoImpl,
+func NewDatasetService(s *service.Service, instructionDataDao dao.InstructionDataDao, operationLogDao dao.OperationLogDao) DatasetService {
+	return &datasetServiceImpl{
+		service:            s,
+		instructionDataDao: instructionDataDao,
+		operationLogDao:    operationLogDao,
 	}
 }

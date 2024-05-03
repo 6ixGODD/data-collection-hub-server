@@ -10,13 +10,13 @@ import (
 )
 
 type Dao struct {
-	MongoClient *mongo.Database
-	RedisClient *redis.Cache
-	Logger      *zap.Logger
+	MongoClient *mongo.Mongo
+	RedisClient *redis.Redis
+	Logger      *zap.Zap
 	Config      *config.Config
 }
 
-func NewDao(ctx context.Context, mongoDB *mongo.Database, redisClient *redis.Cache, logger *zap.Logger, config config.Config) *Dao {
+func NewDao(ctx context.Context, mongoDB *mongo.Mongo, redisClient *redis.Redis, logger *zap.Zap, config config.Config) *Dao {
 	logger.SetTagInContext(ctx, zap.MongoTag)
 	return &Dao{
 		MongoClient: mongoDB,

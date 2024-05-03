@@ -14,7 +14,7 @@ type ZapConfig struct {
 	CallerSkip       int      `mapstructure:"zap_caller_skip" yaml:"zap_caller_skip" default:"1"`
 }
 
-func (c *ZapConfig) ToZapConfig() *zap.Config {
+func (c *ZapConfig) GetZapConfig() *zap.Config {
 	level, err := zapcore.ParseLevel(c.Level)
 	if err != nil {
 		level = zapcore.InfoLevel

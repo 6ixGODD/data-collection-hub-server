@@ -4,6 +4,6 @@ import (
 	"data-collection-hub-server/pkg/middleware"
 )
 
-type CasbinMiddleware struct {
+type LoggingMiddleware struct {
 	Middleware *middleware.Middleware
 }

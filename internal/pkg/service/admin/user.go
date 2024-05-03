@@ -8,14 +8,14 @@ import (
 type UserService interface {
 }
 
-type UserServiceImpl struct {
+type userServiceImpl struct {
 	Service *service.Service
-	UserDao dao.UserDao
+	userDao dao.UserDao
 }
 
-func NewUserService(s *service.Service, userDaoImpl *dao.UserDaoImpl) UserService {
-	return &UserServiceImpl{
+func NewUserService(s *service.Service, userDao dao.UserDao) UserService {
+	return &userServiceImpl{
 		Service: s,
-		UserDao: userDaoImpl,
+		userDao: userDao,
 	}
 }

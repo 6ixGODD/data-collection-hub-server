@@ -8,14 +8,14 @@ import (
 type DocumentationService interface {
 }
 
-type DocumentationServiceImpl struct {
-	Service          *service.Service
-	DocumentationDao dao.DocumentationDao
+type documentationServiceImpl struct {
+	service          *service.Service
+	documentationDao dao.DocumentationDao
 }
 
-func NewDocumentationService(s *service.Service, documentationDaoImpl *dao.DocumentationDaoImpl) DocumentationService {
-	return &DocumentationServiceImpl{
-		Service:          s,
-		DocumentationDao: documentationDaoImpl,
+func NewDocumentationService(s *service.Service, documentationDao dao.DocumentationDao) DocumentationService {
+	return &documentationServiceImpl{
+		service:          s,
+		documentationDao: documentationDao,
 	}
 }

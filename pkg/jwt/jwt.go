@@ -8,14 +8,14 @@ import (
 	"github.com/golang-jwt/jwt"
 )
 
-type Auth interface {
+type Jwt interface {
 	GenerateToken(subject string) (string, error)
 	VerifyToken(token string) (string, error)
 	RefreshToken(token string) (string, error)
 	ExtractClaims(token string) (map[string]interface{}, error)
 }
 
-type AuthImpl struct {
+type jwtImpl struct {
 	privateKey      *ecdsa.PrivateKey
 	publicKey       *ecdsa.PublicKey
 	tokenDuration   time.Duration
@@ -23,9 +23,9 @@ type AuthImpl struct {
 	refreshBuffer   time.Duration
 }
 
-func NewAuth(privateKey *ecdsa.PrivateKey, publicKey *ecdsa.PublicKey, tokenDuration, refreshDuration time.Duration, refreshBuffer time.Duration) Auth {
-	var _ Auth = &AuthImpl{} // Ensure interface is implemented
-	return &AuthImpl{
+func New(privateKey *ecdsa.PrivateKey, publicKey *ecdsa.PublicKey, tokenDuration, refreshDuration time.Duration, refreshBuffer time.Duration) Jwt {
+	var _ Jwt = (*jwtImpl)(nil) // Ensure jwtImpl implements Jwt
+	return &jwtImpl{
 		privateKey:      privateKey,
 		publicKey:       publicKey,
 		tokenDuration:   tokenDuration,
@@ -34,7 +34,7 @@ func NewAuth(privateKey *ecdsa.PrivateKey, publicKey *ecdsa.PublicKey, tokenDura
 	}
 }
 
-func (a *AuthImpl) GenerateToken(subject string) (string, error) {
+func (a *jwtImpl) GenerateToken(subject string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodES256, &jwt.StandardClaims{
 		Subject:   subject,
 		IssuedAt:  time.Now().Unix(),
@@ -50,7 +50,7 @@ func (a *AuthImpl) GenerateToken(subject string) (string, error) {
 	return tokenString, nil
 }
 
-func (a *AuthImpl) RefreshToken(token string) (string, error) {
+func (a *jwtImpl) RefreshToken(token string) (string, error) {
 	claims, err := a.ExtractClaims(token)
 	if err != nil {
 		return "", err
@@ -70,7 +70,7 @@ func (a *AuthImpl) RefreshToken(token string) (string, error) {
 	return newToken, nil
 }
 
-func (a *AuthImpl) ExtractClaims(token string) (map[string]interface{}, error) {
+func (a *jwtImpl) ExtractClaims(token string) (map[string]interface{}, error) {
 	claims := jwt.MapClaims{}
 
 	t, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
@@ -83,7 +83,7 @@ func (a *AuthImpl) ExtractClaims(token string) (map[string]interface{}, error) {
 	return claims, nil
 }
 
-func (a *AuthImpl) VerifyToken(token string) (string, error) {
+func (a *jwtImpl) VerifyToken(token string) (string, error) {
 	claims, err := a.ExtractClaims(token)
 	if err != nil {
 		return "", err

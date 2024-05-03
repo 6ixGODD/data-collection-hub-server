@@ -8,14 +8,14 @@ import (
 type DataAuditService interface {
 }
 
-type DataAuditServiceImpl struct {
-	Service            *service.Service
-	InstructionDataDao dao.InstructionDataDao
+type dataAuditServiceImpl struct {
+	service            *service.Service
+	instructionDataDao dao.InstructionDataDao
 }
 
-func NewDataAuditService(s *service.Service, instructionDataDaoImpl *dao.InstructionDataDaoImpl) DataAuditService {
-	return &DataAuditServiceImpl{
-		Service:            s,
-		InstructionDataDao: instructionDataDaoImpl,
+func NewDataAuditService(s *service.Service, instructionDataDao dao.InstructionDataDao) DataAuditService {
+	return &dataAuditServiceImpl{
+		service:            s,
+		instructionDataDao: instructionDataDao,
 	}
 }

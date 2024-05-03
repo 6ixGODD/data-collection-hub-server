@@ -8,16 +8,16 @@ import (
 type StatisticService interface {
 }
 
-type StatisticServiceImpl struct {
-	Service            *service.Service
-	InstructionDataDao dao.InstructionDataDao
-	UserDao            dao.UserDao
+type statisticServiceImpl struct {
+	service            *service.Service
+	instructionDataDao dao.InstructionDataDao
+	userDao            dao.UserDao
 }
 
-func NewStatisticService(s *service.Service, instructionDataDaoImpl *dao.InstructionDataDaoImpl, userDaoImpl *dao.UserDaoImpl) StatisticService {
-	return &StatisticServiceImpl{
-		Service:            s,
-		InstructionDataDao: instructionDataDaoImpl,
-		UserDao:            userDaoImpl,
+func NewStatisticService(s *service.Service, instructionDataDao dao.InstructionDataDao, userDao dao.UserDao) StatisticService {
+	return &statisticServiceImpl{
+		service:            s,
+		instructionDataDao: instructionDataDao,
+		userDao:            userDao,
 	}
 }

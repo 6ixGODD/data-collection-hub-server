@@ -1,3 +1,0 @@
-package modules
-
-// Logger Middleware

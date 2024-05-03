@@ -8,18 +8,18 @@ import (
 type LogsService interface {
 }
 
-type LogsServiceImpl struct {
-	Service         *service.Service
-	LoginLogDao     dao.LoginLogDao
-	OperationLogDao dao.OperationLogDao
-	ErrorLogDao     dao.ErrorLogDao
+type logsServiceImpl struct {
+	service         *service.Service
+	loginLogDao     dao.LoginLogDao
+	operationLogDao dao.OperationLogDao
+	errorLogDao     dao.ErrorLogDao
 }
 
-func NewLogsService(s *service.Service, loginLogDaoImpl *dao.LoginLogDaoImpl, operationLogDaoImpl *dao.OperationLogDaoImpl, errorLogDaoImpl *dao.ErrorLogDaoImpl) LogsService {
-	return &LogsServiceImpl{
-		Service:         s,
-		LoginLogDao:     loginLogDaoImpl,
-		OperationLogDao: operationLogDaoImpl,
-		ErrorLogDao:     errorLogDaoImpl,
+func NewLogsService(s *service.Service, loginLogDao dao.LoginLogDao, operationLogDao dao.OperationLogDao, errorLogDao dao.ErrorLogDao) LogsService {
+	return &logsServiceImpl{
+		service:         s,
+		loginLogDao:     loginLogDao,
+		operationLogDao: operationLogDao,
+		errorLogDao:     errorLogDao,
 	}
 }
