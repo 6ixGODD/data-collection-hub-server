@@ -22,8 +22,8 @@ type Config struct {
 	ZapConfig        modules.ZapConfig        `mapstructure:"zap" yaml:"zap"`
 }
 
-// NewConfig returns a new instance of Config
-func NewConfig() (config *Config, err error) {
+// New returns a new instance of Config
+func New() (config *Config, err error) {
 	config = &Config{}
 	err = Init(config)
 	if err != nil {

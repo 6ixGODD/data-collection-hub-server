@@ -20,3 +20,6 @@ const (
 	StatusMongoError = 600
 	StatusRedisError = 601
 )
+
+type Api struct {
+}

@@ -23,26 +23,26 @@ type UserDao interface {
 	DeleteUser(user *models.UserModel, ctx context.Context) error
 }
 
-type UserDaoImpl struct{ *dal.Dao }
+type UserDaoImpl struct{ *dal.Core }
 
-func NewUserDao(dao *dal.Dao) UserDao {
+func NewUserDao(dao *dal.Core) UserDao {
 	var _ UserDao = (*UserDaoImpl)(nil) // Ensure that the interface is implemented
 	return &UserDaoImpl{dao}
 }
 
 func (u UserDaoImpl) GetUserById(userId string, ctx context.Context) (*models.UserModel, error) {
 	var user models.UserModel
-	collection := u.Dao.MongoClient.MongoDatabase.Collection("user")
+	collection := u.Core.MongoClient.MongoDatabase.Collection("user_service")
 	err := collection.Find(ctx, bson.M{"user_id": userId}).One(&user)
 	if err != nil {
-		u.Dao.Logger.Logger.Error(
+		u.Core.Logger.Logger.Error(
 			"UserDaoImpl.GetUserById",
 			zap.Field{Key: "userId", Type: zapcore.StringType, String: userId},
 			zap.Field{Key: "error", Type: zapcore.ErrorType, Interface: err},
 		)
 		return nil, err
 	} else {
-		u.Dao.Logger.Logger.Info(
+		u.Core.Logger.Logger.Info(
 			"UserDaoImpl.GetUserById",
 			zap.Field{Key: "userId", Type: zapcore.StringType, String: userId},
 		)
@@ -53,14 +53,14 @@ func (u UserDaoImpl) GetUserById(userId string, ctx context.Context) (*models.Us
 func (u UserDaoImpl) GetUserList(offset, limit int64, desc bool, ctx context.Context) ([]models.UserModel, error) {
 	var users []models.UserModel
 	var err error
-	collection := u.Dao.MongoClient.MongoDatabase.Collection("user")
+	collection := u.Core.MongoClient.MongoDatabase.Collection("user_service")
 	if desc {
 		err = collection.Find(ctx, bson.M{}).Sort("-created_time").Skip(offset).Limit(limit).All(&users)
 	} else {
 		err = collection.Find(ctx, bson.M{}).Skip(offset).Limit(limit).All(&users)
 	}
 	if err != nil {
-		u.Dao.Logger.Logger.Error(
+		u.Core.Logger.Logger.Error(
 			"UserDaoImpl.GetUserList",
 			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
 			zap.Field{Key: "limit", Type: zapcore.Int64Type, Integer: limit},
@@ -76,14 +76,14 @@ func (u UserDaoImpl) GetUserList(offset, limit int64, desc bool, ctx context.Con
 func (u UserDaoImpl) GetUserListByOrganization(organization string, offset, limit int64, desc bool, ctx context.Context) ([]models.UserModel, error) {
 	var users []models.UserModel
 	var err error
-	collection := u.Dao.MongoClient.MongoDatabase.Collection("user")
+	collection := u.Core.MongoClient.MongoDatabase.Collection("user_service")
 	if desc {
 		err = collection.Find(ctx, bson.M{"organization": organization}).Sort("-created_time").Skip(offset).Limit(limit).All(&users)
 	} else {
 		err = collection.Find(ctx, bson.M{"organization": organization}).Skip(offset).Limit(limit).All(&users)
 	}
 	if err != nil {
-		u.Dao.Logger.Logger.Error(
+		u.Core.Logger.Logger.Error(
 			"UserDaoImpl.GetUserListByOrganization",
 			zap.Field{Key: "organization", Type: zapcore.StringType, String: organization},
 			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
@@ -93,7 +93,7 @@ func (u UserDaoImpl) GetUserListByOrganization(organization string, offset, limi
 		)
 		return nil, err
 	} else {
-		u.Dao.Logger.Logger.Info(
+		u.Core.Logger.Logger.Info(
 			"UserDaoImpl.GetUserListByOrganization",
 			zap.Field{Key: "organization", Type: zapcore.StringType, String: organization},
 			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
@@ -107,14 +107,14 @@ func (u UserDaoImpl) GetUserListByOrganization(organization string, offset, limi
 func (u UserDaoImpl) GetUserListByRole(role string, offset, limit int64, desc bool, ctx context.Context) ([]models.UserModel, error) {
 	var users []models.UserModel
 	var err error
-	collection := u.Dao.MongoClient.MongoDatabase.Collection("user")
+	collection := u.Core.MongoClient.MongoDatabase.Collection("user_service")
 	if desc {
 		err = collection.Find(ctx, bson.M{"role": role}).Sort("-created_time").Skip(offset).Limit(limit).All(&users)
 	} else {
 		err = collection.Find(ctx, bson.M{"role": role}).Skip(offset).Limit(limit).All(&users)
 	}
 	if err != nil {
-		u.Dao.Logger.Logger.Error(
+		u.Core.Logger.Logger.Error(
 			"UserDaoImpl.GetUserListByRole",
 			zap.Field{Key: "role", Type: zapcore.StringType, String: role},
 			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
@@ -124,7 +124,7 @@ func (u UserDaoImpl) GetUserListByRole(role string, offset, limit int64, desc bo
 		)
 		return nil, err
 	} else {
-		u.Dao.Logger.Logger.Info(
+		u.Core.Logger.Logger.Info(
 			"UserDaoImpl.GetUserListByRole",
 			zap.Field{Key: "role", Type: zapcore.StringType, String: role},
 			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
@@ -138,14 +138,14 @@ func (u UserDaoImpl) GetUserListByRole(role string, offset, limit int64, desc bo
 func (u UserDaoImpl) GetUserListByCreatedTime(startTime, endTime string, offset, limit int64, desc bool, ctx context.Context) ([]models.UserModel, error) {
 	var users []models.UserModel
 	var err error
-	collection := u.Dao.MongoClient.MongoDatabase.Collection("user")
+	collection := u.Core.MongoClient.MongoDatabase.Collection("user_service")
 	if desc {
 		err = collection.Find(ctx, bson.M{"created_time": bson.M{"$gte": startTime, "$lte": endTime}}).Sort("-created_time").Skip(offset).Limit(limit).All(&users)
 	} else {
 		err = collection.Find(ctx, bson.M{"created_time": bson.M{"$gte": startTime, "$lte": endTime}}).Skip(offset).Limit(limit).All(&users)
 	}
 	if err != nil {
-		u.Dao.Logger.Logger.Error(
+		u.Core.Logger.Logger.Error(
 			"UserDaoImpl.GetUserListByCreatedTime",
 			zap.Field{Key: "startTime", Type: zapcore.StringType, String: startTime},
 			zap.Field{Key: "endTime", Type: zapcore.StringType, String: endTime},
@@ -156,7 +156,7 @@ func (u UserDaoImpl) GetUserListByCreatedTime(startTime, endTime string, offset,
 		)
 		return nil, err
 	} else {
-		u.Dao.Logger.Logger.Info(
+		u.Core.Logger.Logger.Info(
 			"UserDaoImpl.GetUserListByCreatedTime",
 			zap.Field{Key: "startTime", Type: zapcore.StringType, String: startTime},
 			zap.Field{Key: "endTime", Type: zapcore.StringType, String: endTime},
@@ -171,14 +171,14 @@ func (u UserDaoImpl) GetUserListByCreatedTime(startTime, endTime string, offset,
 func (u UserDaoImpl) GetUserListByUpdatedTime(startTime, endTime string, offset, limit int64, desc bool, ctx context.Context) ([]models.UserModel, error) {
 	var users []models.UserModel
 	var err error
-	collection := u.Dao.MongoClient.MongoDatabase.Collection("user")
+	collection := u.Core.MongoClient.MongoDatabase.Collection("user_service")
 	if desc {
 		err = collection.Find(ctx, bson.M{"updated_time": bson.M{"$gte": startTime, "$lte": endTime}}).Sort("-created_time").Skip(offset).Limit(limit).All(&users)
 	} else {
 		err = collection.Find(ctx, bson.M{"updated_time": bson.M{"$gte": startTime, "$lte": endTime}}).Skip(offset).Limit(limit).All(&users)
 	}
 	if err != nil {
-		u.Dao.Logger.Logger.Error(
+		u.Core.Logger.Logger.Error(
 			"UserDaoImpl.GetUserListByUpdatedTime",
 			zap.Field{Key: "startTime", Type: zapcore.StringType, String: startTime},
 			zap.Field{Key: "endTime", Type: zapcore.StringType, String: endTime},
@@ -189,7 +189,7 @@ func (u UserDaoImpl) GetUserListByUpdatedTime(startTime, endTime string, offset,
 		)
 		return nil, err
 	} else {
-		u.Dao.Logger.Logger.Info(
+		u.Core.Logger.Logger.Info(
 			"UserDaoImpl.GetUserListByUpdatedTime",
 			zap.Field{Key: "startTime", Type: zapcore.StringType, String: startTime},
 			zap.Field{Key: "endTime", Type: zapcore.StringType, String: endTime},
@@ -204,7 +204,7 @@ func (u UserDaoImpl) GetUserListByUpdatedTime(startTime, endTime string, offset,
 func (u UserDaoImpl) GetUserListByFuzzyQuery(query string, offset, limit int64, desc bool, ctx context.Context) ([]models.UserModel, error) {
 	var users []models.UserModel
 	var err error
-	collection := u.Dao.MongoClient.MongoDatabase.Collection("user")
+	collection := u.Core.MongoClient.MongoDatabase.Collection("user_service")
 	if desc {
 		err = collection.Find(ctx, bson.M{"$or": []bson.M{
 			{"user_id": bson.M{"$regex": query}},
@@ -221,7 +221,7 @@ func (u UserDaoImpl) GetUserListByFuzzyQuery(query string, offset, limit int64, 
 		}}).Skip(offset).Limit(limit).All(&users)
 	}
 	if err != nil {
-		u.Dao.Logger.Logger.Error(
+		u.Core.Logger.Logger.Error(
 			"UserDaoImpl.GetUserListByFuzzyQuery",
 			zap.Field{Key: "query", Type: zapcore.StringType, String: query},
 			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
@@ -231,7 +231,7 @@ func (u UserDaoImpl) GetUserListByFuzzyQuery(query string, offset, limit int64, 
 		)
 		return nil, err
 	} else {
-		u.Dao.Logger.Logger.Info(
+		u.Core.Logger.Logger.Info(
 			"UserDaoImpl.GetUserListByFuzzyQuery",
 			zap.Field{Key: "query", Type: zapcore.StringType, String: query},
 			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
@@ -243,18 +243,18 @@ func (u UserDaoImpl) GetUserListByFuzzyQuery(query string, offset, limit int64, 
 }
 
 func (u UserDaoImpl) InsertUser(user *models.UserModel, ctx context.Context) error {
-	collection := u.Dao.MongoClient.MongoDatabase.Collection("user")
+	collection := u.Core.MongoClient.MongoDatabase.Collection("user_service")
 	result, err := collection.InsertOne(ctx, user)
 	if err != nil {
-		u.Dao.Logger.Logger.Error(
+		u.Core.Logger.Logger.Error(
 			"UserDaoImpl.InsertUser",
-			zap.Field{Key: "user", Type: zapcore.ObjectMarshalerType, Interface: user},
+			zap.Field{Key: "user_service", Type: zapcore.ObjectMarshalerType, Interface: user},
 			zap.Field{Key: "error", Type: zapcore.ErrorType, Interface: err},
 		)
 	} else {
-		u.Dao.Logger.Logger.Info(
+		u.Core.Logger.Logger.Info(
 			"UserDaoImpl.InsertUser",
-			zap.Field{Key: "user", Type: zapcore.ObjectMarshalerType, Interface: user},
+			zap.Field{Key: "user_service", Type: zapcore.ObjectMarshalerType, Interface: user},
 			zap.Field{Key: "result", Type: zapcore.ObjectMarshalerType, Interface: result},
 		)
 	}
@@ -262,36 +262,36 @@ func (u UserDaoImpl) InsertUser(user *models.UserModel, ctx context.Context) err
 }
 
 func (u UserDaoImpl) UpdateUser(user *models.UserModel, ctx context.Context) error {
-	collection := u.Dao.MongoClient.MongoDatabase.Collection("user")
+	collection := u.Core.MongoClient.MongoDatabase.Collection("user_service")
 	err := collection.UpdateOne(ctx, bson.M{"_id": user.UserID}, bson.M{"$set": user})
 	if err != nil {
-		u.Dao.Logger.Logger.Error(
+		u.Core.Logger.Logger.Error(
 			"UserDaoImpl.UpdateUser",
-			zap.Field{Key: "user", Type: zapcore.ObjectMarshalerType, Interface: user},
+			zap.Field{Key: "user_service", Type: zapcore.ObjectMarshalerType, Interface: user},
 			zap.Field{Key: "error", Type: zapcore.ErrorType, Interface: err},
 		)
 	} else {
-		u.Dao.Logger.Logger.Info(
+		u.Core.Logger.Logger.Info(
 			"UserDaoImpl.UpdateUser",
-			zap.Field{Key: "user", Type: zapcore.ObjectMarshalerType, Interface: user},
+			zap.Field{Key: "user_service", Type: zapcore.ObjectMarshalerType, Interface: user},
 		)
 	}
 	return err
 }
 
 func (u UserDaoImpl) DeleteUser(user *models.UserModel, ctx context.Context) error {
-	collection := u.Dao.MongoClient.MongoDatabase.Collection("user")
+	collection := u.Core.MongoClient.MongoDatabase.Collection("user_service")
 	err := collection.RemoveId(ctx, user.UserID)
 	if err != nil {
-		u.Dao.Logger.Logger.Error(
+		u.Core.Logger.Logger.Error(
 			"UserDaoImpl.DeleteUser",
-			zap.Field{Key: "user", Type: zapcore.ObjectMarshalerType, Interface: user},
+			zap.Field{Key: "user_service", Type: zapcore.ObjectMarshalerType, Interface: user},
 			zap.Field{Key: "error", Type: zapcore.ErrorType, Interface: err},
 		)
 	} else {
-		u.Dao.Logger.Logger.Info(
+		u.Core.Logger.Logger.Info(
 			"UserDaoImpl.DeleteUser",
-			zap.Field{Key: "user", Type: zapcore.ObjectMarshalerType, Interface: user},
+			zap.Field{Key: "user_service", Type: zapcore.ObjectMarshalerType, Interface: user},
 		)
 	}
 	return err

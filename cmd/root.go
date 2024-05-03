@@ -35,6 +35,16 @@ var (
 	tlsKeyFile  string // tls key file path (default is "")
 )
 
+type cliFlags struct {
+	configFile  string
+	port        string
+	host        string
+	logLevel    string
+	tls         bool
+	tlsCertFile string
+	tlsKeyFile  string
+}
+
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "data-collection-hub-server",
@@ -54,52 +64,53 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(initConfig)
+	c := &cliFlags{}
 
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 
 	rootCmd.PersistentFlags().StringVar(
-		&configFile,
+		&c.configFile,
 		"config",
 		"",
 		"config file (default is $HOME/.data-collection-hub-server.prob.yaml)",
 	)
 	rootCmd.PersistentFlags().StringVarP(
-		&port,
+		&c.port,
 		"port",
 		"p",
 		"",
 		"port to listen on (default is 8080)",
 	)
 	rootCmd.PersistentFlags().StringVarP(
-		&host,
+		&c.host,
 		"host",
 		"H",
 		"",
 		"host to listen on (default is localhost)",
 	)
 	rootCmd.PersistentFlags().StringVarP(
-		&logLevel,
+		&c.logLevel,
 		"log-level",
 		"l",
 		"info",
 		"log level (default is info)",
 	)
 	rootCmd.PersistentFlags().BoolVar(
-		&tls,
+		&c.tls,
 		"tls",
 		false,
 		"enable tls (default is false)",
 	)
 	rootCmd.PersistentFlags().StringVar(
-		&tlsCertFile,
+		&c.tlsCertFile,
 		"tls-cert-file",
 		"",
 		"tls cert file path (default is \"\")",
 	)
 	rootCmd.PersistentFlags().StringVar(
-		&tlsKeyFile,
+		&c.tlsKeyFile,
 		"tls-key-file",
 		"",
 		"tls key file path (default is \"\")",
@@ -109,7 +120,7 @@ func init() {
 // initConfig creates a new config object and initializes it with the values from the config file and flags.
 // priority: flags > config file > default values
 func initConfig() {
-	cfg, err := config.NewConfig()
+	cfg, err := config.New()
 	if configFile != "" {
 		// Use config file from the flag.
 		viper.SetConfigFile(configFile)

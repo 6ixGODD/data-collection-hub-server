@@ -24,26 +24,26 @@ type OperationLogDao interface {
 	DeleteOperationLog(operationLogId string, ctx context.Context) error
 }
 
-type OperationLogDaoImpl struct{ *dal.Dao }
+type OperationLogDaoImpl struct{ *dal.Core }
 
-func NewOperationLogDao(dao *dal.Dao) OperationLogDao {
+func NewOperationLogDao(dao *dal.Core) OperationLogDao {
 	var _ OperationLogDao = (*OperationLogDaoImpl)(nil) // Ensure that the interface is implemented
 	return &OperationLogDaoImpl{dao}
 }
 
 func (o OperationLogDaoImpl) GetOperationLogById(operationLogId string, ctx context.Context) (*models.OperationLogModel, error) {
 	var operationLog models.OperationLogModel
-	collection := o.Dao.MongoClient.MongoDatabase.Collection(OperationLogCollectionName)
+	collection := o.Core.MongoClient.MongoDatabase.Collection(OperationLogCollectionName)
 	err := collection.Find(ctx, bson.M{"operation_log_id": operationLogId}).One(&operationLog)
 	if err != nil {
-		o.Dao.Logger.Logger.Error(
+		o.Core.Logger.Logger.Error(
 			"OperationLogDaoImpl.GetOperationLogById",
 			zap.Field{Key: "operationLogId", Type: zapcore.StringType, String: operationLogId},
 			zap.Field{Key: "error", Type: zapcore.ErrorType, Interface: err},
 		)
 		return nil, err
 	} else {
-		o.Dao.Logger.Logger.Info(
+		o.Core.Logger.Logger.Info(
 			"OperationLogDaoImpl.GetOperationLogById",
 			zap.Field{Key: "operationLogId", Type: zapcore.StringType, String: operationLogId},
 		)
@@ -53,10 +53,10 @@ func (o OperationLogDaoImpl) GetOperationLogById(operationLogId string, ctx cont
 
 func (o OperationLogDaoImpl) GetOperationLogList(offset, limit int64, ctx context.Context) ([]models.OperationLogModel, error) {
 	var operationLogList []models.OperationLogModel
-	collection := o.Dao.MongoClient.MongoDatabase.Collection(OperationLogCollectionName)
+	collection := o.Core.MongoClient.MongoDatabase.Collection(OperationLogCollectionName)
 	err := collection.Find(ctx, bson.M{}).Skip(offset).Limit(limit).All(&operationLogList)
 	if err != nil {
-		o.Dao.Logger.Logger.Error(
+		o.Core.Logger.Logger.Error(
 			"OperationLogDaoImpl.GetOperationLogList",
 			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
 			zap.Field{Key: "limit", Type: zapcore.Int64Type, Integer: limit},
@@ -64,7 +64,7 @@ func (o OperationLogDaoImpl) GetOperationLogList(offset, limit int64, ctx contex
 		)
 		return nil, err
 	} else {
-		o.Dao.Logger.Logger.Info(
+		o.Core.Logger.Logger.Info(
 			"OperationLogDaoImpl.GetOperationLogList",
 			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
 			zap.Field{Key: "limit", Type: zapcore.Int64Type, Integer: limit},
@@ -75,10 +75,10 @@ func (o OperationLogDaoImpl) GetOperationLogList(offset, limit int64, ctx contex
 
 func (o OperationLogDaoImpl) GetOperationLogListByUserUUID(userUUID string, offset, limit int64, ctx context.Context) ([]models.OperationLogModel, error) {
 	var operationLogList []models.OperationLogModel
-	collection := o.Dao.MongoClient.MongoDatabase.Collection(OperationLogCollectionName)
+	collection := o.Core.MongoClient.MongoDatabase.Collection(OperationLogCollectionName)
 	err := collection.Find(ctx, bson.M{"user_uuid": userUUID}).Skip(offset).Limit(limit).All(&operationLogList)
 	if err != nil {
-		o.Dao.Logger.Logger.Error(
+		o.Core.Logger.Logger.Error(
 			"OperationLogDaoImpl.GetOperationLogListByUserUUID",
 			zap.Field{Key: "userUUID", Type: zapcore.StringType, String: userUUID},
 			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
@@ -87,7 +87,7 @@ func (o OperationLogDaoImpl) GetOperationLogListByUserUUID(userUUID string, offs
 		)
 		return nil, err
 	} else {
-		o.Dao.Logger.Logger.Info(
+		o.Core.Logger.Logger.Info(
 			"OperationLogDaoImpl.GetOperationLogListByUserUUID",
 			zap.Field{Key: "userUUID", Type: zapcore.StringType, String: userUUID},
 			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
@@ -99,10 +99,10 @@ func (o OperationLogDaoImpl) GetOperationLogListByUserUUID(userUUID string, offs
 
 func (o OperationLogDaoImpl) GetOperationLogListByIPAddress(ipAddress string, offset, limit int64, ctx context.Context) ([]models.OperationLogModel, error) {
 	var operationLogList []models.OperationLogModel
-	collection := o.Dao.MongoClient.MongoDatabase.Collection(OperationLogCollectionName)
+	collection := o.Core.MongoClient.MongoDatabase.Collection(OperationLogCollectionName)
 	err := collection.Find(ctx, bson.M{"ip_address": ipAddress}).Skip(offset).Limit(limit).All(&operationLogList)
 	if err != nil {
-		o.Dao.Logger.Logger.Error(
+		o.Core.Logger.Logger.Error(
 			"OperationLogDaoImpl.GetOperationLogListByIPAddress",
 			zap.Field{Key: "ipAddress", Type: zapcore.StringType, String: ipAddress},
 			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
@@ -111,7 +111,7 @@ func (o OperationLogDaoImpl) GetOperationLogListByIPAddress(ipAddress string, of
 		)
 		return nil, err
 	} else {
-		o.Dao.Logger.Logger.Info(
+		o.Core.Logger.Logger.Info(
 			"OperationLogDaoImpl.GetOperationLogListByIPAddress",
 			zap.Field{Key: "ipAddress", Type: zapcore.StringType, String: ipAddress},
 			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
@@ -123,10 +123,10 @@ func (o OperationLogDaoImpl) GetOperationLogListByIPAddress(ipAddress string, of
 
 func (o OperationLogDaoImpl) GetOperationLogListByOperation(operation string, offset, limit int64, ctx context.Context) ([]models.OperationLogModel, error) {
 	var operationLogList []models.OperationLogModel
-	collection := o.Dao.MongoClient.MongoDatabase.Collection(OperationLogCollectionName)
+	collection := o.Core.MongoClient.MongoDatabase.Collection(OperationLogCollectionName)
 	err := collection.Find(ctx, bson.M{"operation": operation}).Skip(offset).Limit(limit).All(&operationLogList)
 	if err != nil {
-		o.Dao.Logger.Logger.Error(
+		o.Core.Logger.Logger.Error(
 			"OperationLogDaoImpl.GetOperationLogListByOperation",
 			zap.Field{Key: "operation", Type: zapcore.StringType, String: operation},
 			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
@@ -135,7 +135,7 @@ func (o OperationLogDaoImpl) GetOperationLogListByOperation(operation string, of
 		)
 		return nil, err
 	} else {
-		o.Dao.Logger.Logger.Info(
+		o.Core.Logger.Logger.Info(
 			"OperationLogDaoImpl.GetOperationLogListByOperation",
 			zap.Field{Key: "operation", Type: zapcore.StringType, String: operation},
 			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
@@ -147,10 +147,10 @@ func (o OperationLogDaoImpl) GetOperationLogListByOperation(operation string, of
 
 func (o OperationLogDaoImpl) GetOperationLogListByEntityUUID(entityUUID string, offset, limit int64, ctx context.Context) ([]models.OperationLogModel, error) {
 	var operationLogList []models.OperationLogModel
-	collection := o.Dao.MongoClient.MongoDatabase.Collection(OperationLogCollectionName)
+	collection := o.Core.MongoClient.MongoDatabase.Collection(OperationLogCollectionName)
 	err := collection.Find(ctx, bson.M{"entity_uuid": entityUUID}).Skip(offset).Limit(limit).All(&operationLogList)
 	if err != nil {
-		o.Dao.Logger.Logger.Error(
+		o.Core.Logger.Logger.Error(
 			"OperationLogDaoImpl.GetOperationLogListByEntityUUID",
 			zap.Field{Key: "entityUUID", Type: zapcore.StringType, String: entityUUID},
 			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
@@ -159,7 +159,7 @@ func (o OperationLogDaoImpl) GetOperationLogListByEntityUUID(entityUUID string, 
 		)
 		return nil, err
 	} else {
-		o.Dao.Logger.Logger.Info(
+		o.Core.Logger.Logger.Info(
 			"OperationLogDaoImpl.GetOperationLogListByEntityUUID",
 			zap.Field{Key: "entityUUID", Type: zapcore.StringType, String: entityUUID},
 			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
@@ -171,10 +171,10 @@ func (o OperationLogDaoImpl) GetOperationLogListByEntityUUID(entityUUID string, 
 
 func (o OperationLogDaoImpl) GetOperationLogListByCreatedTime(startTime, endTime string, offset, limit int64, ctx context.Context) ([]models.OperationLogModel, error) {
 	var operationLogList []models.OperationLogModel
-	collection := o.Dao.MongoClient.MongoDatabase.Collection(OperationLogCollectionName)
+	collection := o.Core.MongoClient.MongoDatabase.Collection(OperationLogCollectionName)
 	err := collection.Find(ctx, bson.M{"created_time": bson.M{"$gte": startTime, "$lte": endTime}}).Skip(offset).Limit(limit).All(&operationLogList)
 	if err != nil {
-		o.Dao.Logger.Logger.Error(
+		o.Core.Logger.Logger.Error(
 			"OperationLogDaoImpl.GetOperationLogListByCreatedTime",
 			zap.Field{Key: "startTime", Type: zapcore.StringType, String: startTime},
 			zap.Field{Key: "endTime", Type: zapcore.StringType, String: endTime},
@@ -184,7 +184,7 @@ func (o OperationLogDaoImpl) GetOperationLogListByCreatedTime(startTime, endTime
 		)
 		return nil, err
 	} else {
-		o.Dao.Logger.Logger.Info(
+		o.Core.Logger.Logger.Info(
 			"OperationLogDaoImpl.GetOperationLogListByCreatedTime",
 			zap.Field{Key: "startTime", Type: zapcore.StringType, String: startTime},
 			zap.Field{Key: "endTime", Type: zapcore.StringType, String: endTime},
@@ -196,16 +196,16 @@ func (o OperationLogDaoImpl) GetOperationLogListByCreatedTime(startTime, endTime
 }
 
 func (o OperationLogDaoImpl) InsertOperationLog(operationLog *models.OperationLogModel, ctx context.Context) error {
-	collection := o.Dao.MongoClient.MongoDatabase.Collection(OperationLogCollectionName)
+	collection := o.Core.MongoClient.MongoDatabase.Collection(OperationLogCollectionName)
 	result, err := collection.InsertOne(ctx, operationLog)
 	if err != nil {
-		o.Dao.Logger.Logger.Error(
+		o.Core.Logger.Logger.Error(
 			"OperationLogDaoImpl.InsertOperationLog",
 			zap.Field{Key: "operationLog", Type: zapcore.ObjectMarshalerType, Interface: operationLog},
 			zap.Field{Key: "error", Type: zapcore.ErrorType, Interface: err},
 		)
 	} else {
-		o.Dao.Logger.Logger.Info(
+		o.Core.Logger.Logger.Info(
 			"OperationLogDaoImpl.InsertOperationLog",
 			zap.Field{Key: "operationLog", Type: zapcore.ObjectMarshalerType, Interface: operationLog},
 			zap.Field{Key: "result", Type: zapcore.ObjectMarshalerType, Interface: result},
@@ -215,16 +215,16 @@ func (o OperationLogDaoImpl) InsertOperationLog(operationLog *models.OperationLo
 }
 
 func (o OperationLogDaoImpl) DeleteOperationLog(operationLogId string, ctx context.Context) error {
-	collection := o.Dao.MongoClient.MongoDatabase.Collection(OperationLogCollectionName)
+	collection := o.Core.MongoClient.MongoDatabase.Collection(OperationLogCollectionName)
 	err := collection.RemoveId(ctx, operationLogId)
 	if err != nil {
-		o.Dao.Logger.Logger.Error(
+		o.Core.Logger.Logger.Error(
 			"OperationLogDaoImpl.DeleteOperationLog",
 			zap.Field{Key: "operationLogId", Type: zapcore.StringType, String: operationLogId},
 			zap.Field{Key: "error", Type: zapcore.ErrorType, Interface: err},
 		)
 	} else {
-		o.Dao.Logger.Logger.Info(
+		o.Core.Logger.Logger.Info(
 			"OperationLogDaoImpl.DeleteOperationLog",
 			zap.Field{Key: "operationLogId", Type: zapcore.StringType, String: operationLogId},
 		)

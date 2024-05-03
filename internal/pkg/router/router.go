@@ -5,13 +5,19 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func RegisterRouter(app *fiber.App) {
-	router := app.Group("/api")
-	registerRouterV1(router)
+type Router struct {
+	App        *fiber.App
+	RouteGroup *fiber.Router
 }
 
-func registerRouterV1(router fiber.Router) {
-	v1.RegisterAdminRouter(router)
-	v1.RegisterCommonRouter(router)
-	v1.RegisterUserRouter(router)
+func (r *Router) RegisterRouter() {
+	g := r.App.Group("/api")
+	r.RouteGroup = &g
+	r.registerRouterV1()
+}
+
+func (r *Router) registerRouterV1() {
+	v1.RegisterAdminRouter(*r.RouteGroup)
+	v1.RegisterCommonRouter(*r.RouteGroup)
+	v1.RegisterUserRouter(*r.RouteGroup)
 }

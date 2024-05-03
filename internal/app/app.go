@@ -19,6 +19,7 @@ type App struct {
 	app    *fiber.App
 	logger *logging.Zap
 	config *config.Config
+	router *router.Router
 	ctx    context.Context
 }
 
