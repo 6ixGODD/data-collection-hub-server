@@ -40,7 +40,7 @@ type InstructionDataDao interface {
 type InstructionDataDaoImpl struct{ *dal.Dao }
 
 func NewInstructionDataDao(dao *dal.Dao) InstructionDataDao {
-	var _ InstructionDataDao = new(InstructionDataDaoImpl)
+	var _ InstructionDataDao = (*InstructionDataDaoImpl)(nil) // Ensure that the interface is implemented
 	return &InstructionDataDaoImpl{
 		Dao: dao,
 	}

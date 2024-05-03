@@ -27,7 +27,7 @@ type RedisConfig struct {
 	ConnMaxLifetime time.Duration `mapstructure:"redis_conn_max_lifetime" yaml:"redis_conn_max_lifetime" default:"-1"`
 }
 
-func (c *RedisConfig) ToRedisConfig() *redis.Options {
+func (c *RedisConfig) GetRedisOptions() *redis.Options {
 	return &redis.Options{
 		Addr:            c.Addr,
 		ClientName:      c.ClientName,

@@ -9,15 +9,17 @@ import (
 )
 
 type Config struct {
-	BaseConfig    modules.BaseConfig    `mapstructure:"base" yaml:"base"`
-	CasbinConfig  modules.CasbinConfig  `mapstructure:"casbin" yaml:"casbin"`
-	JWTConfig     modules.JWTConfig     `mapstructure:"jwt" yaml:"jwt"`
-	MongoConfig   modules.MongoConfig   `mapstructure:"mongo" yaml:"mongo"`
-	RedisConfig   modules.RedisConfig   `mapstructure:"redis" yaml:"redis"`
-	ZapConfig     modules.ZapConfig     `mapstructure:"zap" yaml:"zap"`
-	FiberConfig   modules.FiberConfig   `mapstructure:"fiber" yaml:"fiber"`
-	LimiterConfig modules.LimiterConfig `mapstructure:"limiter" yaml:"limiter"`
-	CorsConfig    modules.CorsConfig    `mapstructure:"cors" yaml:"cors"`
+	BaseConfig       modules.BaseConfig       `mapstructure:"base" yaml:"base"`
+	CasbinConfig     modules.CasbinConfig     `mapstructure:"casbin" yaml:"casbin"`
+	CorsConfig       modules.CorsConfig       `mapstructure:"cors" yaml:"cors"`
+	FiberConfig      modules.FiberConfig      `mapstructure:"fiber" yaml:"fiber"`
+	JWTConfig        modules.JWTConfig        `mapstructure:"jwt" yaml:"jwt"`
+	LimiterConfig    modules.LimiterConfig    `mapstructure:"limiter" yaml:"limiter"`
+	MongoConfig      modules.MongoConfig      `mapstructure:"mongo" yaml:"mongo"`
+	PrometheusConfig modules.PrometheusConfig `mapstructure:"prometheus" yaml:"prometheus"`
+	RedisConfig      modules.RedisConfig      `mapstructure:"redis" yaml:"redis"`
+	TasksConfig      modules.TasksConfig      `mapstructure:"tasks" yaml:"tasks"`
+	ZapConfig        modules.ZapConfig        `mapstructure:"zap" yaml:"zap"`
 }
 
 // NewConfig returns a new instance of Config
@@ -46,7 +48,7 @@ func Init(config *Config) (err error) {
 				if subFieldValue.CanSet() {
 					defaultTag := subField.Tag.Get("default")
 					if defaultTag != "" {
-						if err := setFieldWithDefault(subFieldValue, defaultTag); err != nil {
+						if err := parseDefaultField(subFieldValue, defaultTag); err != nil {
 							return err
 						}
 					}
@@ -55,7 +57,7 @@ func Init(config *Config) (err error) {
 		} else {
 			defaultTag := subStructType.Field(0).Tag.Get("default")
 			if defaultTag != "" {
-				if err := setFieldWithDefault(subStructValue, defaultTag); err != nil {
+				if err := parseDefaultField(subStructValue, defaultTag); err != nil {
 					return err
 				}
 			}
@@ -64,7 +66,7 @@ func Init(config *Config) (err error) {
 	return nil
 }
 
-func setFieldWithDefault(field reflect.Value, defaultTag string) (err error) {
+func parseDefaultField(field reflect.Value, defaultTag string) (err error) {
 	switch field.Kind() {
 	case reflect.String:
 		field.SetString(defaultTag)

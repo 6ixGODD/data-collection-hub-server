@@ -28,7 +28,7 @@ type ErrorLogDao interface {
 type ErrorLogDaoImpl struct{ *dal.Dao }
 
 func NewErrorLogDao(dao *dal.Dao) ErrorLogDao {
-	var _ ErrorLogDao = new(ErrorLogDaoImpl) // Ensure that the interface is implemented
+	var _ ErrorLogDao = (*ErrorLogDaoImpl)(nil) // Ensure that the interface is implemented
 	return &ErrorLogDaoImpl{dao}
 }
 

@@ -28,7 +28,7 @@ type NoticeDao interface {
 type NoticeDaoImpl struct{ *dal.Dao }
 
 func NewNoticeDao(dao *dal.Dao) NoticeDao {
-	var _ NoticeDao = new(NoticeDaoImpl)
+	var _ NoticeDao = (*NoticeDaoImpl)(nil) // Ensure that the interface is implemented
 	return &NoticeDaoImpl{dao}
 }
 

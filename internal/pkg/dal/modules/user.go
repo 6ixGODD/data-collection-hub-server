@@ -26,7 +26,7 @@ type UserDao interface {
 type UserDaoImpl struct{ *dal.Dao }
 
 func NewUserDao(dao *dal.Dao) UserDao {
-	var _ UserDao = new(UserDaoImpl)
+	var _ UserDao = (*UserDaoImpl)(nil) // Ensure that the interface is implemented
 	return &UserDaoImpl{dao}
 }
 

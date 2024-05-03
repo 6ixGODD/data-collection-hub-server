@@ -25,7 +25,7 @@ type LoginLogDao interface {
 type LoginLogDaoImpl struct{ *dal.Dao }
 
 func NewLoginLogDao(dao *dal.Dao) LoginLogDao {
-	var _ LoginLogDao = new(LoginLogDaoImpl) // Ensure that the interface is implemented
+	var _ LoginLogDao = (*LoginLogDaoImpl)(nil) // Ensure that the interface is implemented
 	return &LoginLogDaoImpl{dao}
 }
 

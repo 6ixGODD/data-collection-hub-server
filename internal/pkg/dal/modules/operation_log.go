@@ -27,7 +27,7 @@ type OperationLogDao interface {
 type OperationLogDaoImpl struct{ *dal.Dao }
 
 func NewOperationLogDao(dao *dal.Dao) OperationLogDao {
-	var _ OperationLogDao = new(OperationLogDaoImpl)
+	var _ OperationLogDao = (*OperationLogDaoImpl)(nil) // Ensure that the interface is implemented
 	return &OperationLogDaoImpl{dao}
 }
 

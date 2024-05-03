@@ -30,7 +30,7 @@ type DocumentationDaoImpl struct{ *dal.Dao }
 
 // NewDocumentationDao creates a new instance of DocumentationDaoImpl with the qmgo.Collection instance
 func NewDocumentationDao(dao *dal.Dao) DocumentationDao {
-	var _ DocumentationDao = new(DocumentationDaoImpl) // Ensure that the interface is implemented
+	var _ DocumentationDao = (*DocumentationDaoImpl)(nil) // Ensure that the interface is implemented
 	return &DocumentationDaoImpl{dao}
 }
 
