@@ -9,7 +9,7 @@ type LogsService interface {
 }
 
 type LogsServiceImpl struct {
-	service         *service.Core
+	core            *service.Core
 	loginLogDao     dao.LoginLogDao
 	operationLogDao dao.OperationLogDao
 	errorLogDao     dao.ErrorLogDao
@@ -17,7 +17,7 @@ type LogsServiceImpl struct {
 
 func NewLogsService(s *service.Core, loginLogDao dao.LoginLogDao, operationLogDao dao.OperationLogDao, errorLogDao dao.ErrorLogDao) LogsService {
 	return &LogsServiceImpl{
-		service:         s,
+		core:            s,
 		loginLogDao:     loginLogDao,
 		operationLogDao: operationLogDao,
 		errorLogDao:     errorLogDao,

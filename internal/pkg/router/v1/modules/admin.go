@@ -1,4 +1,4 @@
-package v1
+package modules
 
 import (
 	"data-collection-hub-server/internal/pkg/router"

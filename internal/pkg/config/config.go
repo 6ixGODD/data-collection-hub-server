@@ -8,6 +8,8 @@ import (
 	"data-collection-hub-server/internal/pkg/config/modules"
 )
 
+var configInstance *Config // singleton
+
 type Config struct {
 	BaseConfig       modules.BaseConfig       `mapstructure:"base" yaml:"base"`
 	CasbinConfig     modules.CasbinConfig     `mapstructure:"casbin" yaml:"casbin"`
@@ -24,17 +26,19 @@ type Config struct {
 
 // New returns a new instance of Config
 func New() (config *Config, err error) {
-	config = &Config{}
-	err = Init(config)
-	if err != nil {
-		return nil, err
-	} else {
-		return config, nil
+	if configInstance != nil {
+		return configInstance, nil
 	}
+	config = &Config{}
+	if err := config.Init(); err != nil {
+		return nil, err
+	}
+	configInstance = config
+	return config, nil
 }
 
-func Init(config *Config) (err error) {
-	configValue := reflect.ValueOf(config).Elem()
+func (c *Config) Init() (err error) {
+	configValue := reflect.ValueOf(c).Elem()
 
 	for i := 0; i < configValue.NumField(); i++ {
 		subStructValue := configValue.Field(i)
@@ -48,7 +52,7 @@ func Init(config *Config) (err error) {
 				if subFieldValue.CanSet() {
 					defaultTag := subField.Tag.Get("default")
 					if defaultTag != "" {
-						if err := parseDefaultField(subFieldValue, defaultTag); err != nil {
+						if err := c.parseDefaultField(subFieldValue, defaultTag); err != nil {
 							return err
 						}
 					}
@@ -57,7 +61,7 @@ func Init(config *Config) (err error) {
 		} else {
 			defaultTag := subStructType.Field(0).Tag.Get("default")
 			if defaultTag != "" {
-				if err := parseDefaultField(subStructValue, defaultTag); err != nil {
+				if err := c.parseDefaultField(subStructValue, defaultTag); err != nil {
 					return err
 				}
 			}
@@ -66,7 +70,7 @@ func Init(config *Config) (err error) {
 	return nil
 }
 
-func parseDefaultField(field reflect.Value, defaultTag string) (err error) {
+func (c *Config) parseDefaultField(field reflect.Value, defaultTag string) (err error) {
 	switch field.Kind() {
 	case reflect.String:
 		field.SetString(defaultTag)

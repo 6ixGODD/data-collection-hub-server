@@ -5,5 +5,5 @@ import (
 )
 
 type CasbinMiddleware struct {
-	Middleware *middleware.Middleware
+	Core *middleware.Core
 }

@@ -6,6 +6,6 @@ import (
 )
 
 type AuthMiddleware struct {
-	Middleware *middleware.Middleware
-	Jwt        *jwt.Jwt
+	Core *middleware.Core
+	Jwt  *jwt.Jwt
 }

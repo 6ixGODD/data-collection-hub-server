@@ -1,7 +1,7 @@
 package models
 
 type NoticeModel struct {
-	NoticeID  string `json:"notice_id" bson:"_id"`         // MongoClient ObjectId
+	NoticeID  string `json:"notice_id" bson:"_id"`         // Mongo ObjectId
 	Title     string `json:"title" bson:"title"`           // Title
 	Content   string `json:"content" bson:"content"`       // Content in Markdown format
 	Type      string `json:"type" bson:"type"`             // Type, 'URGENT' | 'NORMAL'

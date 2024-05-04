@@ -9,13 +9,13 @@ type DataAuditService interface {
 }
 
 type DataAuditServiceImpl struct {
-	service            *service.Core
+	core               *service.Core
 	instructionDataDao dao.InstructionDataDao
 }
 
 func NewDataAuditService(s *service.Core, instructionDataDao dao.InstructionDataDao) DataAuditService {
 	return &DataAuditServiceImpl{
-		service:            s,
+		core:               s,
 		instructionDataDao: instructionDataDao,
 	}
 }

@@ -5,5 +5,5 @@ import (
 )
 
 type LoggingMiddleware struct {
-	Middleware *middleware.Middleware
+	Core *middleware.Core
 }

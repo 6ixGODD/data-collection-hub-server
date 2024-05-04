@@ -14,11 +14,17 @@ type Redis struct {
 	ctx          context.Context
 }
 
+var redisInstance *Redis // Singleton
+
 func New(ctx context.Context, options *redis.Options) (r *Redis, err error) {
+	if redisInstance != nil {
+		return redisInstance, nil
+	}
 	r = &Redis{redisOptions: options, ctx: ctx}
 	if err := r.Init(); err != nil {
 		return nil, err
 	}
+	redisInstance = r
 	return r, nil
 }
 

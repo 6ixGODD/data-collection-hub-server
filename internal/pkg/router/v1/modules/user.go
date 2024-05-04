@@ -1,8 +1,13 @@
-package v1
+package modules
 
 import (
+	"data-collection-hub-server/internal/pkg/router/v1"
 	"github.com/gofiber/fiber/v2"
 )
+
+type UserRouter struct {
+	Router *router.Router
+}
 
 // RegisterUserRouter registers the user_service router.
 func RegisterUserRouter(app fiber.Router) {

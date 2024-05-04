@@ -1,8 +1,13 @@
-package v1
+package modules
 
 import (
+	"data-collection-hub-server/internal/pkg/router"
 	"github.com/gofiber/fiber/v2"
 )
+
+type CommonRouter struct {
+	Router *router.Router
+}
 
 // RegisterCommonRouter registers the common_service router.
 func RegisterCommonRouter(app fiber.Router) { // TODO: Implement

@@ -1,7 +1,7 @@
 package models
 
 type ErrorLogModel struct {
-	ErrorLogID     string `json:"error_log_id" bson:"_id"`                // MongoClient ObjectId
+	ErrorLogID     string `json:"error_log_id" bson:"_id"`                // Mongo ObjectId
 	UserUUID       string `json:"user_uuid" bson:"user_uuid"`             // User UUID
 	Username       string `json:"username" bson:"username"`               // Username (for space-time trade-off)
 	IPAddress      string `json:"ip_address" bson:"ip_address"`           // IP Address

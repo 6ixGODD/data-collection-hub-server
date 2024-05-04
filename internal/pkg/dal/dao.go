@@ -10,21 +10,18 @@ import (
 )
 
 type Core struct {
-	MongoClient *mongo.Mongo
-	RedisClient *redis.Redis
-	Logger      *zap.Zap
-	Config      *config.Config
+	Mongo  *mongo.Mongo
+	Redis  *redis.Redis
+	Zap    *zap.Zap
+	Config *config.Config
 }
 
 func NewCore(ctx context.Context, mongoDB *mongo.Mongo, redisClient *redis.Redis, logger *zap.Zap, config config.Config) *Core {
 	logger.SetTagInContext(ctx, zap.MongoTag)
 	return &Core{
-		MongoClient: mongoDB,
-		RedisClient: redisClient,
-		Logger:      logger,
-		Config:      &config,
+		Mongo:  mongoDB,
+		Redis:  redisClient,
+		Zap:    logger,
+		Config: &config,
 	}
-}
-
-type Dao struct {
 }

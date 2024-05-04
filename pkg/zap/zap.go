@@ -9,17 +9,19 @@ import (
 
 const (
 	MainTag      = "MAIN"
+	SystemTag    = "SYSTEM"
 	MongoTag     = "MONGO"
 	RequestTag   = "REQUEST"
 	LoginTag     = "LOGIN"
 	OperationTag = "OPERATION"
-	SystemTag    = "SYSTEM"
 
 	tag       = "TAG"
 	requestID = "REQUEST_ID"
 	userID    = "USER_ID"
 	operation = "OPERATION"
 )
+
+var zapInstance *Zap
 
 type Zap struct {
 	Logger  *zap.Logger
@@ -28,14 +30,17 @@ type Zap struct {
 }
 
 func New(config *zap.Config, options ...zap.Option) (z *Zap, err error) {
-	z = &Zap{
+	if zapInstance != nil {
+		return zapInstance, nil
+	}
+	zapInstance = &Zap{
 		Config:  config,
 		Options: options,
 	}
-	if err := z.Init(); err != nil {
+	if err := zapInstance.Init(); err != nil {
 		return nil, err
 	}
-	return z, nil
+	return zapInstance, nil
 }
 
 func (z *Zap) Init() error {

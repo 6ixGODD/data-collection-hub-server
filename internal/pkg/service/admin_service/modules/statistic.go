@@ -9,14 +9,14 @@ type StatisticService interface {
 }
 
 type StatisticServiceImpl struct {
-	service            *service.Core
+	core               *service.Core
 	instructionDataDao dao.InstructionDataDao
 	userDao            dao.UserDao
 }
 
 func NewStatisticService(s *service.Core, instructionDataDao dao.InstructionDataDao, userDao dao.UserDao) StatisticService {
 	return &StatisticServiceImpl{
-		service:            s,
+		core:               s,
 		instructionDataDao: instructionDataDao,
 		userDao:            userDao,
 	}

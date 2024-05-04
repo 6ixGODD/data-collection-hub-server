@@ -5,5 +5,5 @@ import (
 )
 
 type PrometheusMiddleware struct {
-	Middleware *middleware.Middleware
+	Core *middleware.Core
 }

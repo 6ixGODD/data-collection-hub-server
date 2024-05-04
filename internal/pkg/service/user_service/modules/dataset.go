@@ -9,14 +9,14 @@ type DatasetService interface {
 }
 
 type DatasetServiceImpl struct {
-	service            *service.Core
+	core               *service.Core
 	instructionDataDao dao.InstructionDataDao
 	operationLogDao    dao.OperationLogDao
 }
 
 func NewDatasetService(s *service.Core, instructionDataDao dao.InstructionDataDao, operationLogDao dao.OperationLogDao) DatasetService {
 	return &DatasetServiceImpl{
-		service:            s,
+		core:               s,
 		instructionDataDao: instructionDataDao,
 		operationLogDao:    operationLogDao,
 	}

@@ -5,7 +5,7 @@ import (
 	"data-collection-hub-server/pkg/zap"
 )
 
-type Middleware struct {
+type Core struct {
 	Redis  *redis.Redis
 	Logger *zap.Zap
 }

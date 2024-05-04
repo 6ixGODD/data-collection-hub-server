@@ -15,7 +15,12 @@ type Mongo struct {
 	ctx           context.Context
 }
 
+var mongoInstance *Mongo // Singleton
+
 func New(ctx context.Context, config *qmgo.Config, PingTimeout int64, databaseName string) (m *Mongo, err error) {
+	if mongoInstance != nil {
+		return mongoInstance, nil
+	}
 	m = &Mongo{
 		mongoConfig:  config,
 		pingTimeout:  PingTimeout,
@@ -25,6 +30,7 @@ func New(ctx context.Context, config *qmgo.Config, PingTimeout int64, databaseNa
 	if err := m.Init(); err != nil {
 		return nil, err
 	}
+	mongoInstance = m
 	return m, nil
 }
 

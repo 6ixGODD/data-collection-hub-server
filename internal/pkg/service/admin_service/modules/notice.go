@@ -9,13 +9,13 @@ type NoticeService interface {
 }
 
 type NoticeServiceImpl struct {
-	service   *service.Core
+	core      *service.Core
 	noticeDao dao.NoticeDao
 }
 
 func NewNoticeService(s *service.Core, noticeDao dao.NoticeDao) NoticeService {
 	return &NoticeServiceImpl{
-		service:   s,
+		core:      s,
 		noticeDao: noticeDao,
 	}
 }

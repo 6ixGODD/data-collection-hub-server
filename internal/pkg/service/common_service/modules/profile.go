@@ -9,13 +9,13 @@ type ProfileService interface {
 }
 
 type ProfileServiceImpl struct {
-	service *service.Core
+	core    *service.Core
 	userDao dao.UserDao
 }
 
 func NewProfileService(s *service.Core, userDao dao.UserDao) ProfileService {
 	return &ProfileServiceImpl{
-		service: s,
+		core:    s,
 		userDao: userDao,
 	}
 }

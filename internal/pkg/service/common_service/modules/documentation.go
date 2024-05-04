@@ -9,13 +9,13 @@ type DocumentationService interface {
 }
 
 type DocumentationServiceImpl struct {
-	service          *service.Core
+	core             *service.Core
 	documentationDao dao.DocumentationDao
 }
 
 func NewDocumentationService(s *service.Core, documentationDao dao.DocumentationDao) DocumentationService {
 	return &DocumentationServiceImpl{
-		service:          s,
+		core:             s,
 		documentationDao: documentationDao,
 	}
 }

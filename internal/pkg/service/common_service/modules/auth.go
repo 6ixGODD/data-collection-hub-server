@@ -9,14 +9,14 @@ type AuthService interface {
 }
 
 type AuthServiceImpl struct {
-	service     *service.Core
+	core        *service.Core
 	userDao     dao.UserDao
 	loginLogDao dao.LoginLogDao
 }
 
 func NewAuthService(s *service.Core, userDao dao.UserDao, loginLogDao dao.LoginLogDao) AuthService {
 	return &AuthServiceImpl{
-		service:     s,
+		core:        s,
 		userDao:     userDao,
 		loginLogDao: loginLogDao,
 	}

@@ -9,13 +9,13 @@ type UserService interface {
 }
 
 type UserServiceImpl struct {
-	Service *service.Core
+	Core    *service.Core
 	userDao dao.UserDao
 }
 
 func NewUserService(s *service.Core, userDao dao.UserDao) UserService {
 	return &UserServiceImpl{
-		Service: s,
+		Core:    s,
 		userDao: userDao,
 	}
 }

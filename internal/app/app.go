@@ -54,10 +54,11 @@ func (a *App) Init() error {
 		EnableTrustedProxyCheck: a.config.FiberConfig.EnableTrustedProxyCheck,
 		TrustedProxies:          a.config.FiberConfig.TrustedProxies,
 		EnablePrintRoutes:       a.config.FiberConfig.EnablePrintRoutes,
-		JSONDecoder:             json.Unmarshal, // Use go-json for enhanced JSON decoding
+		JSONDecoder:             json.Unmarshal, // Use go-json for enhanced JSON decoding performance
 		JSONEncoder:             json.Marshal,
 	})
 
+	// Register middleware
 	// Register limiter middleware
 	app.Use(limiter.New(limiter.Config{
 		Max:               a.config.LimiterConfig.Max,
@@ -91,14 +92,15 @@ func (a *App) Init() error {
 	})
 
 	// Register routers
-	router.RegisterRouter(app)
+	a.router.RegisterRouter(app)
+
 	a.app = app
 
 	logger, err := logging.New(a.config.ZapConfig.GetZapConfig())
-	logger.SetTagInContext(a.ctx, logging.SystemTag)
 	if err != nil {
 		return err
 	}
+	logger.SetTagInContext(a.ctx, logging.SystemTag)
 	a.logger = logger
 
 	return nil
