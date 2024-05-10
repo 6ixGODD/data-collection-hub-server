@@ -9,18 +9,18 @@ import (
 	"data-collection-hub-server/pkg/zap"
 )
 
-type Core struct {
+type Dao struct {
 	Mongo  *mongo.Mongo
 	Redis  *redis.Redis
 	Zap    *zap.Zap
 	Config *config.Config
 }
 
-func NewCore(ctx context.Context, mongoDB *mongo.Mongo, redisClient *redis.Redis, logger *zap.Zap, config config.Config) *Core {
+func New(ctx context.Context, mongo *mongo.Mongo, redis *redis.Redis, logger *zap.Zap, config config.Config) *Dao {
 	logger.SetTagInContext(ctx, zap.MongoTag)
-	return &Core{
-		Mongo:  mongoDB,
-		Redis:  redisClient,
+	return &Dao{
+		Mongo:  mongo,
+		Redis:  redis,
 		Zap:    logger,
 		Config: &config,
 	}

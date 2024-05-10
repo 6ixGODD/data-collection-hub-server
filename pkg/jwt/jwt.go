@@ -8,6 +8,8 @@ import (
 	"github.com/golang-jwt/jwt"
 )
 
+var jwtInstance Jwt
+
 type Jwt interface {
 	GenerateToken(subject string) (string, error)
 	VerifyToken(token string) (string, error)
@@ -23,24 +25,33 @@ type jwtImpl struct {
 	refreshBuffer   time.Duration
 }
 
-func New(privateKey *ecdsa.PrivateKey, publicKey *ecdsa.PublicKey, tokenDuration, refreshDuration time.Duration, refreshBuffer time.Duration) Jwt {
+func New(
+	privateKey *ecdsa.PrivateKey, publicKey *ecdsa.PublicKey, tokenDuration, refreshDuration time.Duration,
+	refreshBuffer time.Duration,
+) Jwt {
+	if jwtInstance != nil {
+		return jwtInstance
+	}
 	var _ Jwt = (*jwtImpl)(nil) // Ensure jwtImpl implements Jwt
-	return &jwtImpl{
+	jwtInstance = &jwtImpl{
 		privateKey:      privateKey,
 		publicKey:       publicKey,
 		tokenDuration:   tokenDuration,
 		refreshDuration: refreshDuration,
 		refreshBuffer:   refreshBuffer,
 	}
+	return jwtInstance
 }
 
 func (a *jwtImpl) GenerateToken(subject string) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodES256, &jwt.StandardClaims{
-		Subject:   subject,
-		IssuedAt:  time.Now().Unix(),
-		ExpiresAt: time.Now().Add(a.tokenDuration).Unix(),
-		NotBefore: time.Now().Unix(),
-	})
+	token := jwt.NewWithClaims(
+		jwt.SigningMethodES256, &jwt.StandardClaims{
+			Subject:   subject,
+			IssuedAt:  time.Now().Unix(),
+			ExpiresAt: time.Now().Add(a.tokenDuration).Unix(),
+			NotBefore: time.Now().Unix(),
+		},
+	)
 
 	tokenString, err := token.SignedString(a.privateKey)
 	if err != nil {
@@ -73,9 +84,11 @@ func (a *jwtImpl) RefreshToken(token string) (string, error) {
 func (a *jwtImpl) ExtractClaims(token string) (map[string]interface{}, error) {
 	claims := jwt.MapClaims{}
 
-	t, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
-		return a.publicKey, nil
-	})
+	t, err := jwt.ParseWithClaims(
+		token, claims, func(token *jwt.Token) (interface{}, error) {
+			return a.publicKey, nil
+		},
+	)
 	if err != nil || !t.Valid {
 		return nil, err
 	}

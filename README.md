@@ -52,12 +52,14 @@
 - **Scheduler**: Cron
 - **Command Line Interface**: Cobra
 - **RBAC**: Casbin
+- **Monitoring**: Prometheus
 - **Middleware**:
   - CORS
   - JWT
   - IP limit
   - Logger
   - Casbin
+  - Prometheus
 
 ## Setup
 ```shell

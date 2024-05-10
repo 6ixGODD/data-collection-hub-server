@@ -24,9 +24,13 @@ const (
 var zapInstance *Zap
 
 type Zap struct {
-	Logger  *zap.Logger
-	Config  *zap.Config
-	Options []zap.Option
+	Logger *zap.Logger
+	config *Config
+}
+
+type Config struct {
+	zapConfig  *zap.Config
+	zapOptions []zap.Option
 }
 
 func New(config *zap.Config, options ...zap.Option) (z *Zap, err error) {
@@ -34,8 +38,10 @@ func New(config *zap.Config, options ...zap.Option) (z *Zap, err error) {
 		return zapInstance, nil
 	}
 	zapInstance = &Zap{
-		Config:  config,
-		Options: options,
+		config: &Config{
+			zapConfig:  config,
+			zapOptions: options,
+		},
 	}
 	if err := zapInstance.Init(); err != nil {
 		return nil, err
@@ -51,14 +57,14 @@ func (z *Zap) Init() error {
 	encoderConfig.EncodeDuration = zapcore.SecondsDurationEncoder
 	encoderConfig.EncodeName = zapcore.FullNameEncoder
 
-	z.Config.EncoderConfig = encoderConfig
-	logger, err := z.Config.Build()
+	z.config.zapConfig.EncoderConfig = encoderConfig
+	logger, err := z.config.zapConfig.Build()
 	if err != nil {
 		return err
 	}
 
-	z.Options = append(z.Options, zap.WithCaller(true), zap.AddStacktrace(zap.ErrorLevel))
-	z.Logger = logger.WithOptions(z.Options...)
+	z.config.zapOptions = append(z.config.zapOptions, zap.WithCaller(true), zap.AddStacktrace(zap.ErrorLevel))
+	z.Logger = logger.WithOptions(z.config.zapOptions...)
 
 	return nil
 }

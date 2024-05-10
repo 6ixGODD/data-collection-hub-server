@@ -1,0 +1,95 @@
+package mods
+
+import (
+	"data-collection-hub-server/internal/pkg/schema"
+	"data-collection-hub-server/internal/pkg/schema/common"
+	commonservice "data-collection-hub-server/internal/pkg/service/common/mods"
+	"data-collection-hub-server/pkg/errors"
+	"github.com/gofiber/fiber/v2"
+)
+
+type AuthApi struct {
+	commonservice.AuthService
+}
+
+func NewAuthApi(authService commonservice.AuthService) AuthApi {
+	return AuthApi{authService}
+}
+
+func (api *AuthApi) Login(c *fiber.Ctx) error {
+	req := new(common.LoginRequest)
+
+	if err := c.BodyParser(req); err != nil {
+		return errors.InvalidRequest(err)
+	}
+
+	resp, err := api.AuthService.Login(c.Context(), req.Email, req.Password)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(
+		schema.Response{
+			Code:    errors.CodeSuccess,
+			Message: errors.MessageSuccess,
+			Data:    resp,
+		},
+	)
+}
+
+func (api *AuthApi) Logout(c *fiber.Ctx) error {
+	err := api.AuthService.Logout(c.Context())
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(
+		schema.Response{
+			Code:    errors.CodeSuccess,
+			Message: errors.MessageSuccess,
+			Data:    nil,
+		},
+	)
+}
+
+func (api *AuthApi) RefreshToken(c *fiber.Ctx) error {
+	req := new(common.RefreshTokenRequest)
+
+	if err := c.BodyParser(req); err != nil {
+		return errors.InvalidRequest(err)
+	}
+
+	resp, err := api.AuthService.RefreshToken(c.Context(), req.RefreshToken)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(
+		schema.Response{
+			Code:    errors.CodeSuccess,
+			Message: errors.MessageSuccess,
+			Data:    resp,
+		},
+	)
+}
+
+func (api *AuthApi) ChangePassword(c *fiber.Ctx) error {
+	req := new(common.ChangePasswordRequest)
+
+	if err := c.BodyParser(req); err != nil {
+		return errors.InvalidRequest(err)
+	}
+
+	err := api.AuthService.ChangePassword(c.Context(), req.OldPassword, req.NewPassword)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(
+		schema.Response{
+			Code:    errors.CodeSuccess,
+			Message: errors.MessageSuccess,
+			Data:    nil,
+		},
+	)
+}

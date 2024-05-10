@@ -8,10 +8,14 @@ import (
 )
 
 type Redis struct {
-	RedisClient  *redis.Client
+	RedisClient *redis.Client
+	redisConfig *Config
+	mutex       sync.Mutex
+	ctx         context.Context
+}
+
+type Config struct {
 	redisOptions *redis.Options
-	mutex        sync.Mutex
-	ctx          context.Context
 }
 
 var redisInstance *Redis // Singleton
@@ -20,7 +24,7 @@ func New(ctx context.Context, options *redis.Options) (r *Redis, err error) {
 	if redisInstance != nil {
 		return redisInstance, nil
 	}
-	r = &Redis{redisOptions: options, ctx: ctx}
+	r = &Redis{redisConfig: &Config{options}, ctx: ctx}
 	if err := r.Init(); err != nil {
 		return nil, err
 	}
@@ -35,7 +39,7 @@ func (r *Redis) Init() error {
 	if r.RedisClient != nil {
 		return nil
 	}
-	client := redis.NewClient(r.redisOptions)
+	client := redis.NewClient(r.redisConfig.redisOptions)
 	if _, err := client.Ping(r.ctx).Result(); err != nil {
 		return err
 	}
