@@ -6,6 +6,7 @@ import (
 
 	"data-collection-hub-server/internal/pkg/dal"
 	"data-collection-hub-server/internal/pkg/models"
+	"github.com/goccy/go-json"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
@@ -15,34 +16,22 @@ import (
 const operationLogCollectionName = "operation_log"
 
 type OperationLogDao interface {
-	GetOperationLogById(operationLogID primitive.ObjectID, ctx context.Context) (*models.OperationLogModel, error)
-	GetOperationLogList(offset, limit int64, ctx context.Context) ([]models.OperationLogModel, error)
-	GetOperationLogListByUserID(
-		userID primitive.ObjectID, offset, limit int64, ctx context.Context,
-	) ([]models.OperationLogModel, error)
-	GetOperationLogListByIPAddress(
-		ipAddress string, offset, limit int64, ctx context.Context,
-	) ([]models.OperationLogModel, error)
-	GetOperationLogListByOperation(
-		operation string, offset, limit int64, ctx context.Context,
-	) ([]models.OperationLogModel, error)
-	GetOperationLogListByEntityID(
-		entityID primitive.ObjectID, offset, limit int64, ctx context.Context,
-	) ([]models.OperationLogModel, error)
-	GetOperationLogListByEntityType(
-		entityType string, offset, limit int64, ctx context.Context,
-	) ([]models.OperationLogModel, error)
-	GetOperationLogListByStatus(status string, offset, limit int64, ctx context.Context) (
-		[]models.OperationLogModel, error,
-	)
-	GetOperationLogListByCreatedTime(
-		startTime, endTime time.Time, offset, limit int64, ctx context.Context,
-	) ([]models.OperationLogModel, error)
+	GetOperationLogById(ctx context.Context, operationLogID primitive.ObjectID) (*models.OperationLogModel, error)
+	GetOperationLogList(
+		ctx context.Context,
+		offset, limit int64, desc bool, startTime, endTime *time.Time, userID, entityID *primitive.ObjectID,
+		ipAddress, operation, entityType, status, query *string,
+	) ([]models.OperationLogModel, *int64, error)
 	InsertOperationLog(
+		ctx context.Context,
 		userID, entityID primitive.ObjectID,
-		username, email, ipAddress, userAgent, operation, entityType, description, status string, ctx context.Context,
+		username, email, ipAddress, userAgent, operation, entityType, description, status string,
 	) (primitive.ObjectID, error)
-	DeleteOperationLog(operationLogID primitive.ObjectID, ctx context.Context) error
+	DeleteOperationLog(ctx context.Context, operationLogID primitive.ObjectID) error
+	DeleteOperationLogList(
+		ctx context.Context, startTime, endTime *time.Time, userID, entityID *primitive.ObjectID,
+		ipAddress, operation, entityType, status *string,
+	) (*int64, error)
 }
 
 type OperationLogDaoImpl struct{ *dal.Dao }
@@ -52,53 +41,108 @@ func NewOperationLogDao(dao *dal.Dao) OperationLogDao {
 	return &OperationLogDaoImpl{dao}
 }
 
-func (o OperationLogDaoImpl) GetOperationLogById(
-	operationLogID primitive.ObjectID, ctx context.Context,
+func (o *OperationLogDaoImpl) GetOperationLogById(
+	ctx context.Context, operationLogID primitive.ObjectID,
 ) (*models.OperationLogModel, error) {
-	var operationLog models.OperationLogModel
 	collection := o.Dao.Mongo.MongoDatabase.Collection(operationLogCollectionName)
-	err := collection.Find(ctx, bson.M{"operation_log_id": operationLogID}).One(&operationLog)
+	var operationLog models.OperationLogModel
+	err := collection.Find(ctx, bson.M{"_id": operationLogID}).One(&operationLog)
 	if err != nil {
 		o.Dao.Zap.Logger.Error(
 			"OperationLogDaoImpl.GetOperationLogById",
-			zap.Field{Key: "operationLogID", Type: zapcore.StringType, String: operationLogID.Hex()},
-			zap.Field{Key: "error", Type: zapcore.ErrorType, Interface: err},
+			zap.String("operationLogID", operationLogID.Hex()),
+			zap.Error(err),
 		)
 		return nil, err
 	} else {
 		o.Dao.Zap.Logger.Info(
 			"OperationLogDaoImpl.GetOperationLogById",
-			zap.Field{Key: "operationLogID", Type: zapcore.StringType, String: operationLogID.Hex()},
+			zap.String("operationLogID", operationLogID.Hex()),
 		)
 		return &operationLog, nil
 	}
 }
 
-func (o OperationLogDaoImpl) GetOperationLogList(offset, limit int64, ctx context.Context) (
-	[]models.OperationLogModel, error,
-) {
+func (o *OperationLogDaoImpl) GetOperationLogList(
+	ctx context.Context,
+	offset, limit int64, desc bool, startTime, endTime *time.Time, userID, entityID *primitive.ObjectID,
+	ipAddress, operation, entityType, status, query *string,
+) ([]models.OperationLogModel, *int64, error) {
 	var operationLogList []models.OperationLogModel
+	var err error
 	collection := o.Dao.Mongo.MongoDatabase.Collection(operationLogCollectionName)
-	err := collection.Find(ctx, bson.M{}).Skip(offset).Limit(limit).All(&operationLogList)
+	doc := bson.M{}
+	if startTime != nil && endTime != nil {
+		doc["created_at"] = bson.M{"$gte": startTime, "$lte": endTime}
+	}
+	if userID != nil {
+		doc["user_id"] = *userID
+	}
+	if entityID != nil {
+		doc["entity_id"] = *entityID
+	}
+	if ipAddress != nil {
+		doc["ip_address"] = *ipAddress
+	}
+	if operation != nil {
+		doc["operation"] = *operation
+	}
+	if entityType != nil {
+		doc["entity_type"] = *entityType
+	}
+	if status != nil {
+		doc["status"] = *status
+	}
+	if query != nil {
+		doc["$or"] = []bson.M{
+			{"username": bson.M{"$regex": *query, "$options": "i"}},
+			{"email": bson.M{"$regex": *query, "$options": "i"}},
+			{"ip_address": bson.M{"$regex": *query, "$options": "i"}},
+			{"operation": bson.M{"$regex": *query, "$options": "i"}},
+			{"entity_type": bson.M{"$regex": *query, "$options": "i"}},
+			{"description": bson.M{"$regex": *query, "$options": "i"}},
+			{"status": bson.M{"$regex": *query, "$options": "i"}},
+		}
+	}
+	docJSON, _ := json.Marshal(doc)
+	if desc {
+		err = collection.Find(ctx, doc).Sort("-created_at").Skip(offset).Limit(limit).All(&operationLogList)
+	} else {
+		err = collection.Find(ctx, doc).Skip(offset).Limit(limit).All(&operationLogList)
+	}
+
 	if err != nil {
 		o.Dao.Zap.Logger.Error(
 			"OperationLogDaoImpl.GetOperationLogList",
-			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
-			zap.Field{Key: "limit", Type: zapcore.Int64Type, Integer: limit},
-			zap.Field{Key: "error", Type: zapcore.ErrorType, Interface: err},
+			zap.Int64("offset", offset), zap.Int64("limit", limit),
+			zap.Bool("desc", desc),
+			zap.ByteString(operationLogCollectionName, docJSON),
+			zap.Error(err),
 		)
-		return nil, err
-	} else {
-		o.Dao.Zap.Logger.Info(
-			"OperationLogDaoImpl.GetOperationLogList",
-			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
-			zap.Field{Key: "limit", Type: zapcore.Int64Type, Integer: limit},
-		)
-		return operationLogList, nil
+		return nil, nil, err
 	}
+	count, err := collection.Find(ctx, doc).Count()
+	if err != nil {
+		o.Dao.Zap.Logger.Error(
+			"OperationLogDaoImpl.GetOperationLogList",
+			zap.Int64("offset", offset), zap.Int64("limit", limit),
+			zap.Bool("desc", desc),
+			zap.ByteString(operationLogCollectionName, docJSON),
+			zap.Error(err),
+		)
+		return nil, nil, err
+	}
+	o.Dao.Zap.Logger.Info(
+		"OperationLogDaoImpl.GetOperationLogList",
+		zap.Int64("offset", offset), zap.Int64("limit", limit),
+		zap.Bool("desc", desc),
+		zap.ByteString(operationLogCollectionName, docJSON),
+		zap.Int64("count", count),
+	)
+	return operationLogList, &count, nil
 }
 
-func (o OperationLogDaoImpl) GetOperationLogListByUserID(
+func (o *OperationLogDaoImpl) GetOperationLogListByUserID(
 	userID primitive.ObjectID, offset, limit int64, ctx context.Context,
 ) ([]models.OperationLogModel, error) {
 	var operationLogList []models.OperationLogModel
@@ -124,7 +168,7 @@ func (o OperationLogDaoImpl) GetOperationLogListByUserID(
 	}
 }
 
-func (o OperationLogDaoImpl) GetOperationLogListByIPAddress(
+func (o *OperationLogDaoImpl) GetOperationLogListByIPAddress(
 	ipAddress string, offset, limit int64, ctx context.Context,
 ) ([]models.OperationLogModel, error) {
 	var operationLogList []models.OperationLogModel
@@ -150,7 +194,7 @@ func (o OperationLogDaoImpl) GetOperationLogListByIPAddress(
 	}
 }
 
-func (o OperationLogDaoImpl) GetOperationLogListByOperation(
+func (o *OperationLogDaoImpl) GetOperationLogListByOperation(
 	operation string, offset, limit int64, ctx context.Context,
 ) ([]models.OperationLogModel, error) {
 	var operationLogList []models.OperationLogModel
@@ -176,7 +220,7 @@ func (o OperationLogDaoImpl) GetOperationLogListByOperation(
 	}
 }
 
-func (o OperationLogDaoImpl) GetOperationLogListByEntityID(
+func (o *OperationLogDaoImpl) GetOperationLogListByEntityID(
 	entityID primitive.ObjectID, offset, limit int64, ctx context.Context,
 ) ([]models.OperationLogModel, error) {
 	var operationLogList []models.OperationLogModel
@@ -202,7 +246,7 @@ func (o OperationLogDaoImpl) GetOperationLogListByEntityID(
 	}
 }
 
-func (o OperationLogDaoImpl) GetOperationLogListByEntityType(
+func (o *OperationLogDaoImpl) GetOperationLogListByEntityType(
 	entityType string, offset, limit int64, ctx context.Context,
 ) ([]models.OperationLogModel, error) {
 	var operationLogList []models.OperationLogModel
@@ -228,7 +272,7 @@ func (o OperationLogDaoImpl) GetOperationLogListByEntityType(
 	}
 }
 
-func (o OperationLogDaoImpl) GetOperationLogListByStatus(
+func (o *OperationLogDaoImpl) GetOperationLogListByStatus(
 	status string, offset, limit int64, ctx context.Context,
 ) ([]models.OperationLogModel, error) {
 	var operationLogList []models.OperationLogModel
@@ -254,7 +298,7 @@ func (o OperationLogDaoImpl) GetOperationLogListByStatus(
 	}
 }
 
-func (o OperationLogDaoImpl) GetOperationLogListByCreatedTime(
+func (o *OperationLogDaoImpl) GetOperationLogListByCreatedTime(
 	startTime, endTime time.Time, offset, limit int64, ctx context.Context,
 ) ([]models.OperationLogModel, error) {
 	var operationLogList []models.OperationLogModel
@@ -284,58 +328,103 @@ func (o OperationLogDaoImpl) GetOperationLogListByCreatedTime(
 	}
 }
 
-func (o OperationLogDaoImpl) InsertOperationLog(
+func (o *OperationLogDaoImpl) InsertOperationLog(
+	ctx context.Context,
 	userID, entityID primitive.ObjectID,
 	username, email, ipAddress, userAgent, operation, entityType, description, status string,
-	ctx context.Context,
 ) (primitive.ObjectID, error) {
 	collection := o.Dao.Mongo.MongoDatabase.Collection(operationLogCollectionName)
-	operationLog := models.OperationLogModel{
-		OperationLogID: primitive.NewObjectID(),
-		UserID:         userID,
-		EntityID:       entityID,
-		Username:       username,
-		Email:          email,
-		IPAddress:      ipAddress,
-		UserAgent:      userAgent,
-		Operation:      operation,
-		EntityType:     entityType,
-		Description:    description,
-		Status:         status,
-		CreatedAt:      time.Now(),
+	doc := bson.M{
+		"user_id":     userID,
+		"entity_id":   entityID,
+		"username":    username,
+		"email":       email,
+		"ip_address":  ipAddress,
+		"user_agent":  userAgent,
+		"operation":   operation,
+		"entity_type": entityType,
+		"description": description,
+		"status":      status,
+		"created_at":  time.Now(),
 	}
-	result, err := collection.InsertOne(ctx, operationLog)
+	docJSON, _ := json.Marshal(doc)
+	result, err := collection.InsertOne(ctx, doc)
 	if err != nil {
 		o.Dao.Zap.Logger.Error(
 			"OperationLogDaoImpl.InsertOperationLog",
-			zap.Field{Key: "operationLog", Type: zapcore.ObjectMarshalerType, Interface: operationLog},
-			zap.Field{Key: "operationLogID", Type: zapcore.StringType, String: operationLog.OperationLogID.Hex()},
-			zap.Field{Key: "error", Type: zapcore.ErrorType, Interface: err},
+			zap.ByteString("doc", docJSON),
+			zap.Error(err),
 		)
 	} else {
 		o.Dao.Zap.Logger.Info(
 			"OperationLogDaoImpl.InsertOperationLog",
-			zap.Field{Key: "operationLog", Type: zapcore.ObjectMarshalerType, Interface: operationLog},
-			zap.Field{Key: "operationLogID", Type: zapcore.StringType, String: operationLog.OperationLogID.Hex()},
+			zap.ByteString("doc", docJSON),
+			zap.String("operationLogID", result.InsertedID.(primitive.ObjectID).Hex()),
 		)
 	}
 	return result.InsertedID.(primitive.ObjectID), err
 }
 
-func (o OperationLogDaoImpl) DeleteOperationLog(operationLogID primitive.ObjectID, ctx context.Context) error {
+func (o *OperationLogDaoImpl) DeleteOperationLog(ctx context.Context, operationLogID primitive.ObjectID) error {
 	collection := o.Dao.Mongo.MongoDatabase.Collection(operationLogCollectionName)
 	err := collection.RemoveId(ctx, operationLogID)
 	if err != nil {
 		o.Dao.Zap.Logger.Error(
 			"OperationLogDaoImpl.DeleteOperationLog",
-			zap.Field{Key: "operationLogID", Type: zapcore.StringType, String: operationLogID.Hex()},
-			zap.Field{Key: "error", Type: zapcore.ErrorType, Interface: err},
+			zap.String("operationLogID", operationLogID.Hex()),
+			zap.Error(err),
 		)
 	} else {
 		o.Dao.Zap.Logger.Info(
 			"OperationLogDaoImpl.DeleteOperationLog",
-			zap.Field{Key: "operationLogID", Type: zapcore.StringType, String: operationLogID.Hex()},
+			zap.String("operationLogID", operationLogID.Hex()),
 		)
 	}
 	return err
+}
+
+func (o *OperationLogDaoImpl) DeleteOperationLogList(
+	ctx context.Context, startTime, endTime *time.Time, userID, entityID *primitive.ObjectID,
+	ipAddress, operation, entityType, status *string,
+) (*int64, error) {
+	collection := o.Dao.Mongo.MongoDatabase.Collection(operationLogCollectionName)
+	doc := bson.M{}
+	if startTime != nil && endTime != nil {
+		doc["created_at"] = bson.M{"$gte": startTime, "$lte": endTime}
+	}
+	if userID != nil {
+		doc["user_id"] = *userID
+	}
+	if entityID != nil {
+		doc["entity_id"] = *entityID
+	}
+	if ipAddress != nil {
+		doc["ip_address"] = *ipAddress
+	}
+	if operation != nil {
+		doc["operation"] = *operation
+	}
+	if entityType != nil {
+		doc["entity_type"] = *entityType
+	}
+	if status != nil {
+		doc["status"] = *status
+	}
+
+	docJSON, _ := json.Marshal(doc)
+	result, err := collection.RemoveAll(ctx, doc)
+	if err != nil {
+		o.Dao.Zap.Logger.Error(
+			"OperationLogDaoImpl.DeleteOperationLogList",
+			zap.ByteString(operationLogCollectionName, docJSON),
+			zap.Error(err),
+		)
+	} else {
+		o.Dao.Zap.Logger.Info(
+			"OperationLogDaoImpl.DeleteOperationLogList",
+			zap.ByteString(operationLogCollectionName, docJSON),
+			zap.Int64("count", result.DeletedCount),
+		)
+	}
+	return &result.DeletedCount, err
 }

@@ -6,6 +6,7 @@ import (
 
 	"data-collection-hub-server/internal/pkg/dal"
 	"data-collection-hub-server/internal/pkg/models"
+	"github.com/goccy/go-json"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
@@ -15,30 +16,22 @@ import (
 const errorLogCollectionName = "error_log"
 
 type ErrorLogDao interface {
-	GetErrorLogById(errorLogID primitive.ObjectID, ctx context.Context) (*models.ErrorLogModel, error)
-	GetErrorLogList(offset, limit int64, desc bool, ctx context.Context) ([]models.ErrorLogModel, error)
-	GetErrorLogListByCreatedTime(
-		startTime, endTime time.Time, offset, limit int64, desc bool, ctx context.Context,
-	) ([]models.ErrorLogModel, error)
-	GetErrorLogListByUserID(
-		userID primitive.ObjectID, offset, limit int64, desc bool, ctx context.Context,
-	) ([]models.ErrorLogModel, error)
-	GetErrorLogListByIPAddress(ipAddress string, offset, limit int64, ctx context.Context) (
-		[]models.ErrorLogModel, error,
-	)
-	GetErrorLogListByRequestURL(requestURL string, offset, limit int64, ctx context.Context) (
-		[]models.ErrorLogModel, error,
-	)
-	GetErrorLogListByErrorCode(errorCode string, offset, limit int64, ctx context.Context) (
-		[]models.ErrorLogModel, error,
-	)
-	GetErrorLogListByFuzzyQuery(query string, offset, limit int64, ctx context.Context) ([]models.ErrorLogModel, error)
+	GetErrorLogById(ctx context.Context, errorLogID primitive.ObjectID) (*models.ErrorLogModel, error)
+	GetErrorLogList(
+		ctx context.Context,
+		offset, limit int64, desc bool, startTime, endTime *time.Time, userID *primitive.ObjectID,
+		ipAddress, requestURL, errorCode, query *string,
+	) ([]models.ErrorLogModel, *int64, error)
 	InsertErrorLog(
+		ctx context.Context,
 		userID primitive.ObjectID,
 		Username, IPAddress, UserAgent, RequestURL, RequestMethod, RequestPayload, ErrorCode, ErrorMsg, Stack string,
-		ctx context.Context,
 	) (primitive.ObjectID, error)
-	DeleteErrorLog(errorLogID primitive.ObjectID, ctx context.Context) error
+	DeleteErrorLog(ctx context.Context, errorLogID primitive.ObjectID) error
+	DeleteErrorLogList(
+		ctx context.Context, startTime, endTime *time.Time, userID *primitive.ObjectID,
+		ipAddress, requestURL, errorCode, query *string,
+	) (*int64, error)
 }
 
 type ErrorLogDaoImpl struct{ *dal.Dao }
@@ -48,7 +41,7 @@ func NewErrorLogDao(dao *dal.Dao) ErrorLogDao {
 	return &ErrorLogDaoImpl{dao}
 }
 
-func (e *ErrorLogDaoImpl) GetErrorLogById(errorLogID primitive.ObjectID, ctx context.Context) (
+func (e *ErrorLogDaoImpl) GetErrorLogById(ctx context.Context, errorLogID primitive.ObjectID) (
 	*models.ErrorLogModel, error,
 ) {
 	var errorLog models.ErrorLogModel
@@ -70,279 +63,174 @@ func (e *ErrorLogDaoImpl) GetErrorLogById(errorLogID primitive.ObjectID, ctx con
 	}
 }
 
-func (e *ErrorLogDaoImpl) GetErrorLogList(offset, limit int64, desc bool, ctx context.Context) (
-	[]models.ErrorLogModel, error,
-) {
+func (e *ErrorLogDaoImpl) GetErrorLogList(
+	ctx context.Context,
+	offset, limit int64, desc bool, startTime, endTime *time.Time, userID *primitive.ObjectID,
+	ipAddress, requestURL, errorCode, query *string,
+) ([]models.ErrorLogModel, *int64, error) {
 	var errorLogList []models.ErrorLogModel
 	var err error
 	collection := e.Dao.Mongo.MongoDatabase.Collection(errorLogCollectionName)
+
+	doc := bson.M{}
+	if userID != nil {
+		doc["user_id"] = *userID
+	}
+	if ipAddress != nil {
+		doc["ip_address"] = *ipAddress
+	}
+	if requestURL != nil {
+		doc["request_url"] = *requestURL
+	}
+	if errorCode != nil {
+		doc["error_code"] = *errorCode
+	}
+	if query != nil {
+		doc["$or"] = []bson.M{
+			{"user_id": bson.M{"$regex": *query}},
+			{"username": bson.M{"$regex": *query}},
+			{"ip_address": bson.M{"$regex": *query}},
+			{"request_url": bson.M{"$regex": *query}},
+			{"error_code": bson.M{"$regex": *query}},
+			{"error_msg": bson.M{"$regex": *query}},
+			{"stack": bson.M{"$regex": *query}},
+		}
+	}
+	if startTime != nil && endTime != nil {
+		doc["created_at"] = bson.M{"$gte": *startTime, "$lte": *endTime}
+	}
+	docJSON, _ := json.Marshal(doc)
+
 	if desc {
-		err = collection.Find(ctx, bson.M{}).Sort("-created_at").Skip(offset).Limit(limit).All(&errorLogList)
+		err = collection.Find(ctx, doc).Sort("-created_at").Skip(offset).Limit(limit).All(&errorLogList)
 	} else {
-		err = collection.Find(ctx, bson.M{}).Skip(offset).Limit(limit).All(&errorLogList)
+		err = collection.Find(ctx, doc).Skip(offset).Limit(limit).All(&errorLogList)
 	}
 	if err != nil {
 		e.Dao.Zap.Logger.Error(
 			"ErrorLogDaoImpl.GetErrorLogList",
-			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
-			zap.Field{Key: "limit", Type: zapcore.Int64Type, Integer: limit},
-			zap.Field{Key: "desc", Type: zapcore.BoolType, Integer: limit},
-			zap.Field{Key: "error", Type: zapcore.ErrorType, Interface: err},
+			zap.Int64("offset", offset), zap.Int64("limit", limit), zap.Bool("desc", desc),
+			zap.ByteString(errorLogCollectionName, docJSON), zap.Error(err),
 		)
-		return nil, err
-	} else {
-		e.Dao.Zap.Logger.Info(
+		return nil, nil, err
+	}
+	count, err := collection.Find(ctx, doc).Count()
+	if err != nil {
+		e.Dao.Zap.Logger.Error(
 			"ErrorLogDaoImpl.GetErrorLogList",
-			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
-			zap.Field{Key: "limit", Type: zapcore.Int64Type, Integer: limit},
-			zap.Field{Key: "desc", Type: zapcore.BoolType, Integer: limit},
+			zap.Int64("offset", offset), zap.Int64("limit", limit), zap.Bool("desc", desc),
+			zap.ByteString(errorLogCollectionName, docJSON), zap.Error(err),
 		)
-		return errorLogList, nil
+		return nil, nil, err
 	}
-}
+	e.Dao.Zap.Logger.Info(
+		"ErrorLogDaoImpl.GetErrorLogList",
+		zap.Int64("offset", offset), zap.Int64("limit", limit), zap.Bool("desc", desc),
+		zap.ByteString(errorLogCollectionName, docJSON), zap.Int64("count", count),
+	)
+	return errorLogList, &count, nil
 
-func (e *ErrorLogDaoImpl) GetErrorLogListByCreatedTime(
-	startTime, endTime time.Time, offset, limit int64, desc bool, ctx context.Context,
-) ([]models.ErrorLogModel, error) {
-	var errorLogList []models.ErrorLogModel
-	var err error
-	collection := e.Dao.Mongo.MongoDatabase.Collection(errorLogCollectionName)
-	if desc {
-		err = collection.Find(
-			ctx, bson.M{"created_at": bson.M{"$gte": startTime, "$lte": endTime}},
-		).Sort("-created_at").Skip(offset).Limit(limit).All(&errorLogList)
-	} else {
-		err = collection.Find(
-			ctx, bson.M{"created_at": bson.M{"$gte": startTime, "$lte": endTime}},
-		).Skip(offset).Limit(limit).All(&errorLogList)
-	}
-	if err != nil {
-		e.Dao.Zap.Logger.Error(
-			"ErrorLogDaoImpl.GetErrorLogListByCreatedTime",
-			zap.Field{Key: "startTime", Type: zapcore.StringType, String: startTime.Format(time.RFC3339)},
-			zap.Field{Key: "endTime", Type: zapcore.StringType, String: endTime.Format(time.RFC3339)},
-			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
-			zap.Field{Key: "limit", Type: zapcore.Int64Type, Integer: limit},
-			zap.Field{Key: "desc", Type: zapcore.BoolType, Integer: limit},
-			zap.Field{Key: "error", Type: zapcore.ErrorType, Interface: err},
-		)
-		return nil, err
-	} else {
-		e.Dao.Zap.Logger.Info(
-			"ErrorLogDaoImpl.GetErrorLogListByCreatedTime",
-			zap.Field{Key: "startTime", Type: zapcore.StringType, String: startTime.Format(time.RFC3339)},
-			zap.Field{Key: "endTime", Type: zapcore.StringType, String: endTime.Format(time.RFC3339)},
-			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
-			zap.Field{Key: "limit", Type: zapcore.Int64Type, Integer: limit},
-			zap.Field{Key: "desc", Type: zapcore.BoolType, Integer: limit},
-		)
-		return errorLogList, nil
-	}
-}
-
-func (e *ErrorLogDaoImpl) GetErrorLogListByUserID(
-	userID primitive.ObjectID, offset, limit int64, desc bool, ctx context.Context,
-) ([]models.ErrorLogModel, error) {
-	var errorLogList []models.ErrorLogModel
-	var err error
-	collection := e.Dao.Mongo.MongoDatabase.Collection(errorLogCollectionName)
-	if desc {
-		err = collection.Find(
-			ctx, bson.M{"user_id": userID},
-		).Sort("-created_at").Skip(offset).Limit(limit).All(&errorLogList)
-	} else {
-		err = collection.Find(ctx, bson.M{"user_id": userID}).Skip(offset).Limit(limit).All(&errorLogList)
-	}
-	if err != nil {
-		e.Dao.Zap.Logger.Error(
-			"ErrorLogDaoImpl.GetErrorLogListByUserID",
-			zap.Field{Key: "userID", Type: zapcore.StringType, String: userID.Hex()},
-			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
-			zap.Field{Key: "limit", Type: zapcore.Int64Type, Integer: limit},
-			zap.Field{Key: "desc", Type: zapcore.BoolType, Integer: limit},
-			zap.Field{Key: "error", Type: zapcore.ErrorType, Interface: err},
-		)
-		return nil, err
-	} else {
-		e.Dao.Zap.Logger.Info(
-			"ErrorLogDaoImpl.GetErrorLogListByUserID",
-			zap.Field{Key: "userID", Type: zapcore.StringType, String: userID.Hex()},
-			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
-			zap.Field{Key: "limit", Type: zapcore.Int64Type, Integer: limit},
-			zap.Field{Key: "desc", Type: zapcore.BoolType, Integer: limit},
-		)
-		return errorLogList, nil
-	}
-}
-
-func (e *ErrorLogDaoImpl) GetErrorLogListByIPAddress(
-	ipAddress string, offset, limit int64, ctx context.Context,
-) ([]models.ErrorLogModel, error) {
-	var errorLogList []models.ErrorLogModel
-	collection := e.Dao.Mongo.MongoDatabase.Collection(errorLogCollectionName)
-	err := collection.Find(ctx, bson.M{"ip_address": ipAddress}).Skip(offset).Limit(limit).All(&errorLogList)
-	if err != nil {
-		e.Dao.Zap.Logger.Error(
-			"ErrorLogDaoImpl.GetErrorLogListByIPAddress",
-			zap.Field{Key: "ipAddress", Type: zapcore.StringType, String: ipAddress},
-			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
-			zap.Field{Key: "limit", Type: zapcore.Int64Type, Integer: limit},
-			zap.Field{Key: "error", Type: zapcore.ErrorType, Interface: err},
-		)
-		return nil, err
-	} else {
-		e.Dao.Zap.Logger.Info(
-			"ErrorLogDaoImpl.GetErrorLogListByIPAddress",
-			zap.Field{Key: "ipAddress", Type: zapcore.StringType, String: ipAddress},
-			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
-			zap.Field{Key: "limit", Type: zapcore.Int64Type, Integer: limit},
-		)
-		return errorLogList, nil
-	}
-}
-
-func (e *ErrorLogDaoImpl) GetErrorLogListByRequestURL(
-	requestURL string, offset, limit int64, ctx context.Context,
-) ([]models.ErrorLogModel, error) {
-	var errorLogList []models.ErrorLogModel
-	collection := e.Dao.Mongo.MongoDatabase.Collection(errorLogCollectionName)
-	err := collection.Find(ctx, bson.M{"request_url": requestURL}).Skip(offset).Limit(limit).All(&errorLogList)
-	if err != nil {
-		e.Dao.Zap.Logger.Error(
-			"ErrorLogDaoImpl.GetErrorLogListByRequestURL",
-			zap.Field{Key: "requestURL", Type: zapcore.StringType, String: requestURL},
-			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
-			zap.Field{Key: "limit", Type: zapcore.Int64Type, Integer: limit},
-			zap.Field{Key: "error", Type: zapcore.ErrorType, Interface: err},
-		)
-		return nil, err
-	} else {
-		e.Dao.Zap.Logger.Info(
-			"ErrorLogDaoImpl.GetErrorLogListByRequestURL",
-			zap.Field{Key: "requestURL", Type: zapcore.StringType, String: requestURL},
-			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
-			zap.Field{Key: "limit", Type: zapcore.Int64Type, Integer: limit},
-		)
-		return errorLogList, nil
-	}
-}
-
-func (e *ErrorLogDaoImpl) GetErrorLogListByErrorCode(
-	errorCode string, offset, limit int64, ctx context.Context,
-) ([]models.ErrorLogModel, error) {
-	var errorLogList []models.ErrorLogModel
-	collection := e.Dao.Mongo.MongoDatabase.Collection(errorLogCollectionName)
-	err := collection.Find(ctx, bson.M{"error_code": errorCode}).Skip(offset).Limit(limit).All(&errorLogList)
-	if err != nil {
-		e.Dao.Zap.Logger.Error(
-			"ErrorLogDaoImpl.GetErrorLogListByErrorCode",
-			zap.Field{Key: "errorCode", Type: zapcore.StringType, String: errorCode},
-			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
-			zap.Field{Key: "limit", Type: zapcore.Int64Type, Integer: limit},
-			zap.Field{Key: "error", Type: zapcore.ErrorType, Interface: err},
-		)
-		return nil, err
-	} else {
-		e.Dao.Zap.Logger.Info(
-			"ErrorLogDaoImpl.GetErrorLogListByErrorCode",
-			zap.Field{Key: "errorCode", Type: zapcore.StringType, String: errorCode},
-			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
-			zap.Field{Key: "limit", Type: zapcore.Int64Type, Integer: limit},
-		)
-		return errorLogList, nil
-	}
-}
-
-func (e *ErrorLogDaoImpl) GetErrorLogListByFuzzyQuery(
-	query string, offset, limit int64, ctx context.Context,
-) ([]models.ErrorLogModel, error) {
-	var errorLogList []models.ErrorLogModel
-	collection := e.Dao.Mongo.MongoDatabase.Collection(errorLogCollectionName)
-	err := collection.Find(
-		ctx, bson.M{
-			"$or": []bson.M{
-				{"user_id": bson.M{"$regex": query}},
-				{"username": bson.M{"$regex": query}},
-				{"ip_address": bson.M{"$regex": query}},
-				{"request_url": bson.M{"$regex": query}},
-				{"error_code": bson.M{"$regex": query}},
-				{"error_msg": bson.M{"$regex": query}},
-				{"stack": bson.M{"$regex": query}},
-			},
-		},
-	).Skip(offset).Limit(limit).All(&errorLogList)
-	if err != nil {
-		e.Dao.Zap.Logger.Error(
-			"ErrorLogDaoImpl.GetErrorLogListByFuzzyQuery",
-			zap.Field{Key: "query", Type: zapcore.StringType, String: query},
-			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
-			zap.Field{Key: "limit", Type: zapcore.Int64Type, Integer: limit},
-			zap.Field{Key: "error", Type: zapcore.ErrorType, Interface: err},
-		)
-		return nil, err
-	} else {
-		e.Dao.Zap.Logger.Info(
-			"ErrorLogDaoImpl.GetErrorLogListByFuzzyQuery",
-			zap.Field{Key: "query", Type: zapcore.StringType, String: query},
-			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
-			zap.Field{Key: "limit", Type: zapcore.Int64Type, Integer: limit},
-		)
-		return errorLogList, nil
-	}
 }
 
 func (e *ErrorLogDaoImpl) InsertErrorLog(
+	ctx context.Context,
 	UserID primitive.ObjectID,
 	Username, IPAddress, UserAgent, RequestURL, RequestMethod, RequestPayload, ErrorCode, ErrorMsg, Stack string,
-	ctx context.Context,
 ) (primitive.ObjectID, error) {
 	collection := e.Dao.Mongo.MongoDatabase.Collection(errorLogCollectionName)
-	errorLog := models.ErrorLogModel{
-		UserID:         UserID,
-		Username:       Username,
-		IPAddress:      IPAddress,
-		UserAgent:      UserAgent,
-		RequestURL:     RequestURL,
-		RequestMethod:  RequestMethod,
-		RequestPayload: RequestPayload,
-		ErrorCode:      ErrorCode,
-		ErrorMsg:       ErrorMsg,
-		Stack:          Stack,
-		CreatedAt:      time.Now(),
+	doc := bson.M{
+		"user_id":         UserID,
+		"username":        Username,
+		"ip_address":      IPAddress,
+		"user_agent":      UserAgent,
+		"request_url":     RequestURL,
+		"request_method":  RequestMethod,
+		"request_payload": RequestPayload,
+		"error_code":      ErrorCode,
+		"error_msg":       ErrorMsg,
+		"stack":           Stack,
+		"created_at":      time.Now(),
 	}
-	result, err := collection.InsertOne(ctx, errorLog)
+	docJSON, _ := json.Marshal(doc)
+	result, err := collection.InsertOne(ctx, doc)
 	if err != nil {
 		e.Dao.Zap.Logger.Error(
 			"ErrorLogDaoImpl.InsertErrorLog",
-			zap.Field{Key: "errorLog", Type: zapcore.ObjectMarshalerType, Interface: errorLog},
-			zap.Field{Key: "error", Type: zapcore.ErrorType, Interface: err},
+			zap.ByteString(errorLogCollectionName, docJSON), zap.Error(err),
+			zap.Error(err),
 		)
 	} else {
 		e.Dao.Zap.Logger.Info(
 			"ErrorLogDaoImpl.InsertErrorLog",
-			zap.Field{
-				Key: "errorLogID", Type: zapcore.StringType, String: result.InsertedID.(primitive.ObjectID).Hex(),
-			},
-			zap.Field{Key: "errorLog", Type: zapcore.ObjectMarshalerType, Interface: errorLog},
+			zap.ByteString(errorLogCollectionName, docJSON), zap.Error(err),
+			zap.String("errorLogID", result.InsertedID.(primitive.ObjectID).Hex()),
 		)
 	}
 	return result.InsertedID.(primitive.ObjectID), err
 }
 
-func (e *ErrorLogDaoImpl) DeleteErrorLog(errorLogID primitive.ObjectID, ctx context.Context) error {
+func (e *ErrorLogDaoImpl) DeleteErrorLog(ctx context.Context, errorLogID primitive.ObjectID) error {
 	collection := e.Dao.Mongo.MongoDatabase.Collection(errorLogCollectionName)
 	err := collection.RemoveId(ctx, errorLogID)
 	if err != nil {
 		e.Dao.Zap.Logger.Error(
 			"ErrorLogDaoImpl.DeleteErrorLog",
-			zap.Field{Key: "errorLogID", Type: zapcore.StringType, String: errorLogID.Hex()},
-			zap.Field{Key: "error", Type: zapcore.ErrorType, Interface: err},
+			zap.String("errorLogID", errorLogID.Hex()), zap.Error(err),
 		)
 	} else {
 		e.Dao.Zap.Logger.Info(
 			"ErrorLogDaoImpl.DeleteErrorLog",
-			zap.Field{Key: "errorLogID", Type: zapcore.StringType, String: errorLogID.Hex()},
+			zap.String("errorLogID", errorLogID.Hex()),
 		)
 	}
 	return err
+}
+
+func (e *ErrorLogDaoImpl) DeleteErrorLogList(
+	ctx context.Context, startTime, endTime *time.Time, userID *primitive.ObjectID,
+	ipAddress, requestURL, errorCode, query *string,
+) (*int64, error) {
+	collection := e.Dao.Mongo.MongoDatabase.Collection(errorLogCollectionName)
+	doc := bson.M{}
+	if userID != nil {
+		doc["user_id"] = *userID
+	}
+	if ipAddress != nil {
+		doc["ip_address"] = *ipAddress
+	}
+	if requestURL != nil {
+		doc["request_url"] = *requestURL
+	}
+	if errorCode != nil {
+		doc["error_code"] = *errorCode
+	}
+	if query != nil {
+		doc["$or"] = []bson.M{
+			{"user_id": bson.M{"$regex": *query}},
+			{"username": bson.M{"$regex": *query}},
+			{"ip_address": bson.M{"$regex": *query}},
+			{"request_url": bson.M{"$regex": *query}},
+			{"error_code": bson.M{"$regex": *query}},
+			{"error_msg": bson.M{"$regex": *query}},
+			{"stack": bson.M{"$regex": *query}},
+		}
+	}
+	if startTime != nil && endTime != nil {
+		doc["created_at"] = bson.M{"$gte": *startTime, "$lte": *endTime}
+	}
+	docJSON, _ := json.Marshal(doc)
+	result, err := collection.RemoveAll(ctx, doc)
+	if err != nil {
+		e.Dao.Zap.Logger.Error(
+			"ErrorLogDaoImpl.DeleteErrorLogList",
+			zap.ByteString(errorLogCollectionName, docJSON), zap.Error(err),
+		)
+		return nil, err
+	}
+	e.Dao.Zap.Logger.Info(
+		"ErrorLogDaoImpl.DeleteErrorLogList",
+		zap.ByteString(errorLogCollectionName, docJSON),
+		zap.Int64("deletedCount", result.DeletedCount),
+	)
+	return &result.DeletedCount, nil
 }
