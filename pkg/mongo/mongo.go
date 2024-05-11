@@ -2,6 +2,7 @@ package mongo
 
 import (
 	"context"
+	"sync"
 
 	"github.com/qiniu/qmgo"
 )
@@ -19,25 +20,29 @@ type Config struct {
 	databaseName string
 }
 
-var mongoInstance *Mongo // Singleton
+var (
+	mongoInstance *Mongo
+	once          sync.Once
+)
 
 func New(ctx context.Context, config *qmgo.Config, PingTimeout int64, databaseName string) (m *Mongo, err error) {
-	if mongoInstance != nil {
-		return mongoInstance, nil
-	}
-	m = &Mongo{
-		mongoConfig: &Config{
-			qmgoConfig:   config,
-			pingTimeout:  PingTimeout,
-			databaseName: databaseName,
+	once.Do(
+		func() {
+			m = &Mongo{
+				mongoConfig: &Config{
+					qmgoConfig:   config,
+					pingTimeout:  PingTimeout,
+					databaseName: databaseName,
+				},
+				ctx: ctx,
+			}
+			if err = m.Init(); err != nil {
+				return
+			}
+			mongoInstance = m
 		},
-		ctx: ctx,
-	}
-	if err := m.Init(); err != nil {
-		return nil, err
-	}
-	mongoInstance = m
-	return m, nil
+	)
+	return mongoInstance, nil
 }
 
 func (m *Mongo) Init() error {

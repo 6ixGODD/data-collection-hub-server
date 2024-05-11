@@ -18,18 +18,27 @@ type Config struct {
 	redisOptions *redis.Options
 }
 
-var redisInstance *Redis // Singleton
+var (
+	redisInstance *Redis // Singleton
+	once          sync.Once
+)
 
 func New(ctx context.Context, options *redis.Options) (r *Redis, err error) {
-	if redisInstance != nil {
-		return redisInstance, nil
-	}
-	r = &Redis{redisConfig: &Config{options}, ctx: ctx}
-	if err := r.Init(); err != nil {
-		return nil, err
-	}
-	redisInstance = r
-	return r, nil
+	once.Do(
+		func() {
+			r = &Redis{
+				redisConfig: &Config{
+					redisOptions: options,
+				},
+				ctx: ctx,
+			}
+			if err = r.Init(); err != nil {
+				return
+			}
+			redisInstance = r
+		},
+	)
+	return redisInstance, nil
 }
 
 func (r *Redis) Init() error {
