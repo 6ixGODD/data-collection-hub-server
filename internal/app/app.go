@@ -138,7 +138,7 @@ func (a *App) Init() error {
 			ModelFilePath: a.config.CasbinConfig.ModelPath,
 			PolicyAdapter: adapter,
 			Lookup: func(c *fiber.Ctx) string {
-				return c.Locals("userID").(string)
+				return c.Locals(config.KeyUserID).(string)
 			},
 		},
 	)

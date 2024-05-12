@@ -74,45 +74,39 @@ func (u *UserApi) GetUserList(c *fiber.Ctx) error {
 	}
 
 	var (
-		page                                                         *int
-		role                                                         *string
-		lastLoginBefore, lastLoginAfter, createdBefore, createdAfter *time.Time
-		err                                                          error
+		lastLoginTimeStart, lastLoginTimeEnd,
+		createdTimeStart, createdTimeEnd *time.Time
+		err error
 	)
 
-	if req.Page != nil {
-		page = req.Page
-	}
-	if req.Role != nil {
-		role = req.Role
-	}
-	if req.LastLoginBefore != nil {
-		*lastLoginBefore, err = time.Parse(time.RFC3339, *req.LastLoginBefore)
+	if req.LastLoginTimeStart != nil {
+		*lastLoginTimeStart, err = time.Parse(time.RFC3339, *req.LastLoginTimeStart)
 		if err != nil {
 			return errors.InvalidRequest(err)
 		}
 	}
-	if req.LastLoginAfter != nil {
-		*lastLoginAfter, err = time.Parse(time.RFC3339, *req.LastLoginAfter)
+	if req.LastLoginTimeEnd != nil {
+		*lastLoginTimeEnd, err = time.Parse(time.RFC3339, *req.LastLoginTimeEnd)
 		if err != nil {
 			return errors.InvalidRequest(err)
 		}
 	}
-	if req.CreatedBefore != nil {
-		*createdBefore, err = time.Parse(time.RFC3339, *req.CreatedBefore)
+	if req.CreateTimeStart != nil {
+		*createdTimeStart, err = time.Parse(time.RFC3339, *req.CreateTimeStart)
 		if err != nil {
 			return errors.InvalidRequest(err)
 		}
 	}
-	if req.CreatedAfter != nil {
-		*createdAfter, err = time.Parse(time.RFC3339, *req.CreatedAfter)
+	if req.CreateTimeEnd != nil {
+		*createdTimeEnd, err = time.Parse(time.RFC3339, *req.CreateTimeEnd)
 		if err != nil {
 			return errors.InvalidRequest(err)
 		}
 	}
 
 	resp, err := u.UserService.GetUserList(
-		c.Context(), page, role, lastLoginBefore, lastLoginAfter, createdBefore, createdAfter,
+		c.Context(), req.Page, req.PageSize, req.Desc, req.Role, lastLoginTimeStart, lastLoginTimeEnd,
+		createdTimeStart, createdTimeEnd, req.Query,
 	)
 	if err != nil {
 		return err

@@ -13,8 +13,6 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-const noticeCollectionName = "notice"
-
 type NoticeDao interface {
 	GetNoticeById(ctx context.Context, noticeID primitive.ObjectID) (*models.NoticeModel, error)
 	GetNoticeList(

@@ -2,6 +2,7 @@ package mods
 
 import (
 	"data-collection-hub-server/internal/pkg/api/v1/user"
+	"data-collection-hub-server/internal/pkg/models"
 	"github.com/gofiber/contrib/casbin"
 	"github.com/gofiber/fiber/v2"
 )
@@ -19,22 +20,22 @@ func (u *UserRouter) RegisterUserRouter(app fiber.Router, api *user.User, rbac *
 	group := app.Group(userPrefix)
 
 	group.Get(
-		"/dataStatistic", rbac.RequiresRoles([]string{"user"}), api.GetDataStatistic,
+		"/dataStatistic", rbac.RequiresRoles([]string{models.UserRoleUser}), api.GetDataStatistic,
 	)
 
 	group.Get(
-		"/instructionData", rbac.RequiresRoles([]string{"user"}), api.GetInstructionData,
+		"/instructionData", rbac.RequiresRoles([]string{models.UserRoleUser}), api.GetInstructionData,
 	)
 	group.Get(
-		"/instructionData/list", rbac.RequiresRoles([]string{"user"}), api.GetInstructionDataList,
+		"/instructionData/list", rbac.RequiresRoles([]string{models.UserRoleUser}), api.GetInstructionDataList,
 	)
 	group.Post(
-		"/instructionData", rbac.RequiresRoles([]string{"user"}), api.InsertInstructionData,
+		"/instructionData", rbac.RequiresRoles([]string{models.UserRoleUser}), api.InsertInstructionData,
 	)
 	group.Put(
-		"/instructionData", rbac.RequiresRoles([]string{"user"}), api.UpdateInstructionData,
+		"/instructionData", rbac.RequiresRoles([]string{models.UserRoleUser}), api.UpdateInstructionData,
 	)
 	group.Delete(
-		"/instructionData", rbac.RequiresRoles([]string{"user"}), api.DeleteInstructionData,
+		"/instructionData", rbac.RequiresRoles([]string{models.UserRoleUser}), api.DeleteInstructionData,
 	)
 }

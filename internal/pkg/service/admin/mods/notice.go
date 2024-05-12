@@ -5,12 +5,13 @@ import (
 
 	dao "data-collection-hub-server/internal/pkg/dal/mods"
 	"data-collection-hub-server/internal/pkg/service"
+	"data-collection-hub-server/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type NoticeService interface {
-	InsertNotice(ctx context.Context, title, content *string) error
-	UpdateNotice(ctx context.Context, noticeID *primitive.ObjectID, title, content *string) error
+	InsertNotice(ctx context.Context, title, content, noticeType *string) error
+	UpdateNotice(ctx context.Context, noticeID *primitive.ObjectID, title, content, noticeType *string) error
 	DeleteNotice(ctx context.Context, noticeID *primitive.ObjectID) error
 }
 
@@ -26,19 +27,28 @@ func NewNoticeService(s *service.Service, noticeDao dao.NoticeDao) NoticeService
 	}
 }
 
-func (n NoticeServiceImpl) InsertNotice(ctx context.Context, title, content *string) error {
-	// TODO implement me
-	panic("implement me")
+func (n NoticeServiceImpl) InsertNotice(ctx context.Context, title, content, noticeType *string) error {
+	_, err := n.noticeDao.InsertNotice(ctx, *title, *content, *noticeType)
+	if err != nil {
+		return errors.MongoError(errors.WriteError(err))
+	}
+	return nil
 }
 
 func (n NoticeServiceImpl) UpdateNotice(
-	ctx context.Context, noticeID *primitive.ObjectID, title, content *string,
+	ctx context.Context, noticeID *primitive.ObjectID, title, content, noticeType *string,
 ) error {
-	// TODO implement me
-	panic("implement me")
+	err := n.noticeDao.UpdateNotice(ctx, *noticeID, title, content, noticeType)
+	if err != nil {
+		return errors.MongoError(errors.WriteError(err))
+	}
+	return nil
 }
 
 func (n NoticeServiceImpl) DeleteNotice(ctx context.Context, noticeID *primitive.ObjectID) error {
-	// TODO implement me
-	panic("implement me")
+	err := n.noticeDao.DeleteNotice(ctx, *noticeID)
+	if err != nil {
+		return errors.MongoError(errors.WriteError(err))
+	}
+	return nil
 }

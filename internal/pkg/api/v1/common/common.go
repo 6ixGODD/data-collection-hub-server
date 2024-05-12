@@ -11,7 +11,7 @@ type Common struct {
 	*mods.NoticeApi
 }
 
-func NewCommonApi(
+func New(
 	authApi *mods.AuthApi, profileApi *mods.ProfileApi, documentationApi *mods.DocumentationApi,
 	noticeApi *mods.NoticeApi,
 ) *Common {

@@ -3,22 +3,9 @@ package zap
 import (
 	"context"
 
+	"data-collection-hub-server/internal/pkg/config"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-)
-
-const (
-	MainTag      = "MAIN"
-	SystemTag    = "SYSTEM"
-	MongoTag     = "MONGO"
-	RequestTag   = "REQUEST"
-	LoginTag     = "LOGIN"
-	OperationTag = "OPERATION"
-
-	tag       = "TAG"
-	requestID = "REQUEST_ID"
-	userID    = "USER_ID"
-	operation = "OPERATION"
 )
 
 var zapInstance *Zap
@@ -72,16 +59,13 @@ func (z *Zap) Init() error {
 func (z *Zap) GetLogger(ctx context.Context) (logger *zap.Logger, err error) {
 	var fields []zap.Field
 	if tag := z.getTagFromContext(ctx); tag != "" {
-		fields = append(fields, zap.String("tag", tag))
+		fields = append(fields, zap.String("tagKey", tag))
 	}
 	if reqID := z.getRequestIDFromContext(ctx); reqID != "" {
-		fields = append(fields, zap.String("reqID", reqID))
+		fields = append(fields, zap.String("requestID", reqID))
 	}
 	if userID := z.getUserIDFromContext(ctx); userID != "" {
 		fields = append(fields, zap.String("userID", userID))
-	}
-	if operation := z.getOperationFromContext(ctx); operation != "" {
-		fields = append(fields, zap.String("operation", operation))
 	}
 	if z.Logger == nil {
 		if err := z.Init(); err != nil {
@@ -96,7 +80,7 @@ func (z *Zap) SetTagInContext(ctx context.Context, tag string) context.Context {
 }
 
 func (z *Zap) getTagFromContext(ctx context.Context) string {
-	if tag := ctx.Value(tag); tag != nil {
+	if tag := ctx.Value(tagKey); tag != nil {
 		if tagStr, ok := tag.(string); ok {
 			return tagStr
 		}
@@ -109,7 +93,7 @@ func (z *Zap) SetRequestIDInContext(ctx context.Context, requestID string) conte
 }
 
 func (z *Zap) getRequestIDFromContext(ctx context.Context) string {
-	if requestID := ctx.Value(requestID); requestID != nil {
+	if requestID := ctx.Value(config.KeyRequestID); requestID != nil {
 		if requestID, ok := requestID.(string); ok {
 			return requestID
 		}
@@ -122,22 +106,9 @@ func (z *Zap) SetUserIDWithContext(ctx context.Context, userID string) context.C
 }
 
 func (z *Zap) getUserIDFromContext(ctx context.Context) string {
-	if userID := ctx.Value(userID); userID != nil {
+	if userID := ctx.Value(config.KeyUserID); userID != nil {
 		if userID, ok := userID.(string); ok {
 			return userID
-		}
-	}
-	return ""
-}
-
-func (z *Zap) SetOperationWithContext(ctx context.Context, operation string) context.Context {
-	return context.WithValue(ctx, operation, operation)
-}
-
-func (z *Zap) getOperationFromContext(ctx context.Context) string {
-	if operation := ctx.Value(operation); operation != nil {
-		if operation, ok := operation.(string); ok {
-			return operation
 		}
 	}
 	return ""

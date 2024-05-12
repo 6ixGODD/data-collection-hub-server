@@ -2,38 +2,38 @@ package admin
 
 type (
 	GetDataStatisticResponse struct {
-		Total              int                  `json:"total"`
-		PendingCount       int                  `json:"pending_count"`
-		ApprovedCount      int                  `json:"approved_count"`
-		RejectedCount      int                  `json:"rejected_count"`
-		ThemeCount         map[string]int       `json:"theme_count"`
-		TimeRangeStatistic []timeRangeStatistic `json:"time_range_statistic"`
+		Total              int64                 `json:"total"`
+		PendingCount       int64                 `json:"pending_count"`
+		ApprovedCount      int64                 `json:"approved_count"`
+		RejectedCount      int64                 `json:"rejected_count"`
+		ThemeCount         map[string]int64      `json:"theme_count"`
+		TimeRangeStatistic []*TimeRangeStatistic `json:"time_range_statistic"`
 	}
 
-	timeRangeStatistic struct {
-		Date          string         `json:"date"`
-		Total         int            `json:"total"`
-		PendingCount  int            `json:"pending_count"`
-		ApprovedCount int            `json:"approved_count"`
-		RejectedCount int            `json:"rejected_count"`
-		ThemeCount    map[string]int `json:"theme_count"`
+	TimeRangeStatistic struct {
+		Date          string           `json:"date"`
+		Total         int64            `json:"total"`
+		PendingCount  int64            `json:"pending_count"`
+		ApprovedCount int64            `json:"approved_count"`
+		RejectedCount int64            `json:"rejected_count"`
+		ThemeCount    map[string]int64 `json:"theme_count"`
 	}
 
 	GetUserStatisticResponse struct {
 		Username string        `json:"username"`
-		Data     userStatistic `json:"data"`
+		Data     UserStatistic `json:"data"`
 	}
 
-	userStatistic struct {
-		Total         int `json:"total"`
-		PendingCount  int `json:"pending_count"`
-		ApprovedCount int `json:"approved_count"`
-		RejectedCount int `json:"rejected_count"`
+	UserStatistic struct {
+		Total         int64 `json:"total"`
+		PendingCount  int64 `json:"pending_count"`
+		ApprovedCount int64 `json:"approved_count"`
+		RejectedCount int64 `json:"rejected_count"`
 	}
 
 	GetUserStatisticListResponse struct {
-		Total             int                        `json:"total"`
-		UserStatisticList []GetUserStatisticResponse `json:"user_statistic_list"`
+		Total             int64                       `json:"total"`
+		UserStatisticList []*GetUserStatisticResponse `json:"user_statistic_list"`
 	}
 
 	GetInstructionDataResponse struct {
@@ -57,13 +57,12 @@ type (
 	}
 
 	GetInstructionDataListResponse struct {
-		Total               int                          `json:"total"`
-		InstructionDataList []GetInstructionDataResponse `json:"instruction_data_list"`
+		Total               int64                         `json:"total"`
+		InstructionDataList []*GetInstructionDataResponse `json:"instruction_data_list"`
 	}
 
 	GetUserResponse struct {
 		UserID       string `json:"_id"`
-		UUID         string `json:"uuid"`
 		Username     string `json:"username"`
 		Email        string `json:"email"`
 		Password     string `json:"password"`
@@ -75,8 +74,8 @@ type (
 	}
 
 	GetUserListResponse struct {
-		Total    int               `json:"total"`
-		UserList []GetUserResponse `json:"user_list"`
+		Total    int64              `json:"total"`
+		UserList []*GetUserResponse `json:"user_list"`
 	}
 
 	GetLoginLogResponse struct {
@@ -90,8 +89,8 @@ type (
 	}
 
 	GetLoginLogListResponse struct {
-		Total        int                   `json:"total"`
-		LoginLogList []GetLoginLogResponse `json:"login_log_list"`
+		Total        int64                  `json:"total"`
+		LoginLogList []*GetLoginLogResponse `json:"login_log_list"`
 	}
 
 	GetOperationLogResponse struct {
@@ -102,13 +101,13 @@ type (
 		IPAddress      string `json:"ip_address"`
 		UserAgent      string `json:"user_agent"`
 		Operation      string `json:"operation"`
-		EntityUUID     string `json:"entity_uuid"`
+		EntityID       string `json:"entity_id"`
 		CreatedAt      string `json:"created_at"`
 	}
 
 	GetOperationLogListResponse struct {
-		Total            int                       `json:"total"`
-		OperationLogList []GetOperationLogResponse `json:"operation_log_list"`
+		Total            int64                      `json:"total"`
+		OperationLogList []*GetOperationLogResponse `json:"operation_log_list"`
 	}
 
 	GetErrorLogResponse struct {
@@ -117,7 +116,7 @@ type (
 		Username       string `json:"username"`
 		IPAddress      string `json:"ip_address"`
 		UserAgent      string `json:"user_agent"`
-		RequestURI     string `json:"request_uri"`
+		RequestURL     string `json:"request_uri"`
 		RequestMethod  string `json:"request_method"`
 		RequestPayload string `json:"request_payload"`
 		ErrorCode      string `json:"error_code"`
@@ -127,7 +126,7 @@ type (
 	}
 
 	GetErrorLogListResponse struct {
-		Total        int                   `json:"total"`
-		ErrorLogList []GetErrorLogResponse `json:"error_log_list"`
+		Total        int64                  `json:"total"`
+		ErrorLogList []*GetErrorLogResponse `json:"error_log_list"`
 	}
 )

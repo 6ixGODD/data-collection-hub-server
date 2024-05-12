@@ -8,7 +8,9 @@ import (
 
 	"data-collection-hub-server/internal/app"
 	"data-collection-hub-server/internal/pkg/api/v1"
-	apis "data-collection-hub-server/internal/pkg/api/v1/modules"
+	adminapi "data-collection-hub-server/internal/pkg/api/v1/admin"
+	commonapi "data-collection-hub-server/internal/pkg/api/v1/common"
+	userapi "data-collection-hub-server/internal/pkg/api/v1/user"
 	"data-collection-hub-server/internal/pkg/dal"
 	dao "data-collection-hub-server/internal/pkg/dal/mods"
 	"data-collection-hub-server/internal/pkg/service"
@@ -70,12 +72,12 @@ var MiddlewareSet = wire.NewSet(
 
 var ApiSet = wire.NewSet(
 	api.New,
-	apis.NewAdminApi,
-	apis.NewUserApi,
-	apis.NewCommonApi,
+	adminapi.New,
+	userapi.New,
+	commonapi.New,
 )
 
-func InitializeApp(ctx context.Context) (*app.App, error) {
+func InitializeApp(ctx context.Context) *app.App {
 	panic(
 		wire.Build(
 			mongo.New,

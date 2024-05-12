@@ -12,8 +12,6 @@ import (
 	"go.uber.org/zap"
 )
 
-const loginLogCollectionName = "login_log"
-
 type LoginLogDao interface {
 	GetLoginLogById(ctx context.Context, loginLogID primitive.ObjectID) (*models.LoginLogModel, error)
 	GetLoginLogList(

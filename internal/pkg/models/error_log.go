@@ -16,7 +16,7 @@ type ErrorLogModel struct {
 	RequestMethod  string             `json:"request_method" bson:"request_method"`   // Request Method
 	RequestPayload string             `json:"request_payload" bson:"request_payload"` // Request Payload
 	ErrorCode      string             `json:"error_code" bson:"error_code"`           // Error Code, e.g. '500', '502'
-	ErrorMsg       string             `json:"error_msg" bson:"error_msg"`             // Error Error
+	ErrorMsg       string             `json:"error_msg" bson:"error_msg"`             // Error Message
 	Stack          string             `json:"stack" bson:"stack"`                     // Error Stack Trace
 	CreatedAt      time.Time          `json:"created_at" bson:"created_at"`           // Created Time
 }

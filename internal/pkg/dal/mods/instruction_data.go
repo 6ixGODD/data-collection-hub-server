@@ -13,16 +13,19 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-const instructionDataCollectionName = "instruction_data"
-
 type InstructionDataDao interface {
 	GetInstructionDataById(
 		ctx context.Context, instructionDataID *primitive.ObjectID,
 	) (*models.InstructionDataModel, error)
 	GetInstructionDataList(
 		ctx context.Context, offset, limit int64, desc bool, userID *primitive.ObjectID, theme, statusCode *string,
-		createTimeStart, createTimeEnd, updateTimeStart, updateTimeEnd *time.Time, fuzzyQuery *string,
+		createTimeStart, createTimeEnd, updateTimeStart, updateTimeEnd *time.Time, query *string,
 	) ([]models.InstructionDataModel, *int64, error)
+	CountInstructionData(
+		ctx context.Context, userID *primitive.ObjectID, theme, statusCode *string,
+		createTimeStart, createTimeEnd, updateTimeStart, updateTimeEnd *time.Time,
+	) (*int64, error)
+	AggregateCountInstructionData(ctx context.Context, groupBy *string) (map[string]int64, error)
 	InsertInstructionData(
 		ctx context.Context,
 		userID primitive.ObjectID,
@@ -30,7 +33,7 @@ type InstructionDataDao interface {
 	) (primitive.ObjectID, error)
 	UpdateInstructionData(
 		ctx context.Context, instructionDataID primitive.ObjectID, userID *primitive.ObjectID,
-		username, rowInstruction, rowInput, rowOutput, theme, source, note, statusCode, statusMessage *string,
+		rowInstruction, rowInput, rowOutput, theme, source, note, statusCode, statusMessage *string,
 	) error
 	SoftDeleteInstructionData(ctx context.Context, instructionDataID primitive.ObjectID) error
 	SoftDeleteInstructionDataList(
@@ -44,11 +47,14 @@ type InstructionDataDao interface {
 	) (*int64, error)
 }
 
-type InstructionDataDaoImpl struct{ *dal.Dao }
+type InstructionDataDaoImpl struct {
+	Dao     *dal.Dao
+	UserDao UserDao
+}
 
-func NewInstructionDataDao(dao *dal.Dao) InstructionDataDao {
+func NewInstructionDataDao(dao *dal.Dao, userDao UserDao) InstructionDataDao {
 	var _ InstructionDataDao = (*InstructionDataDaoImpl)(nil) // Ensure that the interface is implemented
-	return &InstructionDataDaoImpl{dao}
+	return &InstructionDataDaoImpl{dao, userDao}
 }
 
 func (i *InstructionDataDaoImpl) GetInstructionDataById(
@@ -76,7 +82,7 @@ func (i *InstructionDataDaoImpl) GetInstructionDataById(
 func (i *InstructionDataDaoImpl) GetInstructionDataList(
 	ctx context.Context, offset, limit int64, desc bool, userID *primitive.ObjectID,
 	theme, statusCode *string,
-	createTimeStart, createTimeEnd, updateTimeStart, updateTimeEnd *time.Time, fuzzyQuery *string,
+	createTimeStart, createTimeEnd, updateTimeStart, updateTimeEnd *time.Time, query *string,
 ) ([]models.InstructionDataModel, *int64, error) {
 	var instructionDataList []models.InstructionDataModel
 	var err error
@@ -98,8 +104,8 @@ func (i *InstructionDataDaoImpl) GetInstructionDataList(
 	if updateTimeStart != nil && updateTimeEnd != nil {
 		doc["updated_time"] = bson.M{"$gte": *updateTimeStart, "$lte": *updateTimeEnd}
 	}
-	if fuzzyQuery != nil {
-		doc["$text"] = bson.M{"$search": *fuzzyQuery}
+	if query != nil {
+		doc["$text"] = bson.M{"$search": *query}
 	}
 	docJSON, _ := json.Marshal(doc)
 
@@ -132,6 +138,76 @@ func (i *InstructionDataDaoImpl) GetInstructionDataList(
 		zap.ByteString(instructionDataCollectionName, docJSON), zap.Int64("count", count),
 	)
 	return instructionDataList, &count, nil
+}
+
+func (i *InstructionDataDaoImpl) CountInstructionData(
+	ctx context.Context, userID *primitive.ObjectID, theme, statusCode *string,
+	createTimeStart, createTimeEnd, updateTimeStart, updateTimeEnd *time.Time,
+) (*int64, error) {
+	collection := i.Dao.Mongo.MongoDatabase.Collection(instructionDataCollectionName)
+	doc := bson.M{"deleted": false}
+	if userID != nil {
+		doc["user_id"] = *userID
+	}
+	if theme != nil {
+		doc["theme"] = *theme
+	}
+	if statusCode != nil {
+		doc["status_code"] = *statusCode
+	}
+	if createTimeStart != nil && createTimeEnd != nil {
+		doc["created_time"] = bson.M{"$gte": *createTimeStart, "$lte": *createTimeEnd}
+	}
+	if updateTimeStart != nil && updateTimeEnd != nil {
+		doc["updated_time"] = bson.M{"$gte": *updateTimeStart, "$lte": *updateTimeEnd}
+	}
+	docJSON, _ := json.Marshal(doc)
+
+	count, err := collection.Find(ctx, doc).Count()
+	if err != nil {
+		i.Dao.Zap.Logger.Error(
+			"InstructionDataDaoImpl.CountInstructionData",
+			zap.ByteString(instructionDataCollectionName, docJSON),
+			zap.Error(err),
+		)
+	} else {
+		i.Dao.Zap.Logger.Info(
+			"InstructionDataDaoImpl.CountInstructionData",
+			zap.ByteString(instructionDataCollectionName, docJSON),
+			zap.Int64("count", count),
+		)
+	}
+	return &count, err
+}
+
+func (i *InstructionDataDaoImpl) AggregateCountInstructionData(
+	ctx context.Context, groupBy *string,
+) (map[string]int64, error) {
+	collection := i.Dao.Mongo.MongoDatabase.Collection(instructionDataCollectionName)
+	pipeline := []bson.M{
+		{"$match": bson.M{"deleted": false}},
+		{"$group": bson.M{"_id": "$" + *groupBy, "count": bson.M{"$sum": 1}}},
+	}
+	cursor := collection.Aggregate(ctx, pipeline)
+	var result []bson.M
+	if err := cursor.All(&result); err != nil {
+		i.Dao.Zap.Logger.Error(
+			"InstructionDataDaoImpl.AggregateCountGetInstructionData",
+			zap.String("groupBy", *groupBy),
+			zap.Error(err),
+		)
+		return nil, err
+	}
+	countMap := make(map[string]int64, len(result))
+	for _, item := range result {
+		countMap[item["_id"].(string)] = item["count"].(int64)
+	}
+	i.Dao.Zap.Logger.Info(
+		"InstructionDataDaoImpl.AggregateCountGetInstructionData",
+		zap.String("groupBy", *groupBy),
+		zap.Any("countMap", countMap),
+	)
+	return countMap, nil
 }
 
 func (i *InstructionDataDaoImpl) InsertInstructionData(
@@ -181,15 +257,23 @@ func (i *InstructionDataDaoImpl) InsertInstructionData(
 func (i *InstructionDataDaoImpl) UpdateInstructionData(
 	ctx context.Context,
 	instructionDataID primitive.ObjectID, userID *primitive.ObjectID,
-	username, rowInstruction, rowInput, rowOutput, theme, source, note, statusCode, statusMessage *string,
+	rowInstruction, rowInput, rowOutput, theme, source, note, statusCode, statusMessage *string,
 ) error {
 	collection := i.Dao.Mongo.MongoDatabase.Collection(instructionDataCollectionName)
 	doc := bson.M{"updated_at": time.Now()}
 	if userID != nil {
 		doc["user_id"] = *userID
-	}
-	if username != nil {
-		doc["username"] = *username
+		user, err := i.UserDao.GetUserById(ctx, *userID)
+		if err != nil {
+			i.Dao.Zap.Logger.Error(
+				"InstructionDataDaoImpl.UpdateInstructionData",
+				zap.String("instructionDataID", instructionDataID.Hex()),
+				zap.String("userID", userID.Hex()),
+				zap.Error(err),
+			)
+			return err
+		}
+		doc["username"] = user.Username
 	}
 	if rowInstruction != nil {
 		doc["row.instruction"] = *rowInstruction

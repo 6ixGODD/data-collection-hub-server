@@ -2,29 +2,30 @@ package user
 
 type (
 	GetDataStatisticRequest struct {
-		StartDate *string `json:"start_date" validate:"datetime"`
-		EndDate   *string `json:"end_date" validate:"datetime"`
+		StartDate *string `query:"start_date" validate:"datetime"`
+		EndDate   *string `query:"end_date" validate:"datetime"`
 	}
 
 	GetInstructionDataRequest struct {
-		InstructionDataID *string `json:"instruction_data_id" validate:"required,mongodb"`
+		InstructionDataID *string `query:"instruction_data_id" validate:"required,mongodb"`
 	}
 
 	GetInstructionDataListRequest struct {
-		Page         *int    `json:"page" validate:"required,numeric"`
-		UpdateBefore *string `json:"update_before" validate:"datetime"`
-		UpdateAfter  *string `json:"update_after" validate:"datetime"`
-		Theme        *string `json:"theme" validate:""`
-		Status       *string `json:"status" validate:""`
+		Page            *int64  `query:"page" validate:"required,numeric,min=1"`
+		PageSize        *int64  `query:"page_size" validate:"required,numeric,min=1,max=100"`
+		UpdateStartTime *string `query:"update_start_time" validate:"datetime"`
+		UpdateEndTime   *string `query:"update_end_time" validate:"datetime"`
+		Theme           *string `query:"theme" validate:""`
+		Status          *string `query:"status" validate:""`
 	}
 
 	InsertInstructionDataRequest struct {
-		Instruction *string `json:"instruction" validate:"required"`
-		Input       *string `json:"input" validate:"required"`
-		Output      *string `json:"output" validate:"required"`
+		Instruction *string `json:"instruction" validate:"required,max=1000"`
+		Input       *string `json:"input" validate:"required,max=1000"`
+		Output      *string `json:"output" validate:"required,max=1000"`
 		Theme       *string `json:"theme" validate:"required"`
-		Source      *string `json:"source" validate:"required"`
-		Note        *string `json:"note" validate:""`
+		Source      *string `json:"source" validate:"required,max=1000"`
+		Note        *string `json:"note" validate:"omitempty,max=1000"`
 	}
 
 	UpdateInstructionDataRequest struct {

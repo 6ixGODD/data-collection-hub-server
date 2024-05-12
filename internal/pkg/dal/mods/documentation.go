@@ -12,8 +12,6 @@ import (
 	"go.uber.org/zap"
 )
 
-const documentationCollectionName = "documentation"
-
 // DocumentationDao defines the crud methods that the infrastructure layer should implement
 type DocumentationDao interface {
 	GetDocumentationById(ctx context.Context, documentationId primitive.ObjectID) (*models.DocumentationModel, error)

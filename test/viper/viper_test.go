@@ -1,4 +1,4 @@
-package viper_test
+package viper__test
 
 import (
 	"encoding/json"

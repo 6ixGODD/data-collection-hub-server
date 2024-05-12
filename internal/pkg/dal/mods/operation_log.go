@@ -13,8 +13,6 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-const operationLogCollectionName = "operation_log"
-
 type OperationLogDao interface {
 	GetOperationLogById(ctx context.Context, operationLogID primitive.ObjectID) (*models.OperationLogModel, error)
 	GetOperationLogList(

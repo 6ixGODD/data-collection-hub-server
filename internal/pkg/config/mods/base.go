@@ -8,6 +8,4 @@ type BaseConfig struct {
 	EnableTls   bool   `mapstructure:"enable_tls" yaml:"enable_tls" default:"false"`
 	TlsCertFile string `mapstructure:"cert_file" yaml:"cert_file" default:""`
 	TlsKeyFile  string `mapstructure:"key_file" yaml:"key_file" default:""`
-
-	PageLimit int `mapstructure:"page_limit" yaml:"page_limit" default:"10"` // PageLimit is the default page limit for pagination.
 }

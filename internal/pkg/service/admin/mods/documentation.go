@@ -5,6 +5,7 @@ import (
 
 	dao "data-collection-hub-server/internal/pkg/dal/mods"
 	"data-collection-hub-server/internal/pkg/service"
+	"data-collection-hub-server/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -27,18 +28,27 @@ func NewDocumentationService(s *service.Service, documentationDao dao.Documentat
 }
 
 func (d DocumentationServiceImpl) InsertDocumentation(ctx context.Context, title, content *string) error {
-	// TODO implement me
-	panic("implement me")
+	_, err := d.documentationDao.InsertDocumentation(ctx, *title, *content)
+	if err != nil {
+		return errors.MongoError(errors.WriteError(err))
+	}
+	return nil
 }
 
 func (d DocumentationServiceImpl) UpdateDocumentation(
 	ctx context.Context, documentationID *primitive.ObjectID, title, content *string,
 ) error {
-	// TODO implement me
-	panic("implement me")
+	err := d.documentationDao.UpdateDocumentation(ctx, *documentationID, title, content)
+	if err != nil {
+		return errors.MongoError(errors.WriteError(err))
+	}
+	return nil
 }
 
 func (d DocumentationServiceImpl) DeleteDocumentation(ctx context.Context, documentationID *primitive.ObjectID) error {
-	// TODO implement me
-	panic("implement me")
+	err := d.documentationDao.DeleteDocumentation(ctx, *documentationID)
+	if err != nil {
+		return errors.MongoError(errors.WriteError(err))
+	}
+	return nil
 }

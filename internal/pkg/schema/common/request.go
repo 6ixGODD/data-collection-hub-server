@@ -12,7 +12,7 @@ type (
 
 	ChangePasswordRequest struct {
 		OldPassword *string `json:"old_password" validate:"required"`
-		NewPassword *string `json:"new_password" validate:"required, min=8, max=20"`
+		NewPassword *string `json:"new_password" validate:"required,min=8,max=20"`
 	}
 
 	GetNoticeRequest struct {
@@ -20,10 +20,11 @@ type (
 	}
 
 	GetNoticeListRequest struct {
-		Page         *int    `json:"page" validate:"required,numeric"`
-		NoticeType   *string `json:"notice_type" validate:""`
-		UpdateBefore *string `json:"update_before" validate:"datetime"`
-		UpdateAfter  *string `json:"update_after" validate:"datetime"`
+		Page            *int64  `json:"page" validate:"required,numeric,min=1"`
+		PageSize        *int64  `json:"page_size" validate:"required,numeric,min=1,max=100"`
+		NoticeType      *string `json:"notice_type" validate:""`
+		UpdateStartTime *string `json:"update_start_time" validate:"datetime"`
+		UpdateEndTime   *string `json:"update_end_time" validate:"datetime"`
 	}
 
 	GetDocumentationRequest struct {
@@ -31,8 +32,9 @@ type (
 	}
 
 	GetDocumentationListRequest struct {
-		Page         *int    `json:"page" validate:"required,numeric"`
-		UpdateBefore *string `json:"update_before" validate:"datetime"`
-		UpdateAfter  *string `json:"update_after" validate:"datetime"`
+		Page            *int64  `json:"page" validate:"required,numeric,min=1"`
+		PageSize        *int64  `json:"page_size" validate:"required,numeric,min=1,max=100"`
+		UpdateStartTime *string `json:"update_start_time" validate:"datetime"`
+		UpdateEndTime   *string `json:"update_end_time" validate:"datetime"`
 	}
 )

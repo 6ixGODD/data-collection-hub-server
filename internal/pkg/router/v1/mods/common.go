@@ -2,6 +2,7 @@ package mods
 
 import (
 	"data-collection-hub-server/internal/pkg/api/v1/common"
+	"data-collection-hub-server/internal/pkg/models"
 	"github.com/gofiber/contrib/casbin"
 	"github.com/gofiber/fiber/v2"
 )
@@ -20,33 +21,17 @@ func (c *CommonRouter) RegisterCommonRouter(
 ) {
 	group := app.Group(commonPrefix)
 
-	group.Post(
-		"/login", api.Login,
-	)
-	group.Post(
-		"/logout", api.Logout,
-	)
-	group.Get(
-		"/refreshToken", api.RefreshToken,
-	)
-	group.Get(
-		"/profile", rbac.RequiresRoles([]string{"admin", "user"}), api.GetProfile,
-	)
+	group.Post("/login", api.Login)
+	group.Post("/logout", api.Logout)
+	group.Get("/refreshToken", api.RefreshToken)
+	group.Get("/profile", rbac.RequiresRoles([]string{models.UserRoleAdmin, models.UserRoleUser}), api.GetProfile)
 	group.Put(
-		"/changePassword", rbac.RequiresRoles([]string{"admin", "user"}), api.ChangePassword,
+		"/changePassword", rbac.RequiresRoles([]string{models.UserRoleAdmin, models.UserRoleUser}), api.ChangePassword,
 	)
 
-	group.Get(
-		"/notice", api.GetNotice,
-	)
-	group.Get(
-		"/notice/list", api.GetNoticeList,
-	)
+	group.Get("/notice", api.GetNotice)
+	group.Get("/notice/list", api.GetNoticeList)
 
-	group.Get(
-		"/documentation", api.GetDocumentation,
-	)
-	group.Get(
-		"/documentation/list", api.GetDocumentationList,
-	)
+	group.Get("/documentation", api.GetDocumentation)
+	group.Get("/documentation/list", api.GetDocumentationList)
 }

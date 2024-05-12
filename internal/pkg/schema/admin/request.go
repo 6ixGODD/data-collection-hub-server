@@ -11,11 +11,12 @@ type (
 	}
 
 	GetUserStatisticListRequest struct {
-		Page            *int    `query:"page" validate:"required,numeric"`
-		LastLoginBefore *string `query:"last_login_before" validate:"datetime"`
-		LastLoginAfter  *string `query:"last_login_after" validate:"datetime"`
-		CreatedBefore   *string `query:"created_before" validate:"datetime"`
-		CreatedAfter    *string `query:"created_after" validate:"datetime"`
+		Page               *int64  `query:"page" validate:"required,numeric,min=1"`
+		PageSize           *int64  `query:"page_size" validate:"required,numeric,min=1,max=100"`
+		LastLoginStartTime *string `query:"last_login_start_time" validate:"datetime"`
+		LastLoginEndTime   *string `query:"last_login_end_time" validate:"datetime"`
+		CreateStartTime    *string `query:"create_start_time" validate:"datetime"`
+		CreateEndTime      *string `query:"create_end_time" validate:"datetime"`
 	}
 
 	GetInstructionDataRequest struct {
@@ -23,13 +24,17 @@ type (
 	}
 
 	GetInstructionDataListRequest struct {
-		Page         *int    `query:"page" validate:"required,numeric"`
-		Desc         *bool   `query:"desc" validate:""`
-		UserID       *string `query:"user_id" validate:"mongodb"`
-		UpdateBefore *string `query:"update_before" validate:"datetime"`
-		UpdateAfter  *string `query:"update_after" validate:"datetime"`
-		Theme        *string `query:"theme" validate:""`
-		Status       *string `query:"status" validate:""`
+		Page            *int64  `query:"page" validate:"required,numeric,min=1"`
+		PageSize        *int64  `query:"page_size" validate:"required,numeric,min=1,max=100"`
+		Desc            *bool   `query:"desc" validate:""`
+		UserID          *string `query:"user_id" validate:"mongodb"`
+		CreateStartTime *string `query:"create_start_time" validate:"datetime"`
+		CreateEndTime   *string `query:"create_end_time" validate:"datetime"`
+		UpdateStartTime *string `query:"update_start_time" validate:"datetime"`
+		UpdateEndTime   *string `query:"update_end_time" validate:"datetime"`
+		Theme           *string `query:"theme" validate:""`
+		Status          *string `query:"status" validate:""`
+		Query           *string `query:"query" validate:""`
 	}
 
 	ApproveInstructionDataRequest struct {
@@ -43,11 +48,12 @@ type (
 
 	UpdateInstructionDataRequest struct {
 		InstructionDataID *string `json:"instruction_data_id" validate:"required"`
-		Instruction       *string `json:"instruction" validate:"required"`
-		Input             *string `json:"input" validate:"required"`
-		Output            *string `json:"output" validate:"required"`
-		Theme             *string `json:"theme" validate:"required"`
-		Source            *string `json:"source" validate:"required"`
+		UserID            *string `json:"user_id" validate:""`
+		Instruction       *string `json:"instruction" validate:""`
+		Input             *string `json:"input" validate:""`
+		Output            *string `json:"output" validate:""`
+		Theme             *string `json:"theme" validate:""`
+		Source            *string `json:"source" validate:""`
 		Note              *string `json:"note" validate:""`
 	}
 
@@ -85,12 +91,15 @@ type (
 	}
 
 	GetUserListRequest struct {
-		Page            *int    `query:"page" validate:"required"`
-		Role            *string `query:"role" validate:""`
-		LastLoginBefore *string `query:"last_login_before" validate:"datetime"`
-		LastLoginAfter  *string `query:"last_login_after" validate:"datetime"`
-		CreatedBefore   *string `query:"created_before" validate:"datetime"`
-		CreatedAfter    *string `query:"created_after" validate:"datetime"`
+		Page               *int64  `query:"page" validate:"required,numeric,min=1"`
+		PageSize           *int64  `query:"page_size" validate:"required,numeric,min=1,max=100"`
+		Desc               *bool   `query:"desc" validate:""`
+		Role               *string `query:"role" validate:""`
+		LastLoginTimeStart *string `query:"last_login_start_time" validate:"datetime"`
+		LastLoginTimeEnd   *string `query:"last_login_end_time" validate:"datetime"`
+		CreateTimeStart    *string `query:"create_start_time" validate:"datetime"`
+		CreateTimeEnd      *string `query:"create_end_time" validate:"datetime"`
+		Query              *string `query:"query" validate:""`
 	}
 
 	UpdateUserRequest struct {
@@ -130,10 +139,12 @@ type (
 	}
 
 	GetLoginLogListRequest struct {
-		Page          *int    `query:"page" validate:"required,numeric"`
-		Query         *string `query:"query" validate:""`
-		CreatedBefore *string `query:"created_before" validate:"datetime"`
-		CreatedAfter  *string `query:"created_after" validate:"datetime"`
+		Page            *int64  `query:"page" validate:"required,numeric,min=1"`
+		PageSize        *int64  `query:"page_size" validate:"required,numeric,min=1,max=100"`
+		Desc            *bool   `query:"desc" validate:""`
+		Query           *string `query:"query" validate:""`
+		CreateStartTime *string `query:"create_start_time" validate:"datetime"`
+		CreateEndTime   *string `query:"create_end_time" validate:"datetime"`
 	}
 
 	GetOperationLogRequest struct {
@@ -141,11 +152,13 @@ type (
 	}
 
 	GetOperationLogListRequest struct {
-		Page          *int    `query:"page" validate:"required,numeric"`
-		Query         *string `query:"query" validate:""`
-		Operation     *string `query:"operation" validate:""`
-		CreatedBefore *string `query:"created_before" validate:"datetime"`
-		CreatedAfter  *string `query:"created_after" validate:"datetime"`
+		Page            *int64  `query:"page" validate:"required,numeric,min=1"`
+		PageSize        *int64  `query:"page_size" validate:"required,numeric,min=1,max=100"`
+		Desc            *bool   `query:"desc" validate:""`
+		Query           *string `query:"query" validate:""`
+		Operation       *string `query:"operation" validate:""`
+		CreateStartTime *string `query:"create_start_time" validate:"datetime"`
+		CreateEndTime   *string `query:"create_end_time" validate:"datetime"`
 	}
 
 	GetErrorLogRequest struct {
@@ -153,10 +166,12 @@ type (
 	}
 
 	GetErrorLogListRequest struct {
-		Page          *int    `query:"page" validate:"required,numeric"`
-		RequestURL    *string `query:"request_url" validate:""`
-		ErrorCode     *int    `query:"error_code" validate:""`
-		CreatedBefore *string `query:"created_before" validate:"datetime"`
-		CreatedAfter  *string `query:"created_after" validate:"datetime"`
+		Page            *int64  `query:"page" validate:"required,numeric"`
+		PageSize        *int64  `query:"page_size" validate:"required,numeric,min=1,max=100"`
+		Desc            *bool   `query:"desc" validate:""`
+		RequestURL      *string `query:"request_url" validate:""`
+		ErrorCode       *string `query:"error_code" validate:""`
+		CreateStartTime *string `query:"create_start_time" validate:"datetime"`
+		CreateEndTime   *string `query:"create_end_time" validate:"datetime"`
 	}
 )

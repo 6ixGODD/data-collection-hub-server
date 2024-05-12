@@ -24,7 +24,7 @@ func (api *NoticeApi) InsertNotice(c *fiber.Ctx) error {
 		return errors.InvalidRequest(err)
 	}
 
-	err := api.NoticeService.InsertNotice(c.Context(), req.Title, req.Content)
+	err := api.NoticeService.InsertNotice(c.Context(), req.Title, req.Content, req.NoticeType)
 	if err != nil {
 		return err
 	}
@@ -49,7 +49,7 @@ func (api *NoticeApi) UpdateNotice(c *fiber.Ctx) error {
 	if err != nil {
 		return errors.InvalidRequest(err)
 	}
-	err = api.NoticeService.UpdateNotice(c.Context(), &noticeID, req.Title, req.Content)
+	err = api.NoticeService.UpdateNotice(c.Context(), &noticeID, req.Title, req.Content, req.NoticeType)
 	if err != nil {
 		return err
 	}

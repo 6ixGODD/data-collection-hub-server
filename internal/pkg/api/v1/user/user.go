@@ -9,6 +9,6 @@ type User struct {
 	*mods.StatisticApi
 }
 
-func NewUser(datasetApi *mods.DatasetApi, statisticApi *mods.StatisticApi) User {
+func New(datasetApi *mods.DatasetApi, statisticApi *mods.StatisticApi) User {
 	return User{datasetApi, statisticApi}
 }

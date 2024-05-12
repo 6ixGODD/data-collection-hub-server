@@ -55,20 +55,22 @@ func (d DocumentationApi) GetDocumentationList(c *fiber.Ctx) error {
 		err                       error
 	)
 
-	if req.UpdateBefore != nil {
-		*updateBefore, err = time.Parse(time.RFC3339, *req.UpdateBefore)
+	if req.UpdateStartTime != nil {
+		*updateBefore, err = time.Parse(time.RFC3339, *req.UpdateStartTime)
 		if err != nil {
 			return errors.InvalidRequest(err)
 		}
 	}
-	if req.UpdateAfter != nil {
-		*updateAfter, err = time.Parse(time.RFC3339, *req.UpdateAfter)
+	if req.UpdateEndTime != nil {
+		*updateAfter, err = time.Parse(time.RFC3339, *req.UpdateEndTime)
 		if err != nil {
 			return errors.InvalidRequest(err)
 		}
 	}
 
-	resp, err := d.DocumentationService.GetDocumentationList(c.Context(), req.Page, updateBefore, updateAfter)
+	resp, err := d.DocumentationService.GetDocumentationList(
+		c.Context(), req.Page, req.PageSize, updateBefore, updateAfter,
+	)
 	if err != nil {
 		return err
 	}

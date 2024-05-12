@@ -57,20 +57,22 @@ func (l *LogsApi) GetLoginLogList(c *fiber.Ctx) error {
 		err                         error
 	)
 
-	if req.CreatedBefore != nil {
-		*createdBefore, err = time.Parse(time.RFC3339, *req.CreatedBefore)
+	if req.CreateStartTime != nil {
+		*createdBefore, err = time.Parse(time.RFC3339, *req.CreateStartTime)
 		if err != nil {
 			return errors.InvalidRequest(err)
 		}
 	}
-	if req.CreatedAfter != nil {
-		*createdAfter, err = time.Parse(time.RFC3339, *req.CreatedAfter)
+	if req.CreateEndTime != nil {
+		*createdAfter, err = time.Parse(time.RFC3339, *req.CreateEndTime)
 		if err != nil {
 			return errors.InvalidRequest(err)
 		}
 	}
 
-	resp, err := l.LogsService.GetLoginLogList(c.Context(), req.Page, req.Query, createdBefore, createdAfter)
+	resp, err := l.LogsService.GetLoginLogList(
+		c.Context(), req.Page, req.PageSize, req.Desc, req.Query, createdBefore, createdAfter,
+	)
 	if err != nil {
 		return err
 	}
@@ -122,21 +124,21 @@ func (l *LogsApi) GetOperationLogList(c *fiber.Ctx) error {
 		err                         error
 	)
 
-	if req.CreatedBefore != nil {
-		*createdBefore, err = time.Parse(time.RFC3339, *req.CreatedBefore)
+	if req.CreateStartTime != nil {
+		*createdBefore, err = time.Parse(time.RFC3339, *req.CreateStartTime)
 		if err != nil {
 			return errors.InvalidRequest(err)
 		}
 	}
-	if req.CreatedAfter != nil {
-		*createdAfter, err = time.Parse(time.RFC3339, *req.CreatedAfter)
+	if req.CreateEndTime != nil {
+		*createdAfter, err = time.Parse(time.RFC3339, *req.CreateEndTime)
 		if err != nil {
 			return errors.InvalidRequest(err)
 		}
 	}
 
 	resp, err := l.LogsService.GetOperationLogList(
-		c.Context(), req.Page, req.Query, req.Operation, createdBefore, createdAfter,
+		c.Context(), req.Page, req.PageSize, req.Desc, req.Query, req.Operation, createdBefore, createdAfter,
 	)
 	if err != nil {
 		return err
@@ -189,21 +191,21 @@ func (l *LogsApi) GetErrorLogList(c *fiber.Ctx) error {
 		err                         error
 	)
 
-	if req.CreatedBefore != nil {
-		*createdBefore, err = time.Parse(time.RFC3339, *req.CreatedBefore)
+	if req.CreateStartTime != nil {
+		*createdBefore, err = time.Parse(time.RFC3339, *req.CreateStartTime)
 		if err != nil {
 			return errors.InvalidRequest(err)
 		}
 	}
-	if req.CreatedAfter != nil {
-		*createdAfter, err = time.Parse(time.RFC3339, *req.CreatedAfter)
+	if req.CreateEndTime != nil {
+		*createdAfter, err = time.Parse(time.RFC3339, *req.CreateEndTime)
 		if err != nil {
 			return errors.InvalidRequest(err)
 		}
 	}
 
 	resp, err := l.LogsService.GetErrorLogList(
-		c.Context(), req.Page, req.RequestURL, req.ErrorCode, createdBefore, createdAfter,
+		c.Context(), req.Page, req.PageSize, req.Desc, req.RequestURL, req.ErrorCode, createdBefore, createdAfter,
 	)
 	if err != nil {
 		return err

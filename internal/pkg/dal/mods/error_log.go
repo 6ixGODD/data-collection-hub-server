@@ -13,8 +13,6 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-const errorLogCollectionName = "error_log"
-
 type ErrorLogDao interface {
 	GetErrorLogById(ctx context.Context, errorLogID primitive.ObjectID) (*models.ErrorLogModel, error)
 	GetErrorLogList(

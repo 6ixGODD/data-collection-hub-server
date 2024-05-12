@@ -85,42 +85,38 @@ func (s *StatisticApi) GetUserStatisticList(c *fiber.Ctx) error {
 	}
 
 	var (
-		page                        *int
-		loginBefore, loginAfter     *time.Time
-		createdBefore, createdAfter *time.Time
-		err                         error
+		loginStartTime, loginEndTime   *time.Time
+		createStartTime, createEndTime *time.Time
+		err                            error
 	)
 
-	if req.Page != nil {
-		page = req.Page
-	}
-	if req.LastLoginBefore != nil {
-		*loginBefore, err = time.Parse(time.RFC3339, *req.LastLoginBefore)
+	if req.LastLoginStartTime != nil {
+		*loginStartTime, err = time.Parse(time.RFC3339, *req.LastLoginStartTime)
 		if err != nil {
 			return errors.InvalidRequest(err)
 		}
 	}
-	if req.LastLoginAfter != nil {
-		*loginAfter, err = time.Parse(time.RFC3339, *req.LastLoginAfter)
+	if req.LastLoginEndTime != nil {
+		*loginEndTime, err = time.Parse(time.RFC3339, *req.LastLoginEndTime)
 		if err != nil {
 			return errors.InvalidRequest(err)
 		}
 	}
-	if req.CreatedBefore != nil {
-		*createdBefore, err = time.Parse(time.RFC3339, *req.CreatedBefore)
+	if req.CreateStartTime != nil {
+		*createStartTime, err = time.Parse(time.RFC3339, *req.CreateStartTime)
 		if err != nil {
 			return errors.InvalidRequest(err)
 		}
 	}
-	if req.CreatedAfter != nil {
-		*createdAfter, err = time.Parse(time.RFC3339, *req.CreatedAfter)
+	if req.CreateEndTime != nil {
+		*createEndTime, err = time.Parse(time.RFC3339, *req.CreateEndTime)
 		if err != nil {
 			return errors.InvalidRequest(err)
 		}
 	}
 
 	resp, err := s.StatisticService.GetUserStatisticList(
-		c.Context(), page, loginBefore, loginAfter, createdBefore, createdAfter,
+		c.Context(), req.Page, req.PageSize, loginStartTime, loginEndTime, createStartTime, createEndTime,
 	)
 	if err != nil {
 		return err
