@@ -6,7 +6,6 @@ import (
 
 	"data-collection-hub-server/internal/pkg/config"
 	dao "data-collection-hub-server/internal/pkg/dal/mods"
-	"data-collection-hub-server/internal/pkg/models"
 	"data-collection-hub-server/internal/pkg/schema/user"
 	"data-collection-hub-server/internal/pkg/service"
 	"data-collection-hub-server/pkg/errors"
@@ -32,9 +31,9 @@ func NewStatisticService(s *service.Service, instructionDataDao dao.InstructionD
 func (s StatisticServiceImpl) GetDataStatistic(
 	ctx context.Context, startDate, endDate *time.Time,
 ) (*user.GetDataStatisticResponse, error) {
-	pendingStatus := models.InstructionDataStatusPending
-	approvedStatus := models.InstructionDataStatusApproved
-	rejectedStatus := models.InstructionDataStatusRejected
+	pendingStatus := config.InstructionDataStatusPending
+	approvedStatus := config.InstructionDataStatusApproved
+	rejectedStatus := config.InstructionDataStatusRejected
 	themeField := "theme"
 	userID, err := primitive.ObjectIDFromHex(ctx.Value(config.KeyUserID).(string))
 	if err != nil {

@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
+	"data-collection-hub-server/internal/pkg/config"
 	dao "data-collection-hub-server/internal/pkg/dal/mods"
-	"data-collection-hub-server/internal/pkg/models"
 	"data-collection-hub-server/internal/pkg/schema/admin"
 	"data-collection-hub-server/internal/pkg/service"
 	"data-collection-hub-server/pkg/errors"
@@ -144,7 +144,7 @@ func (d DataAuditServiceImpl) GetInstructionDataList(
 }
 
 func (d DataAuditServiceImpl) ApproveInstructionData(ctx context.Context, instructionDataID *primitive.ObjectID) error {
-	status := models.InstructionDataStatusApproved
+	status := config.InstructionDataStatusApproved
 	message := ""
 
 	err := d.instructionDataDao.UpdateInstructionData(
@@ -162,7 +162,7 @@ func (d DataAuditServiceImpl) ApproveInstructionData(ctx context.Context, instru
 func (d DataAuditServiceImpl) RejectInstructionData(
 	ctx context.Context, instructionDataID *primitive.ObjectID, message *string,
 ) error {
-	status := models.InstructionDataStatusRejected
+	status := config.InstructionDataStatusRejected
 	err := d.instructionDataDao.UpdateInstructionData(
 		ctx,
 		*instructionDataID,

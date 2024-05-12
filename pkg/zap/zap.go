@@ -20,7 +20,7 @@ type Config struct {
 	zapOptions []zap.Option
 }
 
-func New(config *zap.Config, options ...zap.Option) (z *Zap, err error) {
+func New(config *zap.Config, options ...zap.Option) (*Zap, error) {
 	if zapInstance != nil {
 		return zapInstance, nil
 	}
@@ -34,6 +34,19 @@ func New(config *zap.Config, options ...zap.Option) (z *Zap, err error) {
 		return nil, err
 	}
 	return zapInstance, nil
+}
+
+func Update(config *zap.Config, options ...zap.Option) error {
+	zapInstance = &Zap{
+		config: &Config{
+			zapConfig:  config,
+			zapOptions: options,
+		},
+	}
+	if err := zapInstance.Init(); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (z *Zap) Init() error {

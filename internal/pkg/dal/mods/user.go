@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"data-collection-hub-server/internal/pkg/config"
 	"data-collection-hub-server/internal/pkg/dal"
 	"data-collection-hub-server/internal/pkg/models"
 	"github.com/goccy/go-json"
@@ -51,7 +52,7 @@ func NewUserDao(dao *dal.Dao) UserDao {
 
 func (u *UserDaoImpl) GetUserById(ctx context.Context, userID primitive.ObjectID) (*models.UserModel, error) {
 	var user models.UserModel
-	collection := u.Dao.Mongo.MongoDatabase.Collection(userCollectionName)
+	collection := u.Dao.Mongo.MongoDatabase.Collection(config.UserCollectionName)
 	err := collection.Find(
 		ctx,
 		bson.M{
@@ -77,7 +78,7 @@ func (u *UserDaoImpl) GetUserById(ctx context.Context, userID primitive.ObjectID
 
 func (u *UserDaoImpl) GetUserByEmail(ctx context.Context, email *string) (*models.UserModel, error) {
 	var user models.UserModel
-	collection := u.Dao.Mongo.MongoDatabase.Collection(userCollectionName)
+	collection := u.Dao.Mongo.MongoDatabase.Collection(config.UserCollectionName)
 	err := collection.Find(
 		ctx,
 		bson.M{
@@ -107,7 +108,7 @@ func (u *UserDaoImpl) GetUserList(
 	createStartTime, createEndTime, updateStartTime, updateEndTime, lastLoginStartTime, lastLoginEndTime *time.Time,
 	query *string,
 ) ([]models.UserModel, *int64, error) {
-	collection := u.Dao.Mongo.MongoDatabase.Collection(userCollectionName)
+	collection := u.Dao.Mongo.MongoDatabase.Collection(config.UserCollectionName)
 	var users []models.UserModel
 	var err error
 	doc := bson.M{"deleted": false}
@@ -144,7 +145,7 @@ func (u *UserDaoImpl) GetUserList(
 		u.Dao.Zap.Logger.Error(
 			"UserDaoImpl.GetUserList",
 			zap.Int64("offset", offset), zap.Int64("limit", limit), zap.Bool("desc", desc),
-			zap.ByteString(userCollectionName, docJSON), zap.Error(err),
+			zap.ByteString(config.UserCollectionName, docJSON), zap.Error(err),
 		)
 		return nil, nil, err
 	}
@@ -153,14 +154,14 @@ func (u *UserDaoImpl) GetUserList(
 		u.Dao.Zap.Logger.Error(
 			"UserDaoImpl.GetUserList",
 			zap.Int64("offset", offset), zap.Int64("limit", limit), zap.Bool("desc", desc),
-			zap.ByteString(userCollectionName, docJSON), zap.Error(err),
+			zap.ByteString(config.UserCollectionName, docJSON), zap.Error(err),
 		)
 		return nil, nil, err
 	}
 	u.Dao.Zap.Logger.Info(
 		"UserDaoImpl.GetUserList",
 		zap.Int64("offset", offset), zap.Int64("limit", limit), zap.Bool("desc", desc),
-		zap.ByteString(userCollectionName, docJSON), zap.Int64("count", count),
+		zap.ByteString(config.UserCollectionName, docJSON), zap.Int64("count", count),
 	)
 	return users, &count, nil
 }
@@ -170,7 +171,7 @@ func (u *UserDaoImpl) CountUser(
 	organization, role *string,
 	createStartTime, createEndTime, updateStartTime, updateEndTime, lastLoginStartTime, lastLoginEndTime *time.Time,
 ) (*int64, error) {
-	collection := u.Dao.Mongo.MongoDatabase.Collection(userCollectionName)
+	collection := u.Dao.Mongo.MongoDatabase.Collection(config.UserCollectionName)
 	doc := bson.M{"deleted": false}
 	if organization != nil {
 		doc["organization"] = *organization
@@ -192,13 +193,13 @@ func (u *UserDaoImpl) CountUser(
 	if err != nil {
 		u.Dao.Zap.Logger.Error(
 			"UserDaoImpl.CountUser",
-			zap.ByteString(userCollectionName, docJSON),
+			zap.ByteString(config.UserCollectionName, docJSON),
 			zap.Error(err),
 		)
 	} else {
 		u.Dao.Zap.Logger.Info(
 			"UserDaoImpl.CountUser",
-			zap.ByteString(userCollectionName, docJSON),
+			zap.ByteString(config.UserCollectionName, docJSON),
 			zap.Int64("count", count),
 		)
 	}
@@ -209,7 +210,7 @@ func (u *UserDaoImpl) InsertUser(
 	ctx context.Context,
 	username, email, password, role, organization string,
 ) (primitive.ObjectID, error) {
-	collection := u.Dao.Mongo.MongoDatabase.Collection(userCollectionName)
+	collection := u.Dao.Mongo.MongoDatabase.Collection(config.UserCollectionName)
 	doc := bson.M{
 		"username":      username,
 		"email":         email,
@@ -227,13 +228,13 @@ func (u *UserDaoImpl) InsertUser(
 	if err != nil {
 		u.Dao.Zap.Logger.Error(
 			"UserDaoImpl.InsertUser",
-			zap.ByteString(userCollectionName, docJSON),
+			zap.ByteString(config.UserCollectionName, docJSON),
 			zap.Error(err),
 		)
 	} else {
 		u.Dao.Zap.Logger.Info(
 			"UserDaoImpl.InsertUser",
-			zap.ByteString(userCollectionName, docJSON),
+			zap.ByteString(config.UserCollectionName, docJSON),
 			zap.String("userID", result.InsertedID.(primitive.ObjectID).Hex()),
 		)
 	}
@@ -243,7 +244,7 @@ func (u *UserDaoImpl) InsertUser(
 func (u *UserDaoImpl) UpdateUser(
 	ctx context.Context, userID primitive.ObjectID, username, email, password, role, organization *string,
 ) error {
-	collection := u.Dao.Mongo.MongoDatabase.Collection(userCollectionName)
+	collection := u.Dao.Mongo.MongoDatabase.Collection(config.UserCollectionName)
 	doc := bson.M{"updated_at": time.Now()}
 	if username != nil {
 		doc["username"] = *username
@@ -266,21 +267,21 @@ func (u *UserDaoImpl) UpdateUser(
 		u.Dao.Zap.Logger.Error(
 			"UserDaoImpl.UpdateUser",
 			zap.String("userID", userID.Hex()),
-			zap.ByteString(userCollectionName, docJSON),
+			zap.ByteString(config.UserCollectionName, docJSON),
 			zap.Error(err),
 		)
 	} else {
 		u.Dao.Zap.Logger.Info(
 			"UserDaoImpl.UpdateUser",
 			zap.String("userID", userID.Hex()),
-			zap.ByteString(userCollectionName, docJSON),
+			zap.ByteString(config.UserCollectionName, docJSON),
 		)
 	}
 	return err
 }
 
 func (u *UserDaoImpl) SoftDeleteUser(ctx context.Context, userID primitive.ObjectID) error {
-	collection := u.Dao.Mongo.MongoDatabase.Collection(userCollectionName)
+	collection := u.Dao.Mongo.MongoDatabase.Collection(config.UserCollectionName)
 	err := collection.UpdateId(ctx, userID, bson.M{"$set": bson.M{"deleted": true, "deleted_at": time.Now()}})
 	if err != nil {
 		u.Dao.Zap.Logger.Error(
@@ -301,7 +302,7 @@ func (u *UserDaoImpl) SoftDeleteUserList(
 	ctx context.Context, organization, role *string,
 	createStartTime, createEndTime, updateStartTime, updateEndTime, lastLoginStartTime, lastLoginEndTime *time.Time,
 ) (*int64, error) {
-	collection := u.Dao.Mongo.MongoDatabase.Collection(userCollectionName)
+	collection := u.Dao.Mongo.MongoDatabase.Collection(config.UserCollectionName)
 	doc := bson.M{"deleted": false}
 	if organization != nil {
 		doc["organization"] = *organization
@@ -323,13 +324,13 @@ func (u *UserDaoImpl) SoftDeleteUserList(
 	if err != nil {
 		u.Dao.Zap.Logger.Error(
 			"UserDaoImpl.DeleteUserList",
-			zap.ByteString(userCollectionName, docJSON),
+			zap.ByteString(config.UserCollectionName, docJSON),
 			zap.Error(err),
 		)
 	} else {
 		u.Dao.Zap.Logger.Info(
 			"UserDaoImpl.DeleteUserList",
-			zap.ByteString(userCollectionName, docJSON),
+			zap.ByteString(config.UserCollectionName, docJSON),
 			zap.Int64("count", result.ModifiedCount),
 		)
 	}
@@ -337,7 +338,7 @@ func (u *UserDaoImpl) SoftDeleteUserList(
 }
 
 func (u *UserDaoImpl) DeleteUser(ctx context.Context, userID primitive.ObjectID) error {
-	collection := u.Dao.Mongo.MongoDatabase.Collection(userCollectionName)
+	collection := u.Dao.Mongo.MongoDatabase.Collection(config.UserCollectionName)
 	err := collection.RemoveId(ctx, userID)
 	if err != nil {
 		u.Dao.Zap.Logger.Error(
@@ -358,7 +359,7 @@ func (u *UserDaoImpl) DeleteUserList(
 	ctx context.Context, organization, role *string,
 	createStartTime, createEndTime, updateStartTime, updateEndTime, lastLoginStartTime, lastLoginEndTime *time.Time,
 ) (*int64, error) {
-	collection := u.Dao.Mongo.MongoDatabase.Collection(userCollectionName)
+	collection := u.Dao.Mongo.MongoDatabase.Collection(config.UserCollectionName)
 	doc := bson.M{}
 	if organization != nil {
 		doc["organization"] = *organization
@@ -380,13 +381,13 @@ func (u *UserDaoImpl) DeleteUserList(
 	if err != nil {
 		u.Dao.Zap.Logger.Error(
 			"UserDaoImpl.DeleteUserList",
-			zap.ByteString(userCollectionName, docJSON),
+			zap.ByteString(config.UserCollectionName, docJSON),
 			zap.Error(err),
 		)
 	} else {
 		u.Dao.Zap.Logger.Info(
 			"UserDaoImpl.DeleteUserList",
-			zap.ByteString(userCollectionName, docJSON),
+			zap.ByteString(config.UserCollectionName, docJSON),
 			zap.Int64("count", result.DeletedCount),
 		)
 	}

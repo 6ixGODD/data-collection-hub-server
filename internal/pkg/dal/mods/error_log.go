@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"data-collection-hub-server/internal/pkg/config"
 	"data-collection-hub-server/internal/pkg/dal"
 	"data-collection-hub-server/internal/pkg/models"
 	"github.com/goccy/go-json"
@@ -43,7 +44,7 @@ func (e *ErrorLogDaoImpl) GetErrorLogById(ctx context.Context, errorLogID primit
 	*models.ErrorLogModel, error,
 ) {
 	var errorLog models.ErrorLogModel
-	collection := e.Dao.Mongo.MongoDatabase.Collection(errorLogCollectionName)
+	collection := e.Dao.Mongo.MongoDatabase.Collection(config.ErrorLogCollectionName)
 	err := collection.Find(ctx, bson.M{"_id": errorLogID}).One(&errorLog)
 	if err != nil {
 		e.Dao.Zap.Logger.Error(
@@ -68,7 +69,7 @@ func (e *ErrorLogDaoImpl) GetErrorLogList(
 ) ([]models.ErrorLogModel, *int64, error) {
 	var errorLogList []models.ErrorLogModel
 	var err error
-	collection := e.Dao.Mongo.MongoDatabase.Collection(errorLogCollectionName)
+	collection := e.Dao.Mongo.MongoDatabase.Collection(config.ErrorLogCollectionName)
 
 	doc := bson.M{}
 	if userID != nil {
@@ -108,7 +109,7 @@ func (e *ErrorLogDaoImpl) GetErrorLogList(
 		e.Dao.Zap.Logger.Error(
 			"ErrorLogDaoImpl.GetErrorLogList",
 			zap.Int64("offset", offset), zap.Int64("limit", limit), zap.Bool("desc", desc),
-			zap.ByteString(errorLogCollectionName, docJSON), zap.Error(err),
+			zap.ByteString(config.ErrorLogCollectionName, docJSON), zap.Error(err),
 		)
 		return nil, nil, err
 	}
@@ -117,14 +118,14 @@ func (e *ErrorLogDaoImpl) GetErrorLogList(
 		e.Dao.Zap.Logger.Error(
 			"ErrorLogDaoImpl.GetErrorLogList",
 			zap.Int64("offset", offset), zap.Int64("limit", limit), zap.Bool("desc", desc),
-			zap.ByteString(errorLogCollectionName, docJSON), zap.Error(err),
+			zap.ByteString(config.ErrorLogCollectionName, docJSON), zap.Error(err),
 		)
 		return nil, nil, err
 	}
 	e.Dao.Zap.Logger.Info(
 		"ErrorLogDaoImpl.GetErrorLogList",
 		zap.Int64("offset", offset), zap.Int64("limit", limit), zap.Bool("desc", desc),
-		zap.ByteString(errorLogCollectionName, docJSON), zap.Int64("count", count),
+		zap.ByteString(config.ErrorLogCollectionName, docJSON), zap.Int64("count", count),
 	)
 	return errorLogList, &count, nil
 
@@ -135,7 +136,7 @@ func (e *ErrorLogDaoImpl) InsertErrorLog(
 	UserID primitive.ObjectID,
 	Username, IPAddress, UserAgent, RequestURL, RequestMethod, RequestPayload, ErrorCode, ErrorMsg, Stack string,
 ) (primitive.ObjectID, error) {
-	collection := e.Dao.Mongo.MongoDatabase.Collection(errorLogCollectionName)
+	collection := e.Dao.Mongo.MongoDatabase.Collection(config.ErrorLogCollectionName)
 	doc := bson.M{
 		"user_id":         UserID,
 		"username":        Username,
@@ -154,13 +155,13 @@ func (e *ErrorLogDaoImpl) InsertErrorLog(
 	if err != nil {
 		e.Dao.Zap.Logger.Error(
 			"ErrorLogDaoImpl.InsertErrorLog",
-			zap.ByteString(errorLogCollectionName, docJSON), zap.Error(err),
+			zap.ByteString(config.ErrorLogCollectionName, docJSON), zap.Error(err),
 			zap.Error(err),
 		)
 	} else {
 		e.Dao.Zap.Logger.Info(
 			"ErrorLogDaoImpl.InsertErrorLog",
-			zap.ByteString(errorLogCollectionName, docJSON), zap.Error(err),
+			zap.ByteString(config.ErrorLogCollectionName, docJSON), zap.Error(err),
 			zap.String("errorLogID", result.InsertedID.(primitive.ObjectID).Hex()),
 		)
 	}
@@ -168,7 +169,7 @@ func (e *ErrorLogDaoImpl) InsertErrorLog(
 }
 
 func (e *ErrorLogDaoImpl) DeleteErrorLog(ctx context.Context, errorLogID primitive.ObjectID) error {
-	collection := e.Dao.Mongo.MongoDatabase.Collection(errorLogCollectionName)
+	collection := e.Dao.Mongo.MongoDatabase.Collection(config.ErrorLogCollectionName)
 	err := collection.RemoveId(ctx, errorLogID)
 	if err != nil {
 		e.Dao.Zap.Logger.Error(
@@ -188,7 +189,7 @@ func (e *ErrorLogDaoImpl) DeleteErrorLogList(
 	ctx context.Context, startTime, endTime *time.Time, userID *primitive.ObjectID,
 	ipAddress, requestURL, errorCode, query *string,
 ) (*int64, error) {
-	collection := e.Dao.Mongo.MongoDatabase.Collection(errorLogCollectionName)
+	collection := e.Dao.Mongo.MongoDatabase.Collection(config.ErrorLogCollectionName)
 	doc := bson.M{}
 	if userID != nil {
 		doc["user_id"] = *userID
@@ -221,13 +222,13 @@ func (e *ErrorLogDaoImpl) DeleteErrorLogList(
 	if err != nil {
 		e.Dao.Zap.Logger.Error(
 			"ErrorLogDaoImpl.DeleteErrorLogList",
-			zap.ByteString(errorLogCollectionName, docJSON), zap.Error(err),
+			zap.ByteString(config.ErrorLogCollectionName, docJSON), zap.Error(err),
 		)
 		return nil, err
 	}
 	e.Dao.Zap.Logger.Info(
 		"ErrorLogDaoImpl.DeleteErrorLogList",
-		zap.ByteString(errorLogCollectionName, docJSON),
+		zap.ByteString(config.ErrorLogCollectionName, docJSON),
 		zap.Int64("deletedCount", result.DeletedCount),
 	)
 	return &result.DeletedCount, nil

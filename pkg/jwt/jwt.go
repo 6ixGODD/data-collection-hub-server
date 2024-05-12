@@ -2,25 +2,19 @@ package jwt
 
 import (
 	"crypto/ecdsa"
-	"crypto/elliptic"
-	"crypto/rand"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/golang-jwt/jwt"
 )
 
-// TODO: Add logger
+var (
+	jwtInstance *Jwt
+	once        sync.Once
+)
 
-type Jwt interface {
-	GenerateAccessToken(subject string) (string, error)
-	GenerateRefreshToken(subject string) (string, error)
-	VerifyToken(token string) (string, error)
-	RefreshToken(token string) (string, error)
-	ExtractClaims(token string) (map[string]interface{}, error)
-}
-
-type jwtImpl struct {
+type Jwt struct {
 	privateKey      *ecdsa.PrivateKey
 	publicKey       *ecdsa.PublicKey
 	tokenDuration   time.Duration
@@ -31,48 +25,61 @@ type jwtImpl struct {
 func New(
 	privateKey *ecdsa.PrivateKey, tokenDuration, refreshDuration time.Duration,
 	refreshBuffer time.Duration,
-) Jwt {
-	j := &jwtImpl{
+) (*Jwt, error) {
+	var err error
+	once.Do(
+		func() {
+			j := &Jwt{
+				privateKey:      privateKey,
+				publicKey:       &privateKey.PublicKey,
+				tokenDuration:   tokenDuration,
+				refreshDuration: refreshDuration,
+				refreshBuffer:   refreshBuffer,
+			}
+			if err = j.checkJWT(); err == nil {
+				jwtInstance = j
+			}
+		},
+	)
+	return jwtInstance, err
+}
+
+func Update(privateKey *ecdsa.PrivateKey, tokenDuration, refreshDuration, refreshBuffer time.Duration) error {
+	var err error
+	jwtInstance = &Jwt{
 		privateKey:      privateKey,
 		publicKey:       &privateKey.PublicKey,
 		tokenDuration:   tokenDuration,
 		refreshDuration: refreshDuration,
 		refreshBuffer:   refreshBuffer,
 	}
-	if err := j.checkJWT(); err != nil {
-		return nil
+	if err = jwtInstance.checkJWT(); err != nil {
+		return err
 	}
-	return j
+	return nil
 }
 
-func (j *jwtImpl) checkJWT() error {
+func (j *Jwt) checkJWT() error {
 	if j.privateKey == nil {
-		_privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-		if err != nil {
-			return err
-		}
-		j.privateKey = _privateKey
-		j.publicKey = &j.privateKey.PublicKey
+		return fmt.Errorf("private key is nil")
 	}
 	if j.tokenDuration == 0 {
-		j.tokenDuration = time.Hour
+		return fmt.Errorf("token duration is 0")
 	}
 	if j.refreshDuration == 0 {
-		j.refreshDuration = 24 * time.Hour
+		return fmt.Errorf("refresh duration is 0")
 	}
 	if j.refreshBuffer == 0 {
-		j.refreshBuffer = time.Minute
+		return fmt.Errorf("refresh buffer is 0")
 	}
 	if j.tokenDuration > j.refreshDuration || j.refreshDuration < j.refreshBuffer || j.tokenDuration < j.refreshBuffer {
-		j.tokenDuration = time.Hour
-		j.refreshDuration = 24 * time.Hour
-		j.refreshBuffer = time.Minute
+		return fmt.Errorf("invalid token, refresh or buffer duration")
 	}
 
 	return nil
 }
 
-func (j *jwtImpl) GenerateAccessToken(subject string) (string, error) {
+func (j *Jwt) GenerateAccessToken(subject string) (string, error) {
 	if subject == "" {
 		return "", fmt.Errorf("subject is empty") // TODO: CHANGE ERROR TYPE
 	}
@@ -93,7 +100,7 @@ func (j *jwtImpl) GenerateAccessToken(subject string) (string, error) {
 	return tokenString, nil
 }
 
-func (j *jwtImpl) GenerateRefreshToken(subject string) (string, error) {
+func (j *Jwt) GenerateRefreshToken(subject string) (string, error) {
 	if subject == "" {
 		return "", fmt.Errorf("subject is empty") // TODO: CHANGE ERROR TYPE
 	}
@@ -114,7 +121,7 @@ func (j *jwtImpl) GenerateRefreshToken(subject string) (string, error) {
 	return tokenString, nil
 }
 
-func (j *jwtImpl) RefreshToken(token string) (string, error) {
+func (j *Jwt) RefreshToken(token string) (string, error) {
 	claims, err := j.ExtractClaims(token)
 	if err != nil {
 		return "", err
@@ -136,7 +143,7 @@ func (j *jwtImpl) RefreshToken(token string) (string, error) {
 	return newToken, nil
 }
 
-func (j *jwtImpl) ExtractClaims(token string) (map[string]interface{}, error) {
+func (j *Jwt) ExtractClaims(token string) (map[string]interface{}, error) {
 	claims := jwt.MapClaims{}
 
 	t, err := jwt.ParseWithClaims(
@@ -151,7 +158,7 @@ func (j *jwtImpl) ExtractClaims(token string) (map[string]interface{}, error) {
 	return claims, nil
 }
 
-func (j *jwtImpl) VerifyToken(token string) (string, error) {
+func (j *Jwt) VerifyToken(token string) (string, error) {
 	claims, err := j.ExtractClaims(token)
 	if err != nil {
 		return "", err

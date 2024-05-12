@@ -20,7 +20,7 @@ type Prometheus struct {
 	reqDuration      *prometheus.HistogramVec
 }
 
-func NewPrometheus(namespace string, subsystem string, metricPath string) *Prometheus {
+func New(namespace string, subsystem string, metricPath string) *Prometheus {
 	p := &Prometheus{
 		PrometheusConfig: &Config{
 			Namespace:  namespace,
@@ -43,12 +43,14 @@ func (p *Prometheus) init() {
 		[]string{"status_code", "method", "path"},
 	)
 
-	p.reqDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-		Name:      "request_duration_seconds",
-		Namespace: p.PrometheusConfig.Namespace,
-		Subsystem: p.PrometheusConfig.Subsystem,
-		Help:      "Duration of HTTP requests",
-	}, []string{"method", "handler"})
+	p.reqDuration = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:      "request_duration_seconds",
+			Namespace: p.PrometheusConfig.Namespace,
+			Subsystem: p.PrometheusConfig.Subsystem,
+			Help:      "Duration of HTTP requests",
+		}, []string{"method", "handler"},
+	)
 }
 
 func (p *Prometheus) PrometheusFiberHandler() fiber.Handler {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"data-collection-hub-server/internal/pkg/config"
 	"data-collection-hub-server/internal/pkg/dal"
 	"data-collection-hub-server/internal/pkg/models"
 	"github.com/goccy/go-json"
@@ -38,7 +39,7 @@ func NewNoticeDao(dao *dal.Dao) NoticeDao {
 }
 
 func (n *NoticeDaoImpl) GetNoticeById(ctx context.Context, noticeID primitive.ObjectID) (*models.NoticeModel, error) {
-	collection := n.Dao.Mongo.MongoDatabase.Collection(noticeCollectionName)
+	collection := n.Dao.Mongo.MongoDatabase.Collection(config.NoticeCollectionName)
 	var notice models.NoticeModel
 	err := collection.Find(ctx, bson.M{"_id": noticeID}).One(&notice)
 	if err != nil {
@@ -62,7 +63,7 @@ func (n *NoticeDaoImpl) GetNoticeList(
 	offset, limit int64, desc bool, createStartTime, createEndTime, updateStartTime, updateEndTime *time.Time,
 	noticeType *string,
 ) ([]models.NoticeModel, *int64, error) {
-	collection := n.Dao.Mongo.MongoDatabase.Collection(noticeCollectionName)
+	collection := n.Dao.Mongo.MongoDatabase.Collection(config.NoticeCollectionName)
 	var noticeList []models.NoticeModel
 	var err error
 	doc := bson.M{}
@@ -87,7 +88,7 @@ func (n *NoticeDaoImpl) GetNoticeList(
 			"NoticeDaoImpl.GetNoticeList",
 			zap.Int64("offset", offset), zap.Int64("limit", limit),
 			zap.Bool("desc", desc),
-			zap.ByteString(noticeCollectionName, docJSON),
+			zap.ByteString(config.NoticeCollectionName, docJSON),
 			zap.Error(err),
 		)
 		return nil, nil, err
@@ -98,7 +99,7 @@ func (n *NoticeDaoImpl) GetNoticeList(
 			"NoticeDaoImpl.GetNoticeList",
 			zap.Int64("offset", offset), zap.Int64("limit", limit),
 			zap.Bool("desc", desc),
-			zap.ByteString(noticeCollectionName, docJSON),
+			zap.ByteString(config.NoticeCollectionName, docJSON),
 			zap.Error(err),
 		)
 		return nil, nil, err
@@ -107,7 +108,7 @@ func (n *NoticeDaoImpl) GetNoticeList(
 		"NoticeDaoImpl.GetNoticeList",
 		zap.Int64("offset", offset), zap.Int64("limit", limit),
 		zap.Bool("desc", desc),
-		zap.ByteString(noticeCollectionName, docJSON),
+		zap.ByteString(config.NoticeCollectionName, docJSON),
 		zap.Int64("count", count),
 	)
 	return noticeList, &count, nil
@@ -116,7 +117,7 @@ func (n *NoticeDaoImpl) GetNoticeList(
 func (n *NoticeDaoImpl) InsertNotice(
 	ctx context.Context, title, content, noticeType string,
 ) (primitive.ObjectID, error) {
-	collection := n.Dao.Mongo.MongoDatabase.Collection(noticeCollectionName)
+	collection := n.Dao.Mongo.MongoDatabase.Collection(config.NoticeCollectionName)
 	doc := bson.M{
 		"title":       title,
 		"content":     content,
@@ -129,13 +130,13 @@ func (n *NoticeDaoImpl) InsertNotice(
 	if err != nil {
 		n.Dao.Zap.Logger.Error(
 			"NoticeDaoImpl.InsertNotice",
-			zap.ByteString(noticeCollectionName, docJSON),
+			zap.ByteString(config.NoticeCollectionName, docJSON),
 			zap.Error(err),
 		)
 	} else {
 		n.Dao.Zap.Logger.Info(
 			"NoticeDaoImpl.InsertNotice",
-			zap.ByteString(noticeCollectionName, docJSON),
+			zap.ByteString(config.NoticeCollectionName, docJSON),
 			zap.String("noticeID", result.InsertedID.(primitive.ObjectID).Hex()),
 		)
 	}
@@ -145,7 +146,7 @@ func (n *NoticeDaoImpl) InsertNotice(
 func (n *NoticeDaoImpl) UpdateNotice(
 	ctx context.Context, noticeID primitive.ObjectID, title, content, noticeType *string,
 ) error {
-	collection := n.Dao.Mongo.MongoDatabase.Collection(noticeCollectionName)
+	collection := n.Dao.Mongo.MongoDatabase.Collection(config.NoticeCollectionName)
 	doc := bson.M{"updated_at": time.Now()}
 	if title != nil {
 		doc["title"] = *title
@@ -163,21 +164,21 @@ func (n *NoticeDaoImpl) UpdateNotice(
 		n.Dao.Zap.Logger.Error(
 			"NoticeDaoImpl.UpdateNotice",
 			zap.String("noticeID", noticeID.Hex()),
-			zap.ByteString(noticeCollectionName, docJSON),
+			zap.ByteString(config.NoticeCollectionName, docJSON),
 			zap.Error(err),
 		)
 	} else {
 		n.Dao.Zap.Logger.Info(
 			"NoticeDaoImpl.UpdateNotice",
 			zap.String("noticeID", noticeID.Hex()),
-			zap.ByteString(noticeCollectionName, docJSON),
+			zap.ByteString(config.NoticeCollectionName, docJSON),
 		)
 	}
 	return err
 }
 
 func (n *NoticeDaoImpl) DeleteNotice(ctx context.Context, noticeID primitive.ObjectID) error {
-	collection := n.Dao.Mongo.MongoDatabase.Collection(noticeCollectionName)
+	collection := n.Dao.Mongo.MongoDatabase.Collection(config.NoticeCollectionName)
 	err := collection.RemoveId(ctx, noticeID)
 	if err != nil {
 		n.Dao.Zap.Logger.Error(
@@ -199,7 +200,7 @@ func (n *NoticeDaoImpl) DeleteNoticeList(
 	createStartTime, createEndTime, updateStartTime, updateEndTime *time.Time,
 	title, content, noticeType *string,
 ) (*int64, error) {
-	collection := n.Dao.Mongo.MongoDatabase.Collection(noticeCollectionName)
+	collection := n.Dao.Mongo.MongoDatabase.Collection(config.NoticeCollectionName)
 	doc := bson.M{}
 	if createStartTime != nil && createEndTime != nil {
 		doc["created_at"] = bson.M{"$gte": createStartTime, "$lte": createEndTime}
@@ -221,13 +222,13 @@ func (n *NoticeDaoImpl) DeleteNoticeList(
 	if err != nil {
 		n.Dao.Zap.Logger.Error(
 			"NoticeDaoImpl.DeleteNoticeList",
-			zap.ByteString(noticeCollectionName, docJSON),
+			zap.ByteString(config.NoticeCollectionName, docJSON),
 			zap.Error(err),
 		)
 	} else {
 		n.Dao.Zap.Logger.Info(
 			"NoticeDaoImpl.DeleteNoticeList",
-			zap.ByteString(noticeCollectionName, docJSON),
+			zap.ByteString(config.NoticeCollectionName, docJSON),
 		)
 	}
 	return &result.DeletedCount, err

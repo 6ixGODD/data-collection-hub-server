@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	configInstance *Config // singleton
+	configInstance = &Config{}
 	once           sync.Once
 )
 
@@ -30,9 +30,12 @@ type Config struct {
 func New() (config *Config, err error) {
 	once.Do(
 		func() {
-			configInstance = &Config{}
 			defaults.SetDefaults(configInstance)
 		},
 	)
 	return configInstance, nil
+}
+
+func Update(cfg *Config) {
+	configInstance = cfg
 }

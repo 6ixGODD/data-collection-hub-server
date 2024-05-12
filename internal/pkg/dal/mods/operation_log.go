@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"data-collection-hub-server/internal/pkg/config"
 	"data-collection-hub-server/internal/pkg/dal"
 	"data-collection-hub-server/internal/pkg/models"
 	"github.com/goccy/go-json"
@@ -42,7 +43,7 @@ func NewOperationLogDao(dao *dal.Dao) OperationLogDao {
 func (o *OperationLogDaoImpl) GetOperationLogById(
 	ctx context.Context, operationLogID primitive.ObjectID,
 ) (*models.OperationLogModel, error) {
-	collection := o.Dao.Mongo.MongoDatabase.Collection(operationLogCollectionName)
+	collection := o.Dao.Mongo.MongoDatabase.Collection(config.OperationLogCollectionName)
 	var operationLog models.OperationLogModel
 	err := collection.Find(ctx, bson.M{"_id": operationLogID}).One(&operationLog)
 	if err != nil {
@@ -68,7 +69,7 @@ func (o *OperationLogDaoImpl) GetOperationLogList(
 ) ([]models.OperationLogModel, *int64, error) {
 	var operationLogList []models.OperationLogModel
 	var err error
-	collection := o.Dao.Mongo.MongoDatabase.Collection(operationLogCollectionName)
+	collection := o.Dao.Mongo.MongoDatabase.Collection(config.OperationLogCollectionName)
 	doc := bson.M{}
 	if startTime != nil && endTime != nil {
 		doc["created_at"] = bson.M{"$gte": startTime, "$lte": endTime}
@@ -114,7 +115,7 @@ func (o *OperationLogDaoImpl) GetOperationLogList(
 			"OperationLogDaoImpl.GetOperationLogList",
 			zap.Int64("offset", offset), zap.Int64("limit", limit),
 			zap.Bool("desc", desc),
-			zap.ByteString(operationLogCollectionName, docJSON),
+			zap.ByteString(config.OperationLogCollectionName, docJSON),
 			zap.Error(err),
 		)
 		return nil, nil, err
@@ -125,7 +126,7 @@ func (o *OperationLogDaoImpl) GetOperationLogList(
 			"OperationLogDaoImpl.GetOperationLogList",
 			zap.Int64("offset", offset), zap.Int64("limit", limit),
 			zap.Bool("desc", desc),
-			zap.ByteString(operationLogCollectionName, docJSON),
+			zap.ByteString(config.OperationLogCollectionName, docJSON),
 			zap.Error(err),
 		)
 		return nil, nil, err
@@ -134,7 +135,7 @@ func (o *OperationLogDaoImpl) GetOperationLogList(
 		"OperationLogDaoImpl.GetOperationLogList",
 		zap.Int64("offset", offset), zap.Int64("limit", limit),
 		zap.Bool("desc", desc),
-		zap.ByteString(operationLogCollectionName, docJSON),
+		zap.ByteString(config.OperationLogCollectionName, docJSON),
 		zap.Int64("count", count),
 	)
 	return operationLogList, &count, nil
@@ -144,7 +145,7 @@ func (o *OperationLogDaoImpl) GetOperationLogListByUserID(
 	userID primitive.ObjectID, offset, limit int64, ctx context.Context,
 ) ([]models.OperationLogModel, error) {
 	var operationLogList []models.OperationLogModel
-	collection := o.Dao.Mongo.MongoDatabase.Collection(operationLogCollectionName)
+	collection := o.Dao.Mongo.MongoDatabase.Collection(config.OperationLogCollectionName)
 	err := collection.Find(ctx, bson.M{"user_id": userID}).Skip(offset).Limit(limit).All(&operationLogList)
 	if err != nil {
 		o.Dao.Zap.Logger.Error(
@@ -170,7 +171,7 @@ func (o *OperationLogDaoImpl) GetOperationLogListByIPAddress(
 	ipAddress string, offset, limit int64, ctx context.Context,
 ) ([]models.OperationLogModel, error) {
 	var operationLogList []models.OperationLogModel
-	collection := o.Dao.Mongo.MongoDatabase.Collection(operationLogCollectionName)
+	collection := o.Dao.Mongo.MongoDatabase.Collection(config.OperationLogCollectionName)
 	err := collection.Find(ctx, bson.M{"ip_address": ipAddress}).Skip(offset).Limit(limit).All(&operationLogList)
 	if err != nil {
 		o.Dao.Zap.Logger.Error(
@@ -196,7 +197,7 @@ func (o *OperationLogDaoImpl) GetOperationLogListByOperation(
 	operation string, offset, limit int64, ctx context.Context,
 ) ([]models.OperationLogModel, error) {
 	var operationLogList []models.OperationLogModel
-	collection := o.Dao.Mongo.MongoDatabase.Collection(operationLogCollectionName)
+	collection := o.Dao.Mongo.MongoDatabase.Collection(config.OperationLogCollectionName)
 	err := collection.Find(ctx, bson.M{"operation": operation}).Skip(offset).Limit(limit).All(&operationLogList)
 	if err != nil {
 		o.Dao.Zap.Logger.Error(
@@ -222,7 +223,7 @@ func (o *OperationLogDaoImpl) GetOperationLogListByEntityID(
 	entityID primitive.ObjectID, offset, limit int64, ctx context.Context,
 ) ([]models.OperationLogModel, error) {
 	var operationLogList []models.OperationLogModel
-	collection := o.Dao.Mongo.MongoDatabase.Collection(operationLogCollectionName)
+	collection := o.Dao.Mongo.MongoDatabase.Collection(config.OperationLogCollectionName)
 	err := collection.Find(ctx, bson.M{"entity_id": entityID}).Skip(offset).Limit(limit).All(&operationLogList)
 	if err != nil {
 		o.Dao.Zap.Logger.Error(
@@ -248,7 +249,7 @@ func (o *OperationLogDaoImpl) GetOperationLogListByEntityType(
 	entityType string, offset, limit int64, ctx context.Context,
 ) ([]models.OperationLogModel, error) {
 	var operationLogList []models.OperationLogModel
-	collection := o.Dao.Mongo.MongoDatabase.Collection(operationLogCollectionName)
+	collection := o.Dao.Mongo.MongoDatabase.Collection(config.OperationLogCollectionName)
 	err := collection.Find(ctx, bson.M{"entity_type": entityType}).Skip(offset).Limit(limit).All(&operationLogList)
 	if err != nil {
 		o.Dao.Zap.Logger.Error(
@@ -274,7 +275,7 @@ func (o *OperationLogDaoImpl) GetOperationLogListByStatus(
 	status string, offset, limit int64, ctx context.Context,
 ) ([]models.OperationLogModel, error) {
 	var operationLogList []models.OperationLogModel
-	collection := o.Dao.Mongo.MongoDatabase.Collection(operationLogCollectionName)
+	collection := o.Dao.Mongo.MongoDatabase.Collection(config.OperationLogCollectionName)
 	err := collection.Find(ctx, bson.M{"status": status}).Skip(offset).Limit(limit).All(&operationLogList)
 	if err != nil {
 		o.Dao.Zap.Logger.Error(
@@ -300,7 +301,7 @@ func (o *OperationLogDaoImpl) GetOperationLogListByCreatedTime(
 	startTime, endTime time.Time, offset, limit int64, ctx context.Context,
 ) ([]models.OperationLogModel, error) {
 	var operationLogList []models.OperationLogModel
-	collection := o.Dao.Mongo.MongoDatabase.Collection(operationLogCollectionName)
+	collection := o.Dao.Mongo.MongoDatabase.Collection(config.OperationLogCollectionName)
 	err := collection.Find(
 		ctx, bson.M{"created_time": bson.M{"$gte": startTime, "$lte": endTime}},
 	).Skip(offset).Limit(limit).All(&operationLogList)
@@ -331,7 +332,7 @@ func (o *OperationLogDaoImpl) InsertOperationLog(
 	userID, entityID primitive.ObjectID,
 	username, email, ipAddress, userAgent, operation, entityType, description, status string,
 ) (primitive.ObjectID, error) {
-	collection := o.Dao.Mongo.MongoDatabase.Collection(operationLogCollectionName)
+	collection := o.Dao.Mongo.MongoDatabase.Collection(config.OperationLogCollectionName)
 	doc := bson.M{
 		"user_id":     userID,
 		"entity_id":   entityID,
@@ -364,7 +365,7 @@ func (o *OperationLogDaoImpl) InsertOperationLog(
 }
 
 func (o *OperationLogDaoImpl) DeleteOperationLog(ctx context.Context, operationLogID primitive.ObjectID) error {
-	collection := o.Dao.Mongo.MongoDatabase.Collection(operationLogCollectionName)
+	collection := o.Dao.Mongo.MongoDatabase.Collection(config.OperationLogCollectionName)
 	err := collection.RemoveId(ctx, operationLogID)
 	if err != nil {
 		o.Dao.Zap.Logger.Error(
@@ -385,7 +386,7 @@ func (o *OperationLogDaoImpl) DeleteOperationLogList(
 	ctx context.Context, startTime, endTime *time.Time, userID, entityID *primitive.ObjectID,
 	ipAddress, operation, entityType, status *string,
 ) (*int64, error) {
-	collection := o.Dao.Mongo.MongoDatabase.Collection(operationLogCollectionName)
+	collection := o.Dao.Mongo.MongoDatabase.Collection(config.OperationLogCollectionName)
 	doc := bson.M{}
 	if startTime != nil && endTime != nil {
 		doc["created_at"] = bson.M{"$gte": startTime, "$lte": endTime}
@@ -414,13 +415,13 @@ func (o *OperationLogDaoImpl) DeleteOperationLogList(
 	if err != nil {
 		o.Dao.Zap.Logger.Error(
 			"OperationLogDaoImpl.DeleteOperationLogList",
-			zap.ByteString(operationLogCollectionName, docJSON),
+			zap.ByteString(config.OperationLogCollectionName, docJSON),
 			zap.Error(err),
 		)
 	} else {
 		o.Dao.Zap.Logger.Info(
 			"OperationLogDaoImpl.DeleteOperationLogList",
-			zap.ByteString(operationLogCollectionName, docJSON),
+			zap.ByteString(config.OperationLogCollectionName, docJSON),
 			zap.Int64("count", result.DeletedCount),
 		)
 	}

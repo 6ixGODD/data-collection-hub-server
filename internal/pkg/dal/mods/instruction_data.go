@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"data-collection-hub-server/internal/pkg/config"
 	"data-collection-hub-server/internal/pkg/dal"
 	"data-collection-hub-server/internal/pkg/models"
 	"github.com/goccy/go-json"
@@ -61,7 +62,7 @@ func (i *InstructionDataDaoImpl) GetInstructionDataById(
 	ctx context.Context, instructionDataID *primitive.ObjectID,
 ) (*models.InstructionDataModel, error) {
 	var instructionData models.InstructionDataModel
-	collection := i.Dao.Mongo.MongoDatabase.Collection(instructionDataCollectionName)
+	collection := i.Dao.Mongo.MongoDatabase.Collection(config.InstructionDataCollectionName)
 	err := collection.Find(ctx, bson.M{"_id": instructionDataID, "deleted": false}).One(&instructionData)
 	if err != nil {
 		i.Dao.Zap.Logger.Error(
@@ -87,7 +88,7 @@ func (i *InstructionDataDaoImpl) GetInstructionDataList(
 	var instructionDataList []models.InstructionDataModel
 	var err error
 
-	collection := i.Dao.Mongo.MongoDatabase.Collection(instructionDataCollectionName)
+	collection := i.Dao.Mongo.MongoDatabase.Collection(config.InstructionDataCollectionName)
 	doc := bson.M{"deleted": false}
 	if userID != nil {
 		doc["user_id"] = *userID
@@ -119,7 +120,7 @@ func (i *InstructionDataDaoImpl) GetInstructionDataList(
 		i.Dao.Zap.Logger.Error(
 			"InstructionDataDaoImpl.GetInstructionDataList",
 			zap.Int64("offset", offset), zap.Int64("limit", limit), zap.Bool("desc", desc),
-			zap.ByteString(instructionDataCollectionName, docJSON), zap.Error(err),
+			zap.ByteString(config.InstructionDataCollectionName, docJSON), zap.Error(err),
 		)
 		return nil, nil, err
 	}
@@ -128,14 +129,14 @@ func (i *InstructionDataDaoImpl) GetInstructionDataList(
 		i.Dao.Zap.Logger.Error(
 			"InstructionDataDaoImpl.GetInstructionDataList",
 			zap.Int64("offset", offset), zap.Int64("limit", limit), zap.Bool("desc", desc),
-			zap.ByteString(instructionDataCollectionName, docJSON), zap.Error(err),
+			zap.ByteString(config.InstructionDataCollectionName, docJSON), zap.Error(err),
 		)
 		return nil, nil, err
 	}
 	i.Dao.Zap.Logger.Info(
 		"InstructionDataDaoImpl.GetInstructionDataList",
 		zap.Int64("offset", offset), zap.Int64("limit", limit), zap.Bool("desc", desc),
-		zap.ByteString(instructionDataCollectionName, docJSON), zap.Int64("count", count),
+		zap.ByteString(config.InstructionDataCollectionName, docJSON), zap.Int64("count", count),
 	)
 	return instructionDataList, &count, nil
 }
@@ -144,7 +145,7 @@ func (i *InstructionDataDaoImpl) CountInstructionData(
 	ctx context.Context, userID *primitive.ObjectID, theme, statusCode *string,
 	createTimeStart, createTimeEnd, updateTimeStart, updateTimeEnd *time.Time,
 ) (*int64, error) {
-	collection := i.Dao.Mongo.MongoDatabase.Collection(instructionDataCollectionName)
+	collection := i.Dao.Mongo.MongoDatabase.Collection(config.InstructionDataCollectionName)
 	doc := bson.M{"deleted": false}
 	if userID != nil {
 		doc["user_id"] = *userID
@@ -167,13 +168,13 @@ func (i *InstructionDataDaoImpl) CountInstructionData(
 	if err != nil {
 		i.Dao.Zap.Logger.Error(
 			"InstructionDataDaoImpl.CountInstructionData",
-			zap.ByteString(instructionDataCollectionName, docJSON),
+			zap.ByteString(config.InstructionDataCollectionName, docJSON),
 			zap.Error(err),
 		)
 	} else {
 		i.Dao.Zap.Logger.Info(
 			"InstructionDataDaoImpl.CountInstructionData",
-			zap.ByteString(instructionDataCollectionName, docJSON),
+			zap.ByteString(config.InstructionDataCollectionName, docJSON),
 			zap.Int64("count", count),
 		)
 	}
@@ -183,7 +184,7 @@ func (i *InstructionDataDaoImpl) CountInstructionData(
 func (i *InstructionDataDaoImpl) AggregateCountInstructionData(
 	ctx context.Context, groupBy *string,
 ) (map[string]int64, error) {
-	collection := i.Dao.Mongo.MongoDatabase.Collection(instructionDataCollectionName)
+	collection := i.Dao.Mongo.MongoDatabase.Collection(config.InstructionDataCollectionName)
 	pipeline := []bson.M{
 		{"$match": bson.M{"deleted": false}},
 		{"$group": bson.M{"_id": "$" + *groupBy, "count": bson.M{"$sum": 1}}},
@@ -236,18 +237,18 @@ func (i *InstructionDataDaoImpl) InsertInstructionData(
 		"deleted_at": nil,
 	}
 	docJSON, _ := bson.Marshal(doc)
-	collection := i.Dao.Mongo.MongoDatabase.Collection(instructionDataCollectionName)
+	collection := i.Dao.Mongo.MongoDatabase.Collection(config.InstructionDataCollectionName)
 	result, err := collection.InsertOne(ctx, doc)
 	if err != nil {
 		i.Dao.Zap.Logger.Error(
 			"InstructionDataDaoImpl.InsertInstructionData",
-			zap.ByteString(instructionDataCollectionName, docJSON),
+			zap.ByteString(config.InstructionDataCollectionName, docJSON),
 			zap.Error(err),
 		)
 	} else {
 		i.Dao.Zap.Logger.Info(
 			"InstructionDataDaoImpl.InsertInstructionData",
-			zap.ByteString(instructionDataCollectionName, docJSON),
+			zap.ByteString(config.InstructionDataCollectionName, docJSON),
 			zap.String("instructionDataID", result.InsertedID.(primitive.ObjectID).Hex()),
 		)
 	}
@@ -259,7 +260,7 @@ func (i *InstructionDataDaoImpl) UpdateInstructionData(
 	instructionDataID primitive.ObjectID, userID *primitive.ObjectID,
 	rowInstruction, rowInput, rowOutput, theme, source, note, statusCode, statusMessage *string,
 ) error {
-	collection := i.Dao.Mongo.MongoDatabase.Collection(instructionDataCollectionName)
+	collection := i.Dao.Mongo.MongoDatabase.Collection(config.InstructionDataCollectionName)
 	doc := bson.M{"updated_at": time.Now()}
 	if userID != nil {
 		doc["user_id"] = *userID
@@ -306,14 +307,14 @@ func (i *InstructionDataDaoImpl) UpdateInstructionData(
 		i.Dao.Zap.Logger.Error(
 			"InstructionDataDaoImpl.UpdateInstructionData",
 			zap.String("instructionDataID", instructionDataID.Hex()),
-			zap.ByteString(instructionDataCollectionName, docJSON),
+			zap.ByteString(config.InstructionDataCollectionName, docJSON),
 			zap.Error(err),
 		)
 	} else {
 		i.Dao.Zap.Logger.Info(
 			"InstructionDataDaoImpl.UpdateInstructionData",
 			zap.String("instructionDataID", instructionDataID.Hex()),
-			zap.ByteString(instructionDataCollectionName, docJSON),
+			zap.ByteString(config.InstructionDataCollectionName, docJSON),
 		)
 	}
 	return err
@@ -322,7 +323,7 @@ func (i *InstructionDataDaoImpl) UpdateInstructionData(
 func (i *InstructionDataDaoImpl) SoftDeleteInstructionData(
 	ctx context.Context, instructionDataID primitive.ObjectID,
 ) error {
-	collection := i.Dao.Mongo.MongoDatabase.Collection(instructionDataCollectionName)
+	collection := i.Dao.Mongo.MongoDatabase.Collection(config.InstructionDataCollectionName)
 	err := collection.UpdateId(
 		ctx,
 		instructionDataID,
@@ -347,7 +348,7 @@ func (i *InstructionDataDaoImpl) SoftDeleteInstructionDataList(
 	ctx context.Context, userID *primitive.ObjectID, theme, statusCode *string,
 	createTimeStart, createTimeEnd, updateTimeStart, updateTimeEnd *time.Time,
 ) (*int64, error) {
-	collection := i.Dao.Mongo.MongoDatabase.Collection(instructionDataCollectionName)
+	collection := i.Dao.Mongo.MongoDatabase.Collection(config.InstructionDataCollectionName)
 	doc := bson.M{"deleted": false}
 	if userID != nil {
 		doc["user_id"] = *userID
@@ -370,13 +371,13 @@ func (i *InstructionDataDaoImpl) SoftDeleteInstructionDataList(
 	if err != nil {
 		i.Dao.Zap.Logger.Error(
 			"InstructionDataDaoImpl.SoftDeleteInstructionDataList",
-			zap.ByteString(instructionDataCollectionName, docJSON),
+			zap.ByteString(config.InstructionDataCollectionName, docJSON),
 			zap.Error(err),
 		)
 	} else {
 		i.Dao.Zap.Logger.Info(
 			"InstructionDataDaoImpl.SoftDeleteInstructionDataList",
-			zap.ByteString(instructionDataCollectionName, docJSON),
+			zap.ByteString(config.InstructionDataCollectionName, docJSON),
 			zap.Int64("deletedCount", result.ModifiedCount),
 		)
 	}
@@ -386,7 +387,7 @@ func (i *InstructionDataDaoImpl) SoftDeleteInstructionDataList(
 func (i *InstructionDataDaoImpl) DeleteInstructionData(
 	ctx context.Context, instructionDataID primitive.ObjectID,
 ) error {
-	collection := i.Dao.Mongo.MongoDatabase.Collection(instructionDataCollectionName)
+	collection := i.Dao.Mongo.MongoDatabase.Collection(config.InstructionDataCollectionName)
 	err := collection.RemoveId(ctx, instructionDataID)
 	if err != nil {
 		i.Dao.Zap.Logger.Error(
@@ -407,7 +408,7 @@ func (i *InstructionDataDaoImpl) DeleteInstructionDataList(
 	ctx context.Context, userID *primitive.ObjectID, theme, statusCode *string,
 	createTimeStart, createTimeEnd, updateTimeStart, updateTimeEnd *time.Time,
 ) (*int64, error) {
-	collection := i.Dao.Mongo.MongoDatabase.Collection(instructionDataCollectionName)
+	collection := i.Dao.Mongo.MongoDatabase.Collection(config.InstructionDataCollectionName)
 	doc := bson.M{"deleted": false}
 	if userID != nil {
 		doc["user_id"] = *userID
@@ -430,13 +431,13 @@ func (i *InstructionDataDaoImpl) DeleteInstructionDataList(
 	if err != nil {
 		i.Dao.Zap.Logger.Error(
 			"InstructionDataDaoImpl.DeleteInstructionDataList",
-			zap.ByteString(instructionDataCollectionName, docJSON),
+			zap.ByteString(config.InstructionDataCollectionName, docJSON),
 			zap.Error(err),
 		)
 	} else {
 		i.Dao.Zap.Logger.Info(
 			"InstructionDataDaoImpl.DeleteInstructionDataList",
-			zap.ByteString(instructionDataCollectionName, docJSON),
+			zap.ByteString(config.InstructionDataCollectionName, docJSON),
 			zap.Int64("deletedCount", result.DeletedCount),
 		)
 	}

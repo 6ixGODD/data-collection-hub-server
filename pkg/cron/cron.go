@@ -12,11 +12,11 @@ type Scheduler struct {
 	cancel context.CancelFunc
 }
 
-func New() *Scheduler {
-	ctx, cancel := context.WithCancel(context.Background())
+func New(ctx context.Context) *Scheduler {
+	c, cancel := context.WithCancel(ctx)
 	return &Scheduler{
 		cron:   cron.New(),
-		ctx:    ctx,
+		ctx:    c,
 		cancel: cancel,
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"data-collection-hub-server/internal/pkg/config"
 	"data-collection-hub-server/internal/pkg/dal"
 	"data-collection-hub-server/internal/pkg/models"
 	"github.com/goccy/go-json"
@@ -40,7 +41,7 @@ func NewLoginLogDao(dao *dal.Dao) LoginLogDao {
 func (l *LoginLogDaoImpl) GetLoginLogById(
 	ctx context.Context, loginLogID primitive.ObjectID,
 ) (*models.LoginLogModel, error) {
-	collection := l.Dao.Mongo.MongoDatabase.Collection(loginLogCollectionName)
+	collection := l.Dao.Mongo.MongoDatabase.Collection(config.LoginLogCollectionName)
 	var loginLog models.LoginLogModel
 	err := collection.Find(ctx, bson.M{"_id": loginLogID}).One(&loginLog)
 	if err != nil {
@@ -64,7 +65,7 @@ func (l *LoginLogDaoImpl) GetLoginLogList(
 	offset, limit int64, desc bool, startTime, endTime *time.Time, userID *primitive.ObjectID,
 	ipAddress, userAgent, query *string,
 ) ([]models.LoginLogModel, *int64, error) {
-	collection := l.Dao.Mongo.MongoDatabase.Collection(loginLogCollectionName)
+	collection := l.Dao.Mongo.MongoDatabase.Collection(config.LoginLogCollectionName)
 	var loginLogList []models.LoginLogModel
 	var err error
 	doc := bson.M{}
@@ -98,7 +99,7 @@ func (l *LoginLogDaoImpl) GetLoginLogList(
 		l.Dao.Zap.Logger.Error(
 			"LoginLogDaoImpl.GetLoginLogList",
 			zap.Int64("offset", offset), zap.Int64("limit", limit),
-			zap.ByteString(loginLogCollectionName, docJSON), zap.Error(err), zap.Error(err),
+			zap.ByteString(config.LoginLogCollectionName, docJSON), zap.Error(err), zap.Error(err),
 		)
 		return nil, nil, err
 	}
@@ -107,14 +108,14 @@ func (l *LoginLogDaoImpl) GetLoginLogList(
 		l.Dao.Zap.Logger.Error(
 			"LoginLogDaoImpl.GetLoginLogList",
 			zap.Int64("offset", offset), zap.Int64("limit", limit),
-			zap.ByteString(loginLogCollectionName, docJSON), zap.Error(err),
+			zap.ByteString(config.LoginLogCollectionName, docJSON), zap.Error(err),
 		)
 		return nil, nil, err
 	}
 	l.Dao.Zap.Logger.Info(
 		"LoginLogDaoImpl.GetLoginLogList",
 		zap.Int64("offset", offset), zap.Int64("limit", limit),
-		zap.ByteString(loginLogCollectionName, docJSON), zap.Int64("count", count),
+		zap.ByteString(config.LoginLogCollectionName, docJSON), zap.Int64("count", count),
 	)
 	return loginLogList, &count, nil
 }
@@ -122,7 +123,7 @@ func (l *LoginLogDaoImpl) GetLoginLogList(
 func (l *LoginLogDaoImpl) InsertLoginLog(
 	ctx context.Context, UserID primitive.ObjectID, Username, Email, IPAddress, UserAgent string,
 ) (primitive.ObjectID, error) {
-	collection := l.Dao.Mongo.MongoDatabase.Collection(loginLogCollectionName)
+	collection := l.Dao.Mongo.MongoDatabase.Collection(config.LoginLogCollectionName)
 	doc := bson.M{
 		"user_id":    UserID,
 		"username":   Username,
@@ -136,13 +137,13 @@ func (l *LoginLogDaoImpl) InsertLoginLog(
 	if err != nil {
 		l.Dao.Zap.Logger.Error(
 			"LoginLogDaoImpl.InsertLoginLog",
-			zap.ByteString(loginLogCollectionName, docJSON),
+			zap.ByteString(config.LoginLogCollectionName, docJSON),
 			zap.Error(err),
 		)
 	} else {
 		l.Dao.Zap.Logger.Info(
 			"LoginLogDaoImpl.InsertLoginLog",
-			zap.ByteString(loginLogCollectionName, docJSON),
+			zap.ByteString(config.LoginLogCollectionName, docJSON),
 			zap.String("loginLogID", result.InsertedID.(primitive.ObjectID).Hex()),
 		)
 	}
@@ -150,7 +151,7 @@ func (l *LoginLogDaoImpl) InsertLoginLog(
 }
 
 func (l *LoginLogDaoImpl) DeleteLoginLog(loginLogID primitive.ObjectID, ctx context.Context) error {
-	collection := l.Dao.Mongo.MongoDatabase.Collection(loginLogCollectionName)
+	collection := l.Dao.Mongo.MongoDatabase.Collection(config.LoginLogCollectionName)
 	err := collection.RemoveId(ctx, loginLogID)
 	if err != nil {
 		l.Dao.Zap.Logger.Error(
@@ -171,7 +172,7 @@ func (l *LoginLogDaoImpl) DeleteLoginLogList(
 	ctx context.Context, startTime, endTime *time.Time, userID *primitive.ObjectID,
 	ipAddress, userAgent *string,
 ) (*int64, error) {
-	collection := l.Dao.Mongo.MongoDatabase.Collection(loginLogCollectionName)
+	collection := l.Dao.Mongo.MongoDatabase.Collection(config.LoginLogCollectionName)
 	doc := bson.M{}
 	if startTime != nil && endTime != nil {
 		doc["created_at"] = bson.M{"$gte": startTime, "$lte": endTime}
@@ -190,13 +191,13 @@ func (l *LoginLogDaoImpl) DeleteLoginLogList(
 	if err != nil {
 		l.Dao.Zap.Logger.Error(
 			"LoginLogDaoImpl.DeleteLoginLogList",
-			zap.ByteString(loginLogCollectionName, docJSON),
+			zap.ByteString(config.LoginLogCollectionName, docJSON),
 			zap.Error(err),
 		)
 	} else {
 		l.Dao.Zap.Logger.Info(
 			"LoginLogDaoImpl.DeleteLoginLogList",
-			zap.ByteString(loginLogCollectionName, docJSON),
+			zap.ByteString(config.LoginLogCollectionName, docJSON),
 			zap.Int64("count", result.DeletedCount),
 		)
 	}

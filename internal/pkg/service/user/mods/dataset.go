@@ -6,7 +6,6 @@ import (
 
 	"data-collection-hub-server/internal/pkg/config"
 	dao "data-collection-hub-server/internal/pkg/dal/mods"
-	"data-collection-hub-server/internal/pkg/models"
 	"data-collection-hub-server/internal/pkg/schema/user"
 	"data-collection-hub-server/internal/pkg/service"
 	"data-collection-hub-server/pkg/errors"
@@ -58,7 +57,7 @@ func (d DatasetServiceImpl) InsertInstructionData(
 	}
 	_, err = d.instructionDataDao.InsertInstructionData(
 		ctx, userID, usr.Username, *Instruction, *Input, *Output, *Theme, *Source, *Note,
-		models.InstructionDataStatusPending, "",
+		config.InstructionDataStatusPending, "",
 	)
 	if err != nil {
 		return errors.MongoError(errors.WriteError(err))

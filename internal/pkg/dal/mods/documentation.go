@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"data-collection-hub-server/internal/pkg/config"
 	"data-collection-hub-server/internal/pkg/dal"
 	"data-collection-hub-server/internal/pkg/models"
 	"github.com/goccy/go-json"
@@ -41,7 +42,7 @@ func (d *DocumentationDaoImpl) GetDocumentationById(
 	ctx context.Context, documentationId primitive.ObjectID,
 ) (*models.DocumentationModel, error) {
 	var documentation models.DocumentationModel
-	collection := d.Dao.Mongo.MongoDatabase.Collection(documentationCollectionName)
+	collection := d.Dao.Mongo.MongoDatabase.Collection(config.DocumentationCollectionName)
 	err := collection.Find(ctx, bson.M{"_id": documentationId}).One(&documentation)
 	if err != nil {
 		d.Dao.Zap.Logger.Error(
@@ -65,7 +66,7 @@ func (d *DocumentationDaoImpl) GetDocumentationList(
 ) ([]models.DocumentationModel, *int64, error) {
 	var documentationList []models.DocumentationModel
 	var err error
-	collection := d.Dao.Mongo.MongoDatabase.Collection(documentationCollectionName)
+	collection := d.Dao.Mongo.MongoDatabase.Collection(config.DocumentationCollectionName)
 	doc := bson.M{}
 	if createStartTime != nil && createEndTime != nil {
 		doc["created_at"] = bson.M{"$gte": createStartTime, "$lte": createEndTime}
@@ -83,7 +84,7 @@ func (d *DocumentationDaoImpl) GetDocumentationList(
 		d.Dao.Zap.Logger.Error(
 			"DocumentationDaoImpl.GetDocumentationList",
 			zap.Int64("offset", offset), zap.Int64("limit", limit),
-			zap.Bool("desc", desc), zap.ByteString(documentationCollectionName, docJSON), zap.Error(err),
+			zap.Bool("desc", desc), zap.ByteString(config.DocumentationCollectionName, docJSON), zap.Error(err),
 		)
 		return nil, nil, err
 	}
@@ -92,7 +93,7 @@ func (d *DocumentationDaoImpl) GetDocumentationList(
 		d.Dao.Zap.Logger.Error(
 			"DocumentationDaoImpl.GetDocumentationList",
 			zap.Int64("offset", offset), zap.Int64("limit", limit),
-			zap.ByteString(documentationCollectionName, docJSON), zap.Error(err),
+			zap.ByteString(config.DocumentationCollectionName, docJSON), zap.Error(err),
 		)
 		return nil, nil, err
 	}
@@ -100,7 +101,7 @@ func (d *DocumentationDaoImpl) GetDocumentationList(
 	d.Dao.Zap.Logger.Info(
 		"DocumentationDaoImpl.GetDocumentationList",
 		zap.Int64("offset", offset), zap.Int64("limit", limit),
-		zap.ByteString(documentationCollectionName, docJSON), zap.Int64("count", count),
+		zap.ByteString(config.DocumentationCollectionName, docJSON), zap.Int64("count", count),
 	)
 	return documentationList, &count, nil
 }
@@ -108,7 +109,7 @@ func (d *DocumentationDaoImpl) GetDocumentationList(
 func (d *DocumentationDaoImpl) InsertDocumentation(
 	ctx context.Context, title, content string,
 ) (primitive.ObjectID, error) {
-	collection := d.Dao.Mongo.MongoDatabase.Collection(documentationCollectionName)
+	collection := d.Dao.Mongo.MongoDatabase.Collection(config.DocumentationCollectionName)
 	doc := bson.M{
 		"title": title, "content": content, "created_at": time.Now(), "updated_at": time.Now(),
 	}
@@ -117,13 +118,13 @@ func (d *DocumentationDaoImpl) InsertDocumentation(
 	if err != nil {
 		d.Dao.Zap.Logger.Error(
 			"DocumentationDaoImpl.InsertDocumentation",
-			zap.ByteString(documentationCollectionName, docJSON),
+			zap.ByteString(config.DocumentationCollectionName, docJSON),
 			zap.Error(err),
 		)
 	} else {
 		d.Dao.Zap.Logger.Info(
 			"DocumentationDaoImpl.InsertDocumentation",
-			zap.ByteString(documentationCollectionName, docJSON),
+			zap.ByteString(config.DocumentationCollectionName, docJSON),
 			zap.String("documentation_id", result.InsertedID.(primitive.ObjectID).Hex()),
 		)
 	}
@@ -133,7 +134,7 @@ func (d *DocumentationDaoImpl) InsertDocumentation(
 func (d *DocumentationDaoImpl) UpdateDocumentation(
 	ctx context.Context, documentationId primitive.ObjectID, title, content *string,
 ) error {
-	collection := d.Dao.Mongo.MongoDatabase.Collection(documentationCollectionName)
+	collection := d.Dao.Mongo.MongoDatabase.Collection(config.DocumentationCollectionName)
 	doc := bson.M{"updated_at": time.Now()}
 	if title != nil {
 		doc["title"] = *title
@@ -147,14 +148,14 @@ func (d *DocumentationDaoImpl) UpdateDocumentation(
 		d.Dao.Zap.Logger.Error(
 			"DocumentationDaoImpl.UpdateDocumentation",
 			zap.String("documentationId", documentationId.Hex()),
-			zap.ByteString(documentationCollectionName, docJSON),
+			zap.ByteString(config.DocumentationCollectionName, docJSON),
 			zap.Error(err),
 		)
 	} else {
 		d.Dao.Zap.Logger.Info(
 			"DocumentationDaoImpl.UpdateDocumentation",
 			zap.String("documentationId", documentationId.Hex()),
-			zap.ByteString(documentationCollectionName, docJSON),
+			zap.ByteString(config.DocumentationCollectionName, docJSON),
 		)
 	}
 	return err
@@ -163,7 +164,7 @@ func (d *DocumentationDaoImpl) UpdateDocumentation(
 func (d *DocumentationDaoImpl) DeleteDocumentation(
 	ctx context.Context, documentationId primitive.ObjectID,
 ) error {
-	collection := d.Dao.Mongo.MongoDatabase.Collection(documentationCollectionName)
+	collection := d.Dao.Mongo.MongoDatabase.Collection(config.DocumentationCollectionName)
 	err := collection.RemoveId(ctx, documentationId)
 	if err != nil {
 		d.Dao.Zap.Logger.Error(
@@ -184,7 +185,7 @@ func (d *DocumentationDaoImpl) DeleteDocumentationList(
 	ctx context.Context, createStartTime, createEndTime, updateStartTime, updateEndTime *time.Time,
 	title, content *string,
 ) (*int64, error) {
-	collection := d.Dao.Mongo.MongoDatabase.Collection(documentationCollectionName)
+	collection := d.Dao.Mongo.MongoDatabase.Collection(config.DocumentationCollectionName)
 	doc := bson.M{}
 	if title != nil {
 		doc["title"] = *title
@@ -203,14 +204,14 @@ func (d *DocumentationDaoImpl) DeleteDocumentationList(
 	if err != nil {
 		d.Dao.Zap.Logger.Error(
 			"DocumentationDaoImpl.DeleteDocumentationList",
-			zap.ByteString(documentationCollectionName, docJSON),
+			zap.ByteString(config.DocumentationCollectionName, docJSON),
 			zap.Error(err),
 		)
 		return nil, err
 	}
 	d.Dao.Zap.Logger.Info(
 		"DocumentationDaoImpl.DeleteDocumentationList",
-		zap.ByteString(documentationCollectionName, docJSON),
+		zap.ByteString(config.DocumentationCollectionName, docJSON),
 		zap.Int64("deleted_count", result.DeletedCount),
 	)
 	return &result.DeletedCount, nil

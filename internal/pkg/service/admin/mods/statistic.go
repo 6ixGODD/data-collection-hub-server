@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
+	"data-collection-hub-server/internal/pkg/config"
 	dao "data-collection-hub-server/internal/pkg/dal/mods"
-	"data-collection-hub-server/internal/pkg/models"
 	"data-collection-hub-server/internal/pkg/schema/admin"
 	"data-collection-hub-server/internal/pkg/service"
 	"data-collection-hub-server/pkg/errors"
@@ -39,9 +39,9 @@ func NewStatisticService(
 func (s StatisticServiceImpl) GetDataStatistic(
 	ctx context.Context, startDate, endDate *time.Time,
 ) (*admin.GetDataStatisticResponse, error) {
-	pendingStatus := models.InstructionDataStatusPending
-	approvedStatus := models.InstructionDataStatusApproved
-	rejectedStatus := models.InstructionDataStatusRejected
+	pendingStatus := config.InstructionDataStatusPending
+	approvedStatus := config.InstructionDataStatusApproved
+	rejectedStatus := config.InstructionDataStatusRejected
 	themeField := "theme"
 	total, err := s.instructionDataDao.CountInstructionData(
 		ctx, nil, nil, nil, nil,
@@ -145,9 +145,9 @@ func (s StatisticServiceImpl) GetDataStatistic(
 func (s StatisticServiceImpl) GetUserStatistic(
 	ctx context.Context, userID *primitive.ObjectID,
 ) (*admin.GetUserStatisticResponse, error) {
-	pendingStatus := models.InstructionDataStatusPending
-	approvedStatus := models.InstructionDataStatusApproved
-	rejectedStatus := models.InstructionDataStatusRejected
+	pendingStatus := config.InstructionDataStatusPending
+	approvedStatus := config.InstructionDataStatusApproved
+	rejectedStatus := config.InstructionDataStatusRejected
 	user, err := s.userDao.GetUserById(ctx, *userID)
 	if err != nil {
 		return nil, errors.MongoError(errors.ReadError(err))
@@ -198,9 +198,9 @@ func (s StatisticServiceImpl) GetUserStatistic(
 func (s StatisticServiceImpl) GetUserStatisticList(
 	ctx context.Context, page, pageSize *int64, loginBefore, loginAfter, createdBefore, createdAfter *time.Time,
 ) (*admin.GetUserStatisticListResponse, error) {
-	pendingStatus := models.InstructionDataStatusPending
-	approvedStatus := models.InstructionDataStatusApproved
-	rejectedStatus := models.InstructionDataStatusRejected
+	pendingStatus := config.InstructionDataStatusPending
+	approvedStatus := config.InstructionDataStatusApproved
+	rejectedStatus := config.InstructionDataStatusRejected
 	offset := (*page - 1) * *pageSize
 	users, count, err := s.userDao.GetUserList(
 		ctx, offset, *pageSize, false, nil, nil, createdBefore, createdAfter,

@@ -25,10 +25,11 @@ var (
 	once          sync.Once
 )
 
-func New(ctx context.Context, config *qmgo.Config, PingTimeout int64, databaseName string) (m *Mongo, err error) {
+func New(ctx context.Context, config *qmgo.Config, PingTimeout int64, databaseName string) (*Mongo, error) {
+	var err error
 	once.Do(
 		func() {
-			m = &Mongo{
+			m := &Mongo{
 				mongoConfig: &Config{
 					qmgoConfig:   config,
 					pingTimeout:  PingTimeout,
@@ -42,7 +43,22 @@ func New(ctx context.Context, config *qmgo.Config, PingTimeout int64, databaseNa
 			mongoInstance = m
 		},
 	)
-	return mongoInstance, nil
+	return mongoInstance, err
+}
+
+func Update(config *qmgo.Config, PingTimeout int64, databaseName string) error {
+	var err error
+	mongoInstance = &Mongo{
+		mongoConfig: &Config{
+			qmgoConfig:   config,
+			pingTimeout:  PingTimeout,
+			databaseName: databaseName,
+		},
+	}
+	if err = mongoInstance.Init(); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (m *Mongo) Init() error {

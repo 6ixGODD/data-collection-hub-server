@@ -23,10 +23,11 @@ var (
 	once          sync.Once
 )
 
-func New(ctx context.Context, options *redis.Options) (r *Redis, err error) {
+func New(ctx context.Context, options *redis.Options) (*Redis, error) {
+	var err error
 	once.Do(
 		func() {
-			r = &Redis{
+			r := &Redis{
 				redisConfig: &Config{
 					redisOptions: options,
 				},
@@ -38,9 +39,21 @@ func New(ctx context.Context, options *redis.Options) (r *Redis, err error) {
 			redisInstance = r
 		},
 	)
-	return redisInstance, nil
+	return redisInstance, err
 }
 
+func Update(options *redis.Options) error {
+	var err error
+	redisInstance = &Redis{
+		redisConfig: &Config{
+			redisOptions: options,
+		},
+	}
+	if err = redisInstance.Init(); err != nil {
+		return err
+	}
+	return nil
+}
 func (r *Redis) Init() error {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()

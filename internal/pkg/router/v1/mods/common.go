@@ -2,7 +2,7 @@ package mods
 
 import (
 	"data-collection-hub-server/internal/pkg/api/v1/common"
-	"data-collection-hub-server/internal/pkg/models"
+	"data-collection-hub-server/internal/pkg/config"
 	"github.com/gofiber/contrib/casbin"
 	"github.com/gofiber/fiber/v2"
 )
@@ -24,9 +24,9 @@ func (c *CommonRouter) RegisterCommonRouter(
 	group.Post("/login", api.Login)
 	group.Post("/logout", api.Logout)
 	group.Get("/refreshToken", api.RefreshToken)
-	group.Get("/profile", rbac.RequiresRoles([]string{models.UserRoleAdmin, models.UserRoleUser}), api.GetProfile)
+	group.Get("/profile", rbac.RequiresRoles([]string{config.UserRoleAdmin, config.UserRoleUser}), api.GetProfile)
 	group.Put(
-		"/changePassword", rbac.RequiresRoles([]string{models.UserRoleAdmin, models.UserRoleUser}), api.ChangePassword,
+		"/changePassword", rbac.RequiresRoles([]string{config.UserRoleAdmin, config.UserRoleUser}), api.ChangePassword,
 	)
 
 	group.Get("/notice", api.GetNotice)

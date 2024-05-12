@@ -21,7 +21,8 @@ const (
 func TestJwt_GenerateAccessToken(t *testing.T) {
 	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	assert.NoError(t, err)
-	jwtInstance := jwt.New(privateKey, tokenDuration, refreshDuration, refreshBuffer)
+	jwtInstance, err := jwt.New(privateKey, tokenDuration, refreshDuration, refreshBuffer)
+	assert.NoError(t, err)
 
 	accessToken, err := jwtInstance.GenerateAccessToken(sub)
 	assert.NoError(t, err)
@@ -37,7 +38,8 @@ func TestJwt_GenerateAccessToken(t *testing.T) {
 func TestJwt_GenerateRefreshToken(t *testing.T) {
 	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	assert.NoError(t, err)
-	jwtInstance := jwt.New(privateKey, tokenDuration, refreshDuration, refreshBuffer)
+	jwtInstance, err := jwt.New(privateKey, tokenDuration, refreshDuration, refreshBuffer)
+	assert.NoError(t, err)
 
 	refreshToken, err := jwtInstance.GenerateRefreshToken(sub)
 	assert.NoError(t, err)
@@ -53,7 +55,8 @@ func TestJwt_GenerateRefreshToken(t *testing.T) {
 func TestJwt_VerifyToken(t *testing.T) {
 	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	assert.NoError(t, err)
-	jwtInstance := jwt.New(privateKey, tokenDuration, refreshDuration, refreshBuffer)
+	jwtInstance, err := jwt.New(privateKey, tokenDuration, refreshDuration, refreshBuffer)
+	assert.NoError(t, err)
 
 	accessToken, err := jwtInstance.GenerateAccessToken(sub)
 	assert.NoError(t, err)
@@ -74,7 +77,8 @@ func TestJwt_VerifyToken(t *testing.T) {
 func TestJwt_RefreshToken(t *testing.T) {
 	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	assert.NoError(t, err)
-	jwtInstance := jwt.New(privateKey, tokenDuration, refreshDuration, refreshBuffer)
+	jwtInstance, err := jwt.New(privateKey, tokenDuration, refreshDuration, refreshBuffer)
+	assert.NoError(t, err)
 
 	refreshToken, err := jwtInstance.GenerateRefreshToken(sub)
 	assert.NoError(t, err)
@@ -96,7 +100,8 @@ func TestJwt_RefreshToken(t *testing.T) {
 func TestJwt_ExtractClaims(t *testing.T) {
 	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	assert.NoError(t, err)
-	jwtInstance := jwt.New(privateKey, tokenDuration, refreshDuration, refreshBuffer)
+	jwtInstance, err := jwt.New(privateKey, tokenDuration, refreshDuration, refreshBuffer)
+	assert.NoError(t, err)
 
 	subject := "test"
 	accessToken, err := jwtInstance.GenerateAccessToken(subject)
