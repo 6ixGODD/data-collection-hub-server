@@ -22,13 +22,13 @@ import (
 )
 
 type App struct {
-	app        *fiber.App
-	logger     *logging.Zap
-	config     *config.Config
-	router     *router.Router
-	middleware *middleware.Middleware
+	App        *fiber.App
+	Logger     *logging.Zap
+	Config     *config.Config
+	Router     *router.Router
+	Middleware *middleware.Middleware
 	Scheduler  *cron.Scheduler
-	ctx        context.Context
+	Ctx        context.Context
 }
 
 // New factory function that initializes the application and returns a fiber.App instance.
@@ -37,12 +37,12 @@ func New(
 	middleware *middleware.Middleware, scheduler *cron.Scheduler,
 ) (*App, error) {
 	app := &App{
-		logger:     logger,
-		config:     config,
-		router:     router,
-		middleware: middleware,
+		Logger:     logger,
+		Config:     config,
+		Router:     router,
+		Middleware: middleware,
 		Scheduler:  scheduler,
-		ctx:        ctx,
+		Ctx:        ctx,
 	}
 
 	if err := app.Init(); err != nil {
@@ -54,67 +54,67 @@ func New(
 func (a *App) Init() error {
 	app := fiber.New(
 		fiber.Config{
-			Prefork:                 a.config.FiberConfig.Prefork,
-			ServerHeader:            a.config.FiberConfig.ServerHeader,
-			BodyLimit:               a.config.FiberConfig.BodyLimit,
-			Concurrency:             a.config.FiberConfig.Concurrency,
-			ReadTimeout:             a.config.FiberConfig.ReadTimeout,
-			WriteTimeout:            a.config.FiberConfig.WriteTimeout,
-			IdleTimeout:             a.config.FiberConfig.IdleTimeout,
-			ReadBufferSize:          a.config.FiberConfig.ReadBufferSize,
-			WriteBufferSize:         a.config.FiberConfig.WriteBufferSize,
-			ProxyHeader:             a.config.FiberConfig.ProxyHeader,
-			DisableStartupMessage:   a.config.FiberConfig.DisableStartupMessage,
-			AppName:                 a.config.BaseConfig.AppName,
-			ReduceMemoryUsage:       a.config.FiberConfig.ReduceMemoryUsage,
-			EnableTrustedProxyCheck: a.config.FiberConfig.EnableTrustedProxyCheck,
-			TrustedProxies:          a.config.FiberConfig.TrustedProxies,
-			EnablePrintRoutes:       a.config.FiberConfig.EnablePrintRoutes,
+			Prefork:                 a.Config.FiberConfig.Prefork,
+			ServerHeader:            a.Config.FiberConfig.ServerHeader,
+			BodyLimit:               a.Config.FiberConfig.BodyLimit,
+			Concurrency:             a.Config.FiberConfig.Concurrency,
+			ReadTimeout:             a.Config.FiberConfig.ReadTimeout,
+			WriteTimeout:            a.Config.FiberConfig.WriteTimeout,
+			IdleTimeout:             a.Config.FiberConfig.IdleTimeout,
+			ReadBufferSize:          a.Config.FiberConfig.ReadBufferSize,
+			WriteBufferSize:         a.Config.FiberConfig.WriteBufferSize,
+			ProxyHeader:             a.Config.FiberConfig.ProxyHeader,
+			DisableStartupMessage:   a.Config.FiberConfig.DisableStartupMessage,
+			AppName:                 a.Config.BaseConfig.AppName,
+			ReduceMemoryUsage:       a.Config.FiberConfig.ReduceMemoryUsage,
+			EnableTrustedProxyCheck: a.Config.FiberConfig.EnableTrustedProxyCheck,
+			TrustedProxies:          a.Config.FiberConfig.TrustedProxies,
+			EnablePrintRoutes:       a.Config.FiberConfig.EnablePrintRoutes,
 			ErrorHandler:            errors.ErrorHandler,
 			JSONDecoder:             json.Unmarshal, // Use go-json for enhanced JSON decoding performance
 			JSONEncoder:             json.Marshal,
 		},
 	)
 
-	// Register middleware
-	// Register limiter middleware
+	// Register Middleware
+	// Register limiter Middleware
 	app.Use(
 		limiter.New(
 			limiter.Config{
-				Max:               a.config.LimiterConfig.Max,
-				Expiration:        a.config.LimiterConfig.Expiration,
+				Max:               a.Config.LimiterConfig.Max,
+				Expiration:        a.Config.LimiterConfig.Expiration,
 				LimiterMiddleware: limiter.SlidingWindow{},
 				// LimitReached: nil,
 			},
 		),
 	)
 
-	// Register cors middleware
+	// Register cors Middleware
 	app.Use(
 		cors.New(
 			cors.Config{
 				// Next:             nil,
-				AllowOrigins:     a.config.CorsConfig.AllowOrigins,
-				AllowMethods:     a.config.CorsConfig.AllowMethods,
-				AllowHeaders:     a.config.CorsConfig.AllowHeaders,
-				AllowCredentials: a.config.CorsConfig.AllowCredentials,
-				ExposeHeaders:    a.config.CorsConfig.ExposeHeaders,
-				MaxAge:           a.config.CorsConfig.MaxAge,
+				AllowOrigins:     a.Config.CorsConfig.AllowOrigins,
+				AllowMethods:     a.Config.CorsConfig.AllowMethods,
+				AllowHeaders:     a.Config.CorsConfig.AllowHeaders,
+				AllowCredentials: a.Config.CorsConfig.AllowCredentials,
+				ExposeHeaders:    a.Config.CorsConfig.ExposeHeaders,
+				MaxAge:           a.Config.CorsConfig.MaxAge,
 			},
 		),
 	)
 
-	// Register request id middleware
+	// Register request id Middleware
 	app.Use(requestid.New())
 
-	// Register logger middleware
+	// Register Logger Middleware
 
-	// TODO: Add more middleware here
+	// TODO: Add more Middleware here
 
 	// Register hooks
 	app.Hooks().OnShutdown(
 		func() error {
-			return hooks.Shutdown(a.ctx, app)
+			return hooks.Shutdown(a.Ctx, app)
 		},
 	)
 
@@ -130,43 +130,43 @@ func (a *App) Init() error {
 	)
 
 	// Register routers
-	adapter, err := mongodbadapter.NewAdapter(a.config.CasbinConfig.PolicyAdapterUrl)
+	adapter, err := mongodbadapter.NewAdapter(a.Config.CasbinConfig.PolicyAdapterUrl)
 	if err != nil {
 		return err
 	}
 	rbac := casbin.New(
 		casbin.Config{
-			ModelFilePath: a.config.CasbinConfig.ModelPath,
+			ModelFilePath: a.Config.CasbinConfig.ModelPath,
 			PolicyAdapter: adapter,
 			Lookup: func(c *fiber.Ctx) string {
 				return c.Locals(config.KeyUserID).(string)
 			},
 		},
 	)
-	a.router.RegisterRouter(app, rbac)
+	a.Router.RegisterRouter(app, rbac)
 
-	a.app = app
+	a.App = app
 
 	return nil
 }
 
 // Run function starts the application server.
 func (a *App) Run(addr string, enableTls bool) {
-	a.logger.SetTagInContext(a.ctx, logging.SystemTag)
-	a.logger.Logger.Info(
+	a.Logger.SetTagInContext(a.Ctx, logging.SystemTag)
+	a.Logger.Logger.Info(
 		"Server is starting",
 		zap.String("Addr", addr),
-		zap.String("version", a.config.BaseConfig.AppVersion),
+		zap.String("version", a.Config.BaseConfig.AppVersion),
 		zap.Int64("pid", int64(os.Getpid())),
 	)
 
-	if a.config.BaseConfig.EnableTls || enableTls {
-		if err := a.app.ListenTLS(addr, a.config.BaseConfig.TlsCertFile, a.config.BaseConfig.TlsKeyFile); err != nil {
-			a.logger.Logger.Fatal("Server run failed", zap.Error(err))
+	if a.Config.BaseConfig.EnableTls || enableTls {
+		if err := a.App.ListenTLS(addr, a.Config.BaseConfig.TlsCertFile, a.Config.BaseConfig.TlsKeyFile); err != nil {
+			a.Logger.Logger.Fatal("Server run failed", zap.Error(err))
 		}
 	} else {
-		if err := a.app.Listen(addr); err != nil {
-			a.logger.Logger.Fatal("Server run failed", zap.Error(err))
+		if err := a.App.Listen(addr); err != nil {
+			a.Logger.Logger.Fatal("Server run failed", zap.Error(err))
 		}
 	}
 }

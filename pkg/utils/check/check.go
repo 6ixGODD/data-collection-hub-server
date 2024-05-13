@@ -22,3 +22,12 @@ func IsValidAppPort(port string) bool {
 	}
 	return false
 }
+
+func IsValidLogLevel(level string) bool {
+	// Check if the log level is valid
+	switch level {
+	case "debug", "info", "warn", "error", "dpanic", "panic", "fatal":
+		return true
+	}
+	return false
+}
