@@ -15,10 +15,6 @@ type NoticeApi struct {
 	commonservice.NoticeService
 }
 
-func NewNoticeApi(noticeService commonservice.NoticeService) *NoticeApi {
-	return &NoticeApi{noticeService}
-}
-
 func (n *NoticeApi) GetNotice(c *fiber.Ctx) error {
 	req := new(common.GetNoticeRequest)
 

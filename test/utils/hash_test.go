@@ -11,7 +11,8 @@ func TestHash(t *testing.T) {
 	a := assert.New(t)
 
 	// Test1 hash
-	hash, _ := crypt.PasswordHash("123456")
+	hash, err := crypt.PasswordHash("123456")
+	a.NoError(err)
 	a.NotEmpty(hash)
 
 	// Test1 verify

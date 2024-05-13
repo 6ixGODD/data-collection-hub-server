@@ -12,10 +12,6 @@ type AuthApi struct {
 	commonservice.AuthService
 }
 
-func NewAuthApi(authService commonservice.AuthService) AuthApi {
-	return AuthApi{authService}
-}
-
 func (api *AuthApi) Login(c *fiber.Ctx) error {
 	req := new(common.LoginRequest)
 

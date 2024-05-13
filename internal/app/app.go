@@ -34,13 +34,14 @@ type App struct {
 // New factory function that initializes the application and returns a fiber.App instance.
 func New(
 	ctx context.Context, logger *logging.Zap, config *config.Config, router *router.Router,
-	middleware *middleware.Middleware,
+	middleware *middleware.Middleware, scheduler *cron.Scheduler,
 ) (*App, error) {
 	app := &App{
 		logger:     logger,
 		config:     config,
 		router:     router,
 		middleware: middleware,
+		Scheduler:  scheduler,
 		ctx:        ctx,
 	}
 

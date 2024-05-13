@@ -13,10 +13,6 @@ type DocumentationApi struct {
 	adminservice.DocumentationService
 }
 
-func NewDocumentationApi(documentationService adminservice.DocumentationService) DocumentationApi {
-	return DocumentationApi{documentationService}
-}
-
 func (d DocumentationApi) InsertDocumentation(c *fiber.Ctx) error {
 	req := new(admin.InsertDocumentationRequest)
 

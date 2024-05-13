@@ -8,8 +8,10 @@ import (
 	"data-collection-hub-server/internal/pkg/dal"
 	"data-collection-hub-server/internal/pkg/models"
 	"github.com/goccy/go-json"
+	"github.com/qiniu/qmgo/options"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	opt "go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -45,9 +47,24 @@ type UserDao interface {
 
 type UserDaoImpl struct{ *dal.Dao }
 
-func NewUserDao(dao *dal.Dao) UserDao {
-	var _ UserDao = (*UserDaoImpl)(nil) // Ensure that the interface is implemented
-	return &UserDaoImpl{dao}
+func NewUserDao(dao *dal.Dao) (UserDao, error) {
+	var _ UserDao = (*UserDaoImpl)(nil)
+	collection := dao.Mongo.MongoDatabase.Collection(config.UserCollectionName)
+	err := collection.CreateIndexes(
+		context.Background(), []options.IndexModel{
+			{
+				Key:          []string{"username", "email"},
+				IndexOptions: opt.Index().SetUnique(true),
+			},
+			{
+				Key: []string{"created_at", "updated_at"},
+			},
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &UserDaoImpl{dao}, nil
 }
 
 func (u *UserDaoImpl) GetUserById(ctx context.Context, userID primitive.ObjectID) (*models.UserModel, error) {

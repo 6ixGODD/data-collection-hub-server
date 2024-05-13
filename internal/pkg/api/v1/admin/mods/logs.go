@@ -15,10 +15,6 @@ type LogsApi struct {
 	adminservice.LogsService
 }
 
-func NewLogsApi(logsService adminservice.LogsService) LogsApi {
-	return LogsApi{logsService}
-}
-
 func (l *LogsApi) GetLoginLog(c *fiber.Ctx) error {
 	req := new(admin.GetLoginLogRequest)
 

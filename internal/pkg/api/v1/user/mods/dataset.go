@@ -15,10 +15,6 @@ type DatasetApi struct {
 	userservice.DatasetService
 }
 
-func NewDatasetApi(datasetService userservice.DatasetService) *DatasetApi {
-	return &DatasetApi{datasetService}
-}
-
 func (d *DatasetApi) InsertInstructionData(c *fiber.Ctx) error {
 	req := new(user.InsertInstructionDataRequest)
 

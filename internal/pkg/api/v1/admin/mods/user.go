@@ -15,10 +15,6 @@ type UserApi struct {
 	adminservice.UserService
 }
 
-func NewUserApi(userService adminservice.UserService) UserApi {
-	return UserApi{userService}
-}
-
 func (u *UserApi) InsertUser(c *fiber.Ctx) error {
 	req := new(admin.InsertUserRequest)
 

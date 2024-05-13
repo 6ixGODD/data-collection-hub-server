@@ -13,10 +13,6 @@ type NoticeApi struct {
 	adminservice.NoticeService
 }
 
-func NewNoticeApi(noticeService adminservice.NoticeService) NoticeApi {
-	return NoticeApi{noticeService}
-}
-
 func (api *NoticeApi) InsertNotice(c *fiber.Ctx) error {
 	req := new(admin.InsertNoticeRequest)
 

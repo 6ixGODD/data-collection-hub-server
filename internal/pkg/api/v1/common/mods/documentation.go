@@ -15,10 +15,6 @@ type DocumentationApi struct {
 	commonservice.DocumentationService
 }
 
-func NewDocumentationApi(documentationService commonservice.DocumentationService) DocumentationApi {
-	return DocumentationApi{documentationService}
-}
-
 func (d DocumentationApi) GetDocumentation(c *fiber.Ctx) error {
 	req := new(common.GetDocumentationRequest)
 

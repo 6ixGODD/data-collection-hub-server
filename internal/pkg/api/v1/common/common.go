@@ -10,15 +10,3 @@ type Common struct {
 	*mods.DocumentationApi
 	*mods.NoticeApi
 }
-
-func New(
-	authApi *mods.AuthApi, profileApi *mods.ProfileApi, documentationApi *mods.DocumentationApi,
-	noticeApi *mods.NoticeApi,
-) *Common {
-	return &Common{
-		AuthApi:          authApi,
-		ProfileApi:       profileApi,
-		DocumentationApi: documentationApi,
-		NoticeApi:        noticeApi,
-	}
-}

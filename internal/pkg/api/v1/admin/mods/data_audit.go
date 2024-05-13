@@ -15,10 +15,6 @@ type DataAuditApi struct {
 	adminservice.DataAuditService
 }
 
-func NewDataAuditApi(dataAuditService adminservice.DataAuditService) *DataAuditApi {
-	return &DataAuditApi{dataAuditService}
-}
-
 func (d *DataAuditApi) GetInstructionData(c *fiber.Ctx) error {
 	req := new(admin.GetInstructionDataRequest)
 

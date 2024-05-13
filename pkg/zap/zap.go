@@ -3,7 +3,6 @@ package zap
 import (
 	"context"
 
-	"data-collection-hub-server/internal/pkg/config"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -72,7 +71,7 @@ func (z *Zap) Init() error {
 func (z *Zap) GetLogger(ctx context.Context) (logger *zap.Logger, err error) {
 	var fields []zap.Field
 	if tag := z.getTagFromContext(ctx); tag != "" {
-		fields = append(fields, zap.String("tagKey", tag))
+		fields = append(fields, zap.String("tag", tag))
 	}
 	if reqID := z.getRequestIDFromContext(ctx); reqID != "" {
 		fields = append(fields, zap.String("requestID", reqID))
@@ -89,7 +88,7 @@ func (z *Zap) GetLogger(ctx context.Context) (logger *zap.Logger, err error) {
 }
 
 func (z *Zap) SetTagInContext(ctx context.Context, tag string) context.Context {
-	return context.WithValue(ctx, tag, tag)
+	return context.WithValue(ctx, tagKey, tag)
 }
 
 func (z *Zap) getTagFromContext(ctx context.Context) string {
@@ -102,11 +101,11 @@ func (z *Zap) getTagFromContext(ctx context.Context) string {
 }
 
 func (z *Zap) SetRequestIDInContext(ctx context.Context, requestID string) context.Context {
-	return context.WithValue(ctx, requestID, requestID)
+	return context.WithValue(ctx, requestIDKey, requestID)
 }
 
 func (z *Zap) getRequestIDFromContext(ctx context.Context) string {
-	if requestID := ctx.Value(config.KeyRequestID); requestID != nil {
+	if requestID := ctx.Value(requestIDKey); requestID != nil {
 		if requestID, ok := requestID.(string); ok {
 			return requestID
 		}
@@ -115,11 +114,11 @@ func (z *Zap) getRequestIDFromContext(ctx context.Context) string {
 }
 
 func (z *Zap) SetUserIDWithContext(ctx context.Context, userID string) context.Context {
-	return context.WithValue(ctx, userID, userID)
+	return context.WithValue(ctx, userIDKey, userID)
 }
 
 func (z *Zap) getUserIDFromContext(ctx context.Context) string {
-	if userID := ctx.Value(config.KeyUserID); userID != nil {
+	if userID := ctx.Value(userIDKey); userID != nil {
 		if userID, ok := userID.(string); ok {
 			return userID
 		}

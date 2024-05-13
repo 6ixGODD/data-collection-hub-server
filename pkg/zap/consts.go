@@ -8,5 +8,7 @@ const (
 	LoginTag     = "LOGIN"
 	OperationTag = "OPERATION"
 
-	tagKey = "TAG"
+	tagKey       = "TAG"
+	requestIDKey = "REQUEST_ID"
+	userIDKey    = "USER_ID"
 )

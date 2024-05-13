@@ -11,10 +11,6 @@ type ProfileApi struct {
 	commonservice.ProfileService
 }
 
-func NewProfileApi(profileService commonservice.ProfileService) ProfileApi {
-	return ProfileApi{profileService}
-}
-
 func (api *ProfileApi) GetProfile(c *fiber.Ctx) error {
 	resp, err := api.ProfileService.GetProfile(c.Context())
 	if err != nil {

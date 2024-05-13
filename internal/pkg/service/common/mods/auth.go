@@ -24,7 +24,7 @@ type AuthServiceImpl struct {
 	service     *service.Service
 	userDao     dao.UserDao
 	loginLogDao dao.LoginLogDao
-	Jwt         jwt.Jwt
+	Jwt         *jwt.Jwt
 }
 
 func (a AuthServiceImpl) Login(ctx context.Context, email, password *string) (*common.LoginResponse, error) {
@@ -142,10 +142,11 @@ func (a AuthServiceImpl) ChangePassword(ctx context.Context, oldPassword, newPas
 	return nil
 }
 
-func NewAuthService(s *service.Service, userDao dao.UserDao, loginLogDao dao.LoginLogDao) AuthService {
+func NewAuthService(s *service.Service, userDao dao.UserDao, loginLogDao dao.LoginLogDao, jwt *jwt.Jwt) AuthService {
 	return &AuthServiceImpl{
 		service:     s,
 		userDao:     userDao,
 		loginLogDao: loginLogDao,
+		Jwt:         jwt,
 	}
 }

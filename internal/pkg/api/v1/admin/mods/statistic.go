@@ -15,10 +15,6 @@ type StatisticApi struct {
 	adminservice.StatisticService
 }
 
-func NewStatisticApi(statisticService adminservice.StatisticService) *StatisticApi {
-	return &StatisticApi{statisticService}
-}
-
 func (s *StatisticApi) GetDataStatistic(c *fiber.Ctx) error {
 	req := new(admin.GetDataStatisticRequest)
 	if err := c.QueryParser(req); err != nil {

@@ -11,11 +11,11 @@ import (
 )
 
 type AuthMiddleware struct {
-	Jwt jwt.Jwt
+	Jwt *jwt.Jwt
 	Zap *logging.Zap
 }
 
-func NewAuthMiddleware(jwt jwt.Jwt, zap *logging.Zap) *AuthMiddleware {
+func NewAuthMiddleware(jwt *jwt.Jwt, zap *logging.Zap) *AuthMiddleware {
 	return &AuthMiddleware{
 		Jwt: jwt,
 		Zap: zap,
