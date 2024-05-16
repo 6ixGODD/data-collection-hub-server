@@ -12,12 +12,3 @@ type Service struct {
 	Redis  *redis.Redis
 	Config *config.Config
 }
-
-// New creates a new instance of Service.
-func New(logger *zap.Zap, redis *redis.Redis, config *config.Config) *Service {
-	return &Service{
-		Logger: logger,
-		Redis:  redis,
-		Config: config,
-	}
-}

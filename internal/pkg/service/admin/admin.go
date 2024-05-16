@@ -12,19 +12,3 @@ type Admin struct {
 	StatisticService     mods.StatisticService
 	UserService          mods.UserService
 }
-
-// New creates a new Admin service.
-func New(
-	dataAuditService mods.DataAuditService, documentationService mods.DocumentationService,
-	logsService mods.LogsService, noticeService mods.NoticeService, statisticService mods.StatisticService,
-	userService mods.UserService,
-) *Admin {
-	return &Admin{
-		DataAuditService:     dataAuditService,
-		DocumentationService: documentationService,
-		LogsService:          logsService,
-		NoticeService:        noticeService,
-		StatisticService:     statisticService,
-		UserService:          userService,
-	}
-}

@@ -21,6 +21,7 @@ type Config struct {
 	LimiterConfig    mods.LimiterConfig    `mapstructure:"limiter" yaml:"limiter"`
 	MongoConfig      mods.MongoConfig      `mapstructure:"mongo" yaml:"mongo"`
 	PrometheusConfig mods.PrometheusConfig `mapstructure:"prometheus" yaml:"prometheus"`
+	CacheConfig      mods.CacheConfig      `mapstructure:"cache" yaml:"cache"`
 	RedisConfig      mods.RedisConfig      `mapstructure:"redis" yaml:"redis"`
 	TasksConfig      mods.TasksConfig      `mapstructure:"tasks" yaml:"tasks"`
 	ZapConfig        mods.ZapConfig        `mapstructure:"zap" yaml:"zap"`

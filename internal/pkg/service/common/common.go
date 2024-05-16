@@ -10,15 +10,3 @@ type Common struct {
 	NoticeService        mods.NoticeService
 	ProfileService       mods.ProfileService
 }
-
-func New(
-	authService mods.AuthService, documentationService mods.DocumentationService,
-	noticeService mods.NoticeService, profileService mods.ProfileService,
-) *Common {
-	return &Common{
-		AuthService:          authService,
-		DocumentationService: documentationService,
-		NoticeService:        noticeService,
-		ProfileService:       profileService,
-	}
-}

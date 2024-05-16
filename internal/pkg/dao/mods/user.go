@@ -1,0 +1,551 @@
+package mods
+
+import (
+	"context"
+	"fmt"
+	"strconv"
+	"time"
+
+	"data-collection-hub-server/internal/pkg/config"
+	"data-collection-hub-server/internal/pkg/dao"
+	"data-collection-hub-server/internal/pkg/models"
+	"github.com/goccy/go-json"
+	"github.com/qiniu/qmgo/options"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	opt "go.mongodb.org/mongo-driver/mongo/options"
+	"go.uber.org/zap"
+)
+
+type UserDao interface {
+	GetUserById(ctx context.Context, userID primitive.ObjectID) (*models.UserModel, error)
+	GetUserByEmail(ctx context.Context, email *string) (*models.UserModel, error)
+	GetUserList(
+		ctx context.Context,
+		offset, limit int64, desc bool, organization, role *string,
+		createStartTime, createEndTime, updateStartTime, updateEndTime, lastLoginStartTime, lastLoginEndTime *time.Time,
+		query *string,
+	) ([]models.UserModel, *int64, error)
+	CountUser(
+		ctx context.Context, organization, role *string,
+		createStartTime, createEndTime, updateStartTime, updateEndTime, lastLoginStartTime, lastLoginEndTime *time.Time,
+	) (*int64, error)
+	InsertUser(ctx context.Context, username, email, password, role, organization string) (primitive.ObjectID, error)
+	UpdateUser(
+		ctx context.Context, userID primitive.ObjectID, username, email, password, role, organization *string,
+	) error
+	SoftDeleteUser(ctx context.Context, userID primitive.ObjectID) error
+	SoftDeleteUserList(
+		ctx context.Context, organization, role *string,
+		createStartTime, createEndTime, updateStartTime, updateEndTime, lastLoginStartTime, lastLoginEndTime *time.Time,
+	) (*int64, error)
+	DeleteUser(ctx context.Context, userID primitive.ObjectID) error
+	DeleteUserList(
+		ctx context.Context, organization, role *string,
+		createStartTime, createEndTime, updateStartTime, updateEndTime, lastLoginStartTime, lastLoginEndTime *time.Time,
+	) (*int64, error)
+}
+
+type UserDaoImpl struct {
+	Dao   *dao.Dao
+	Cache *dao.Cache
+}
+
+func NewUserDao(ctx context.Context, dao *dao.Dao, cache *dao.Cache) (UserDao, error) {
+	var _ UserDao = (*UserDaoImpl)(nil)
+	coll := dao.Mongo.MongoClient.Database(dao.Mongo.DatabaseName).Collection(config.UserCollectionName)
+	err := coll.CreateIndexes(
+		ctx, []options.IndexModel{
+			{
+				Key:          []string{"username"},
+				IndexOptions: opt.Index().SetUnique(true),
+			},
+			{
+				Key:          []string{"email"},
+				IndexOptions: opt.Index().SetUnique(true),
+			},
+			{Key: []string{"created_at"}}, {Key: []string{"updated_at"}},
+		},
+	)
+	if err != nil {
+		dao.Logger.Error(
+			fmt.Sprintf("Failed to create indexes for %s", config.UserCollectionName),
+			zap.Error(err),
+		)
+		return nil, err
+	}
+	return &UserDaoImpl{dao, cache}, nil
+}
+
+func (u *UserDaoImpl) GetUserById(ctx context.Context, userID primitive.ObjectID) (*models.UserModel, error) {
+	var user models.UserModel
+	key := fmt.Sprintf("%s:userID:%s", config.UserCachePrefix, userID.Hex())
+	cache, err := u.Cache.Get(ctx, key)
+	if err != nil {
+		u.Dao.Logger.Error("UserDaoImpl.GetUserById: cache get failed", zap.Error(err), zap.String("key", key))
+	} else if cache != nil && *cache != "" {
+		err := json.Unmarshal([]byte(*cache), &user)
+		if err != nil {
+			u.Dao.Logger.Error(
+				"UserDaoImpl.GetUserById: failed to unmarshal cache", zap.Error(err), zap.String("key", key),
+			)
+		} else {
+			u.Dao.Logger.Info("UserDaoImpl.GetUserById: cache hit", zap.String("key", key))
+			return &user, nil
+		}
+	} else {
+		u.Dao.Logger.Info("UserDaoImpl.GetUserById: cache miss", zap.String("key", key))
+	}
+	coll := u.Dao.Mongo.MongoClient.Database(u.Dao.Mongo.DatabaseName).Collection(config.UserCollectionName)
+	err = coll.Find(
+		ctx, bson.M{"_id": userID, "deleted": false},
+	).One(&user)
+	if err != nil {
+		u.Dao.Logger.Error(
+			"UserDaoImpl.GetUserById: failed to find user",
+			zap.Error(err), zap.String("userID", userID.Hex()),
+		)
+		return nil, err
+	} else {
+		u.Dao.Logger.Info(
+			"UserDaoImpl.GetUserById: success",
+			zap.String("userID", userID.Hex()),
+		)
+		return &user, nil
+	}
+}
+
+func (u *UserDaoImpl) GetUserByEmail(ctx context.Context, email *string) (*models.UserModel, error) {
+	var user models.UserModel
+	coll := u.Dao.Mongo.MongoClient.Database(u.Dao.Mongo.DatabaseName).Collection(config.UserCollectionName)
+	if email == nil {
+		return nil, fmt.Errorf("email is nil")
+	}
+	key := fmt.Sprintf("%s:email:%s", config.UserCachePrefix, *email)
+	cache, err := u.Cache.Get(ctx, key)
+	if err != nil {
+		u.Dao.Logger.Error("UserDaoImpl.GetUserByEmail: cache get failed", zap.Error(err), zap.String("key", key))
+	} else if cache != nil && *cache != "" {
+		err := json.Unmarshal([]byte(*cache), &user)
+		if err != nil {
+			u.Dao.Logger.Error(
+				"UserDaoImpl.GetUserByEmail: failed to unmarshal cache", zap.Error(err), zap.String("key", key),
+			)
+		} else {
+			u.Dao.Logger.Info("UserDaoImpl.GetUserByEmail: cache hit", zap.String("key", key))
+			return &user, nil
+		}
+	} else {
+		u.Dao.Logger.Info(
+			"UserDaoImpl.GetUserByEmail: cache miss",
+			zap.String("key", key),
+		)
+	}
+	err = coll.Find(
+		ctx, bson.M{"email": *email, "deleted": false},
+	).One(&user)
+	if err != nil {
+		u.Dao.Logger.Error(
+			"UserDaoImpl.GetUserByEmail: failed to find user", zap.Error(err), zap.String("email", *email),
+		)
+		return nil, err
+	} else {
+		u.Dao.Logger.Info(
+			"UserDaoImpl.GetUserByEmail: success",
+			zap.String("email", *email),
+		)
+		userJSON, _ := json.Marshal(user)
+		err := u.Cache.Set(ctx, key, string(userJSON))
+		if err != nil {
+			u.Dao.Logger.Error("UserDaoImpl.GetUserByEmail: cache set failed", zap.Error(err), zap.String("key", key))
+		} else {
+			u.Dao.Logger.Info("UserDaoImpl.GetUserByEmail: cache set success", zap.String("key", key))
+		}
+		return &user, nil
+	}
+}
+
+func (u *UserDaoImpl) GetUserList(
+	ctx context.Context,
+	offset, limit int64, desc bool, organization, role *string,
+	createStartTime, createEndTime, updateStartTime, updateEndTime, lastLoginStartTime, lastLoginEndTime *time.Time,
+	query *string,
+) ([]models.UserModel, *int64, error) {
+	coll := u.Dao.Mongo.MongoClient.Database(u.Dao.Mongo.DatabaseName).Collection(config.UserCollectionName)
+	var userList []models.UserModel
+	var err error
+	doc := bson.M{"deleted": false}
+	key := fmt.Sprintf("%s:offset:%d:limit:%d", config.UserCachePrefix, offset, limit)
+	if organization != nil {
+		doc["organization"] = *organization
+		key += fmt.Sprintf(":organization:%s", *organization)
+	}
+	if role != nil {
+		doc["role"] = *role
+		key += fmt.Sprintf(":role:%s", *role)
+	}
+	if createStartTime != nil && createEndTime != nil {
+		doc["created_at"] = bson.M{"$gte": createStartTime, "$lte": createEndTime}
+		key += fmt.Sprintf(":createStartTime:%s:createEndTime:%s", createStartTime, createEndTime)
+	}
+	if updateStartTime != nil && updateEndTime != nil {
+		doc["updated_at"] = bson.M{"$gte": updateStartTime, "$lte": updateEndTime}
+		key += fmt.Sprintf(":updateStartTime:%s:updateEndTime:%s", updateStartTime, updateEndTime)
+	}
+	if lastLoginStartTime != nil && lastLoginEndTime != nil {
+		doc["last_login_at"] = bson.M{"$gte": lastLoginStartTime, "$lte": lastLoginEndTime}
+		key += fmt.Sprintf(":lastLoginStartTime:%s:lastLoginEndTime:%s", lastLoginStartTime, lastLoginEndTime)
+	}
+	if query != nil {
+		pattern := ".*" + *query + ".*"
+		doc["$or"] = []bson.M{
+			{"user_id": bson.M{"$regex": primitive.Regex{Pattern: pattern, Options: "i"}}},
+			{"email": bson.M{"$regex": primitive.Regex{Pattern: pattern, Options: "i"}}},
+			{"user_name": bson.M{"$regex": primitive.Regex{Pattern: pattern, Options: "i"}}},
+			{"organization": bson.M{"$regex": primitive.Regex{Pattern: pattern, Options: "i"}}},
+		}
+	}
+	docJSON, _ := json.Marshal(doc)
+
+	if desc {
+		key += ":desc"
+	}
+	cache, err := u.Cache.GetList(ctx, key)
+	if err != nil {
+		u.Dao.Logger.Error(
+			"UserDaoImpl.GetUserList: failed to get cache",
+			zap.String("key", key), zap.Error(err),
+		)
+	} else if cache != nil {
+		u.Dao.Logger.Info("UserDaoImpl.GetUserList: cache hit", zap.String("key", key))
+		return cache.List.([]models.UserModel), &cache.Total, nil
+	} else {
+		u.Dao.Logger.Info("UserDaoImpl.GetUserList: cache miss", zap.String("key", key), zap.Error(err))
+	}
+
+	if desc {
+		err = coll.Find(ctx, doc).Sort("-created_at").Skip(offset).Limit(limit).All(&userList)
+	} else {
+		err = coll.Find(ctx, doc).Skip(offset).Limit(limit).All(&userList)
+	}
+	if err != nil {
+		u.Dao.Logger.Error(
+			"UserDaoImpl.GetUserList: failed to find userList",
+			zap.ByteString(config.UserCollectionName, docJSON), zap.Error(err),
+		)
+		return nil, nil, err
+	}
+	count, err := coll.Find(ctx, doc).Count()
+	if err != nil {
+		u.Dao.Logger.Error(
+			"UserDaoImpl.GetUserList: failed to count userList",
+			zap.ByteString(config.UserCollectionName, docJSON), zap.Error(err),
+		)
+		return nil, nil, err
+	}
+	u.Dao.Logger.Info(
+		"UserDaoImpl.GetUserList: success",
+		zap.ByteString(config.UserCollectionName, docJSON), zap.Int64("count", count),
+	)
+
+	cacheList := models.CacheList{Total: count, List: userList}
+	err = u.Cache.SetList(ctx, key, &cacheList)
+	if err != nil {
+		u.Dao.Logger.Error(
+			"NoticeDaoImpl.GetUserList: failed to set cache",
+			zap.Error(err),
+			zap.String("key", key),
+			zap.ByteString(config.UserCollectionName, docJSON),
+		)
+	} else {
+		u.Dao.Logger.Info(
+			"NoticeDaoImpl.GetUserList: cache set",
+			zap.String("key", key),
+			zap.ByteString(config.UserCollectionName, docJSON),
+		)
+	}
+	return userList, &count, nil
+}
+
+func (u *UserDaoImpl) CountUser(
+	ctx context.Context,
+	organization, role *string,
+	createStartTime, createEndTime, updateStartTime, updateEndTime, lastLoginStartTime, lastLoginEndTime *time.Time,
+) (*int64, error) {
+	coll := u.Dao.Mongo.MongoClient.Database(u.Dao.Mongo.DatabaseName).Collection(config.UserCollectionName)
+	doc := bson.M{"deleted": false}
+	key := fmt.Sprintf("%s:count", config.UserCachePrefix)
+	if organization != nil {
+		doc["organization"] = *organization
+		key += fmt.Sprintf(":organization:%s", *organization)
+	}
+	if role != nil {
+		doc["role"] = *role
+		key += fmt.Sprintf(":role:%s", *role)
+	}
+	if createStartTime != nil && createEndTime != nil {
+		doc["created_at"] = bson.M{"$gte": createStartTime, "$lte": createEndTime}
+		key += fmt.Sprintf(":createStartTime:%s:createEndTime:%s", createStartTime, createEndTime)
+	}
+	if updateStartTime != nil && updateEndTime != nil {
+		doc["updated_at"] = bson.M{"$gte": updateStartTime, "$lte": updateEndTime}
+		key += fmt.Sprintf(":updateStartTime:%s:updateEndTime:%s", updateStartTime, updateEndTime)
+	}
+	if lastLoginStartTime != nil && lastLoginEndTime != nil {
+		doc["last_login_at"] = bson.M{"$gte": lastLoginStartTime, "$lte": lastLoginEndTime}
+		key += fmt.Sprintf(":lastLoginStartTime:%s:lastLoginEndTime:%s", lastLoginStartTime, lastLoginEndTime)
+	}
+	docJSON, _ := json.Marshal(doc)
+	cache, err := u.Cache.Get(ctx, key)
+	if err != nil {
+		u.Dao.Logger.Error(
+			"UserDaoImpl.CountUser: failed to get cache",
+			zap.Error(err),
+			zap.String("key", key),
+		)
+	} else if cache != nil {
+		u.Dao.Logger.Info(
+			"UserDaoImpl.CountUser: cache hit",
+			zap.String("key", key),
+		)
+		if count, err := strconv.ParseInt(*cache, 10, 64); err != nil {
+			u.Dao.Logger.Error(
+				"UserDaoImpl.CountUser: failed to parse cache",
+				zap.Error(err),
+				zap.String("key", key), zap.String("value", *cache),
+			)
+		} else {
+			return &count, nil
+		}
+	} else {
+		u.Dao.Logger.Info(
+			"UserDaoImpl.CountUser: cache miss",
+			zap.String("key", key),
+		)
+	}
+	count, err := coll.Find(ctx, doc).Count()
+	if err != nil {
+		u.Dao.Logger.Error(
+			"UserDaoImpl.CountUser: failed to count user", zap.Error(err),
+			zap.ByteString(config.UserCollectionName, docJSON),
+		)
+	} else {
+		u.Dao.Logger.Info(
+			"UserDaoImpl.CountUser: success", zap.Int64("count", count),
+			zap.ByteString(config.UserCollectionName, docJSON),
+		)
+	}
+	return &count, err
+}
+
+func (u *UserDaoImpl) InsertUser(
+	ctx context.Context,
+	username, email, password, role, organization string,
+) (primitive.ObjectID, error) {
+	coll := u.Dao.Mongo.MongoClient.Database(u.Dao.Mongo.DatabaseName).Collection(config.UserCollectionName)
+	doc := bson.M{
+		"username":      username,
+		"email":         email,
+		"password":      password,
+		"role":          role,
+		"organization":  organization,
+		"last_login_at": nil,
+		"deleted":       false,
+		"created_at":    time.Now(),
+		"updated_at":    time.Now(),
+		"deleted_at":    nil,
+	}
+	docJSON, _ := json.Marshal(doc)
+	result, err := coll.InsertOne(ctx, doc)
+	if err != nil {
+		u.Dao.Logger.Error(
+			"UserDaoImpl.InsertUser",
+			zap.Error(err), zap.ByteString(config.UserCollectionName, docJSON),
+		)
+		return primitive.NilObjectID, err
+	} else {
+		u.Dao.Logger.Info(
+			"UserDaoImpl.InsertUser",
+			zap.String("userID", result.InsertedID.(primitive.ObjectID).Hex()),
+			zap.ByteString(config.UserCollectionName, docJSON),
+		)
+		prefix := config.UserCachePrefix
+		if err = u.Cache.Flush(ctx, &prefix); err != nil {
+			u.Dao.Logger.Error("UserDaoImpl.InsertUser: failed to flush cache", zap.Error(err))
+		} else {
+			u.Dao.Logger.Info("UserDaoImpl.InsertUser: cache flushed")
+		}
+		return result.InsertedID.(primitive.ObjectID), nil
+	}
+}
+
+func (u *UserDaoImpl) UpdateUser(
+	ctx context.Context, userID primitive.ObjectID, username, email, password, role, organization *string,
+) error {
+	coll := u.Dao.Mongo.MongoClient.Database(u.Dao.Mongo.DatabaseName).Collection(config.UserCollectionName)
+	doc := bson.M{"updated_at": time.Now()}
+	if username != nil {
+		doc["username"] = *username
+	}
+	if email != nil {
+		doc["email"] = *email
+	}
+	if password != nil {
+		doc["password"] = *password
+	}
+	if role != nil {
+		doc["role"] = *role
+	}
+	if organization != nil {
+		doc["organization"] = *organization
+	}
+	docJSON, _ := json.Marshal(doc)
+	err := coll.UpdateId(ctx, userID, bson.M{"$set": doc})
+	if err != nil {
+		u.Dao.Logger.Error(
+			"UserDaoImpl.UpdateUser: failed",
+			zap.Error(err), zap.String("userID", userID.Hex()), zap.ByteString(config.UserCollectionName, docJSON),
+		)
+	} else {
+		u.Dao.Logger.Info(
+			"UserDaoImpl.UpdateUser: success",
+			zap.String("userID", userID.Hex()), zap.ByteString(config.UserCollectionName, docJSON),
+		)
+		prefix := config.UserCachePrefix
+		if err = u.Cache.Flush(ctx, &prefix); err != nil {
+			u.Dao.Logger.Error("UserDaoImpl.UpdateUser: failed to flush cache", zap.Error(err))
+		} else {
+			u.Dao.Logger.Info("UserDaoImpl.UpdateUser: cache flushed")
+		}
+	}
+	return err
+}
+
+func (u *UserDaoImpl) SoftDeleteUser(ctx context.Context, userID primitive.ObjectID) error {
+	coll := u.Dao.Mongo.MongoClient.Database(u.Dao.Mongo.DatabaseName).Collection(config.UserCollectionName)
+	err := coll.UpdateId(ctx, userID, bson.M{"$set": bson.M{"deleted": true, "deleted_at": time.Now()}})
+	if err != nil {
+		u.Dao.Logger.Error("UserDaoImpl.DeleteUser", zap.Error(err), zap.String("userID", userID.Hex()))
+	} else {
+		u.Dao.Logger.Info("UserDaoImpl.DeleteUser", zap.String("userID", userID.Hex()))
+		prefix := config.UserCachePrefix
+		if err = u.Cache.Flush(ctx, &prefix); err != nil {
+			u.Dao.Logger.Error("UserDaoImpl.SoftDeleteUser: failed to flush cache", zap.Error(err))
+		} else {
+			u.Dao.Logger.Info("UserDaoImpl.SoftDeleteUser: cache flushed")
+		}
+	}
+	return err
+}
+
+func (u *UserDaoImpl) SoftDeleteUserList(
+	ctx context.Context, organization, role *string,
+	createStartTime, createEndTime, updateStartTime, updateEndTime, lastLoginStartTime, lastLoginEndTime *time.Time,
+) (*int64, error) {
+	coll := u.Dao.Mongo.MongoClient.Database(u.Dao.Mongo.DatabaseName).Collection(config.UserCollectionName)
+	doc := bson.M{"deleted": false}
+	if organization != nil {
+		doc["organization"] = *organization
+	}
+	if role != nil {
+		doc["role"] = *role
+	}
+	if createStartTime != nil && createEndTime != nil {
+		doc["created_at"] = bson.M{"$gte": createStartTime, "$lte": createEndTime}
+	}
+	if updateStartTime != nil && updateEndTime != nil {
+		doc["updated_at"] = bson.M{"$gte": updateStartTime, "$lte": updateEndTime}
+	}
+	if lastLoginStartTime != nil && lastLoginEndTime != nil {
+		doc["last_login_at"] = bson.M{"$gte": lastLoginStartTime, "$lte": lastLoginEndTime}
+	}
+	docJSON, _ := json.Marshal(doc)
+	result, err := coll.UpdateAll(ctx, doc, bson.M{"$set": bson.M{"deleted": true, "deleted_at": time.Now()}})
+	if err != nil {
+		u.Dao.Logger.Error(
+			"UserDaoImpl.DeleteUserList: failed",
+			zap.Error(err),
+			zap.ByteString(config.UserCollectionName, docJSON),
+		)
+	} else {
+		u.Dao.Logger.Info(
+			"UserDaoImpl.DeleteUserList: success",
+			zap.Int64("count", result.ModifiedCount),
+			zap.ByteString(config.UserCollectionName, docJSON),
+		)
+		prefix := config.UserCachePrefix
+		if err = u.Cache.Flush(ctx, &prefix); err != nil {
+			u.Dao.Logger.Error("UserDaoImpl.SoftDeleteUserList: failed to flush cache", zap.Error(err))
+		} else {
+			u.Dao.Logger.Info("UserDaoImpl.SoftDeleteUserList: cache flushed")
+		}
+	}
+	return &result.ModifiedCount, err
+}
+
+func (u *UserDaoImpl) DeleteUser(ctx context.Context, userID primitive.ObjectID) error {
+	coll := u.Dao.Mongo.MongoClient.Database(u.Dao.Mongo.DatabaseName).Collection(config.UserCollectionName)
+	err := coll.RemoveId(ctx, userID)
+	if err != nil {
+		u.Dao.Logger.Error("UserDaoImpl.DeleteUser: failed", zap.Error(err), zap.String("userID", userID.Hex()))
+	} else {
+		u.Dao.Logger.Info(
+			"UserDaoImpl.DeleteUser: success",
+			zap.String("userID", userID.Hex()),
+		)
+		prefix := config.UserCachePrefix
+		if err = u.Cache.Flush(ctx, &prefix); err != nil {
+			u.Dao.Logger.Error("UserDaoImpl.DeleteUser: failed to flush cache", zap.Error(err))
+		} else {
+			u.Dao.Logger.Info("UserDaoImpl.DeleteUser: cache flushed")
+		}
+	}
+	return err
+}
+
+func (u *UserDaoImpl) DeleteUserList(
+	ctx context.Context, organization, role *string,
+	createStartTime, createEndTime, updateStartTime, updateEndTime, lastLoginStartTime, lastLoginEndTime *time.Time,
+) (*int64, error) {
+	coll := u.Dao.Mongo.MongoClient.Database(u.Dao.Mongo.DatabaseName).Collection(config.UserCollectionName)
+	doc := bson.M{}
+	if organization != nil {
+		doc["organization"] = *organization
+	}
+	if role != nil {
+		doc["role"] = *role
+	}
+	if createStartTime != nil && createEndTime != nil {
+		doc["created_at"] = bson.M{"$gte": createStartTime, "$lte": createEndTime}
+	}
+	if updateStartTime != nil && updateEndTime != nil {
+		doc["updated_at"] = bson.M{"$gte": updateStartTime, "$lte": updateEndTime}
+	}
+	if lastLoginStartTime != nil && lastLoginEndTime != nil {
+		doc["last_login_at"] = bson.M{"$gte": lastLoginStartTime, "$lte": lastLoginEndTime}
+	}
+	docJSON, _ := json.Marshal(doc)
+	result, err := coll.RemoveAll(ctx, doc)
+	if err != nil {
+		u.Dao.Logger.Error(
+			"UserDaoImpl.DeleteUserList: failed", zap.Error(err), zap.ByteString(config.UserCollectionName, docJSON),
+		)
+	} else {
+		u.Dao.Logger.Info(
+			"UserDaoImpl.DeleteUserList: success", zap.Int64("count", result.DeletedCount),
+			zap.ByteString(config.UserCollectionName, docJSON),
+		)
+		prefix := config.UserCachePrefix
+		if err = u.Cache.Flush(ctx, &prefix); err != nil {
+			u.Dao.Logger.Error(
+				"UserDaoImpl.DeleteUserList: failed to flush cache",
+				zap.Error(err),
+			)
+		} else {
+			u.Dao.Logger.Info(
+				"UserDaoImpl.DeleteUserList: cache flushed",
+			)
+		}
+	}
+	return &result.DeletedCount, err
+}

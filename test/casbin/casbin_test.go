@@ -1,1 +1,1 @@
-package casbin__test
+package casbin_test

@@ -11,11 +11,3 @@ type Api struct {
 	CommonApi *common.Common
 	UserApi   *user.User
 }
-
-func New(adminApi *admin.Admin, commonApi *common.Common, userApi *user.User) *Api {
-	return &Api{
-		AdminApi:  adminApi,
-		CommonApi: commonApi,
-		UserApi:   userApi,
-	}
-}

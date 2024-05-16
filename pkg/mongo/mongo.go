@@ -8,16 +8,10 @@ import (
 )
 
 type Mongo struct {
-	MongoClient   *qmgo.Client
-	MongoDatabase *qmgo.Database
-	mongoConfig   *Config
-	ctx           context.Context
-}
-
-type Config struct {
+	MongoClient  *qmgo.Client
+	DatabaseName string
 	qmgoConfig   *qmgo.Config
 	pingTimeout  int64
-	databaseName string
 }
 
 var (
@@ -30,14 +24,11 @@ func New(ctx context.Context, config *qmgo.Config, PingTimeout int64, databaseNa
 	once.Do(
 		func() {
 			m := &Mongo{
-				mongoConfig: &Config{
-					qmgoConfig:   config,
-					pingTimeout:  PingTimeout,
-					databaseName: databaseName,
-				},
-				ctx: ctx,
+				qmgoConfig:   config,
+				pingTimeout:  PingTimeout,
+				DatabaseName: databaseName,
 			}
-			if err = m.Init(); err != nil {
+			if err = m.init(ctx); err != nil {
 				return
 			}
 			mongoInstance = m
@@ -46,51 +37,25 @@ func New(ctx context.Context, config *qmgo.Config, PingTimeout int64, databaseNa
 	return mongoInstance, err
 }
 
-func Update(config *qmgo.Config, PingTimeout int64, databaseName string) error {
-	var err error
+func Set(ctx context.Context, config *qmgo.Config, PingTimeout int64, databaseName string) error {
 	mongoInstance = &Mongo{
-		mongoConfig: &Config{
-			qmgoConfig:   config,
-			pingTimeout:  PingTimeout,
-			databaseName: databaseName,
-		},
+		qmgoConfig:   config,
+		pingTimeout:  PingTimeout,
+		DatabaseName: databaseName,
 	}
-	if err = mongoInstance.Init(); err != nil {
-		return err
-	}
-	return nil
+	return mongoInstance.init(ctx)
 }
 
-func (m *Mongo) Init() error {
-	client, err := qmgo.NewClient(m.ctx, m.mongoConfig.qmgoConfig)
+func (m *Mongo) init(ctx context.Context) error {
+	client, err := qmgo.NewClient(ctx, m.qmgoConfig)
 	if err != nil {
 		return err
 	}
-	if err = client.Ping(m.mongoConfig.pingTimeout); err != nil {
+	if err = client.Ping(m.pingTimeout); err != nil {
 		return err
 	}
 	m.MongoClient = client
-	m.MongoDatabase = client.Database(m.mongoConfig.databaseName)
 	return nil
-}
-
-func (m *Mongo) GetClient() (client *qmgo.Client, err error) {
-	if m.MongoClient == nil || m.MongoClient.Ping(m.mongoConfig.pingTimeout) != nil {
-		if err = m.Init(); err != nil {
-			return nil, err
-		}
-	}
-	return m.MongoClient, nil
-}
-
-func (m *Mongo) GetDatabase() (database *qmgo.Database, err error) {
-	if m.MongoDatabase == nil || m.MongoClient.Ping(m.mongoConfig.pingTimeout) != nil {
-		if err = m.Init(); err != nil {
-			return nil, err
-		}
-	}
-	return m.MongoDatabase, nil
-
 }
 
 func (m *Mongo) Close(ctx context.Context) error {

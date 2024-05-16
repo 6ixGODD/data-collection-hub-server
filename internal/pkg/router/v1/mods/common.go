@@ -11,10 +11,6 @@ const commonPrefix = "/common"
 
 type CommonRouter struct{}
 
-func NewCommonRouter() *CommonRouter {
-	return &CommonRouter{}
-}
-
 // RegisterCommonRouter registers the common router.
 func (c *CommonRouter) RegisterCommonRouter(
 	app fiber.Router, api *common.Common, rbac *casbin.Middleware,
@@ -23,10 +19,10 @@ func (c *CommonRouter) RegisterCommonRouter(
 
 	group.Post("/login", api.Login)
 	group.Post("/logout", api.Logout)
-	group.Get("/refreshToken", api.RefreshToken)
+	group.Get("/refresh-token", api.RefreshToken)
 	group.Get("/profile", rbac.RequiresRoles([]string{config.UserRoleAdmin, config.UserRoleUser}), api.GetProfile)
 	group.Put(
-		"/changePassword", rbac.RequiresRoles([]string{config.UserRoleAdmin, config.UserRoleUser}), api.ChangePassword,
+		"/change-password", rbac.RequiresRoles([]string{config.UserRoleAdmin, config.UserRoleUser}), api.ChangePassword,
 	)
 
 	group.Get("/notice", api.GetNotice)

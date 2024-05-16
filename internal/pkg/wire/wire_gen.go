@@ -17,8 +17,10 @@ import (
 	"data-collection-hub-server/internal/pkg/api/v1/user"
 	mods7 "data-collection-hub-server/internal/pkg/api/v1/user/mods"
 	"data-collection-hub-server/internal/pkg/config"
-	"data-collection-hub-server/internal/pkg/dal"
-	"data-collection-hub-server/internal/pkg/dal/mods"
+	"data-collection-hub-server/internal/pkg/dao"
+	"data-collection-hub-server/internal/pkg/dao/mods"
+	"data-collection-hub-server/internal/pkg/middleware"
+	mods9 "data-collection-hub-server/internal/pkg/middleware/mods"
 	router2 "data-collection-hub-server/internal/pkg/router"
 	"data-collection-hub-server/internal/pkg/router/v1"
 	mods8 "data-collection-hub-server/internal/pkg/router/v1/mods"
@@ -30,8 +32,6 @@ import (
 	user2 "data-collection-hub-server/internal/pkg/service/user"
 	mods6 "data-collection-hub-server/internal/pkg/service/user/mods"
 	"data-collection-hub-server/pkg/cron"
-	"data-collection-hub-server/pkg/middleware"
-	mods9 "data-collection-hub-server/pkg/middleware/mods"
 	"github.com/google/wire"
 )
 
@@ -60,17 +60,22 @@ func InitializeApp(ctx context.Context) (*app.App, error) {
 	if err != nil {
 		return nil, err
 	}
-	dao := &dal.Dao{
-		Mongo:  mongo,
-		Redis:  redis,
-		Zap:    zap,
-		Config: configConfig,
-	}
-	userDao, err := mods.NewUserDao(dao)
+	daoDao, err := dao.New(ctx, mongo, zap)
 	if err != nil {
 		return nil, err
 	}
-	instructionDataDao := mods.NewInstructionDataDao(dao, userDao)
+	cache := &dao.Cache{
+		Redis:  redis,
+		Config: configConfig,
+	}
+	userDao, err := mods.NewUserDao(ctx, daoDao, cache)
+	if err != nil {
+		return nil, err
+	}
+	instructionDataDao, err := mods.NewInstructionDataDao(ctx, daoDao, userDao)
+	if err != nil {
+		return nil, err
+	}
 	dataAuditService := mods2.NewDataAuditService(serviceService, instructionDataDao)
 	dataAuditApi := &mods3.DataAuditApi{
 		DataAuditService: dataAuditService,
@@ -83,20 +88,31 @@ func InitializeApp(ctx context.Context) (*app.App, error) {
 	userApi := &mods3.UserApi{
 		UserService: userService,
 	}
-	noticeDao := mods.NewNoticeDao(dao)
+	noticeDao, err := mods.NewNoticeDao(ctx, daoDao, cache)
+	if err != nil {
+		return nil, err
+	}
 	noticeService := mods2.NewNoticeService(serviceService, noticeDao)
 	noticeApi := &mods3.NoticeApi{
 		NoticeService: noticeService,
 	}
-	documentationDao := mods.NewDocumentationDao(dao)
+	documentationDao, err := mods.NewDocumentationDao(ctx, daoDao, cache)
+	if err != nil {
+		return nil, err
+	}
 	documentationService := mods2.NewDocumentationService(serviceService, documentationDao)
 	documentationApi := &mods3.DocumentationApi{
 		DocumentationService: documentationService,
 	}
-	loginLogDao := mods.NewLoginLogDao(dao)
-	operationLogDao := mods.NewOperationLogDao(dao)
-	errorLogDao := mods.NewErrorLogDao(dao)
-	logsService := mods2.NewLogsService(serviceService, loginLogDao, operationLogDao, errorLogDao)
+	loginLogDao, err := mods.NewLoginLogDao(ctx, daoDao)
+	if err != nil {
+		return nil, err
+	}
+	operationLogDao, err := mods.NewOperationLogDao(ctx, daoDao)
+	if err != nil {
+		return nil, err
+	}
+	logsService := mods2.NewLogsService(serviceService, loginLogDao, operationLogDao)
 	logsApi := &mods3.LogsApi{
 		LogsService: logsService,
 	}
@@ -163,10 +179,19 @@ func InitializeApp(ctx context.Context) (*app.App, error) {
 	router3 := &router2.Router{
 		RouterV1: routerRouter,
 	}
-	authMiddleware := mods9.NewAuthMiddleware(jwt, zap)
-	loggingMiddleware := mods9.NewLoggingMiddleware(zap, redis)
+	authMiddleware := &mods9.AuthMiddleware{
+		Jwt: jwt,
+		Zap: zap,
+	}
+	loggingMiddleware := &mods9.LoggingMiddleware{
+		Zap:   zap,
+		Redis: redis,
+	}
 	prometheus := InitializePrometheus(configConfig)
-	prometheusMiddleware := mods9.NewPrometheusMiddleware(prometheus, zap)
+	prometheusMiddleware := &mods9.PrometheusMiddleware{
+		Prometheus: prometheus,
+		Zap:        zap,
+	}
 	middlewareMiddleware := &middleware.Middleware{
 		AuthMiddleware:       authMiddleware,
 		LoggingMiddleware:    loggingMiddleware,
@@ -183,15 +208,15 @@ func InitializeApp(ctx context.Context) (*app.App, error) {
 // wire.go:
 
 var (
-	RouterSet = wire.NewSet(wire.Struct(new(mods8.AdminRouter), "*"), wire.Struct(new(mods8.UserRouter), "*"), wire.Struct(new(mods8.CommonRouter), "*"), wire.Struct(new(router.Router), "*"), wire.Struct(new(router2.Router), "*"))
+	RouterProviderSet = wire.NewSet(wire.Struct(new(mods8.AdminRouter), "*"), wire.Struct(new(mods8.UserRouter), "*"), wire.Struct(new(mods8.CommonRouter), "*"), wire.Struct(new(router.Router), "*"), wire.Struct(new(router2.Router), "*"))
 
-	ApiSet = wire.NewSet(wire.Struct(new(mods5.AuthApi), "*"), wire.Struct(new(mods5.ProfileApi), "*"), wire.Struct(new(mods5.DocumentationApi), "*"), wire.Struct(new(mods5.NoticeApi), "*"), wire.Struct(new(mods7.DatasetApi), "*"), wire.Struct(new(mods7.StatisticApi), "*"), wire.Struct(new(mods3.UserApi), "*"), wire.Struct(new(mods3.DocumentationApi), "*"), wire.Struct(new(mods3.NoticeApi), "*"), wire.Struct(new(mods3.StatisticApi), "*"), wire.Struct(new(mods3.LogsApi), "*"), wire.Struct(new(mods3.DataAuditApi), "*"), wire.Struct(new(common.Common), "*"), wire.Struct(new(user.User), "*"), wire.Struct(new(admin.Admin), "*"), wire.Struct(new(api.Api), "*"))
+	ApiProviderSet = wire.NewSet(wire.Struct(new(mods5.AuthApi), "*"), wire.Struct(new(mods5.ProfileApi), "*"), wire.Struct(new(mods5.DocumentationApi), "*"), wire.Struct(new(mods5.NoticeApi), "*"), wire.Struct(new(mods7.DatasetApi), "*"), wire.Struct(new(mods7.StatisticApi), "*"), wire.Struct(new(mods3.UserApi), "*"), wire.Struct(new(mods3.DocumentationApi), "*"), wire.Struct(new(mods3.NoticeApi), "*"), wire.Struct(new(mods3.StatisticApi), "*"), wire.Struct(new(mods3.LogsApi), "*"), wire.Struct(new(mods3.DataAuditApi), "*"), wire.Struct(new(common.Common), "*"), wire.Struct(new(user.User), "*"), wire.Struct(new(admin.Admin), "*"), wire.Struct(new(api.Api), "*"))
 
-	ServiceSet = wire.NewSet(wire.Struct(new(service.Service), "*"), wire.Struct(new(admin2.Admin), "*"), wire.Struct(new(user2.User), "*"), wire.Struct(new(common2.Common), "*"), mods2.NewDataAuditService, mods2.NewStatisticService, mods2.NewUserService, mods2.NewNoticeService, mods2.NewDocumentationService, mods2.NewLogsService, mods4.NewAuthService, mods4.NewProfileService, mods4.NewDocumentationService, mods4.NewNoticeService, mods6.NewDatasetService, mods6.NewStatisticService)
+	ServiceProviderSet = wire.NewSet(wire.Struct(new(service.Service), "*"), wire.Struct(new(admin2.Admin), "*"), wire.Struct(new(user2.User), "*"), wire.Struct(new(common2.Common), "*"), mods2.NewDataAuditService, mods2.NewStatisticService, mods2.NewUserService, mods2.NewNoticeService, mods2.NewDocumentationService, mods2.NewLogsService, mods4.NewAuthService, mods4.NewProfileService, mods4.NewDocumentationService, mods4.NewNoticeService, mods6.NewDatasetService, mods6.NewStatisticService)
 
-	DaoSet = wire.NewSet(wire.Struct(new(dal.Dao), "*"), mods.NewUserDao, mods.NewInstructionDataDao, mods.NewNoticeDao, mods.NewLoginLogDao, mods.NewOperationLogDao, mods.NewErrorLogDao, mods.NewDocumentationDao)
+	DaoProviderSet = wire.NewSet(dao.New, wire.Struct(new(dao.Cache), "*"), mods.NewUserDao, mods.NewInstructionDataDao, mods.NewNoticeDao, mods.NewLoginLogDao, mods.NewOperationLogDao, mods.NewDocumentationDao)
 
-	MiddlewareSet = wire.NewSet(mods9.NewLoggingMiddleware, mods9.NewPrometheusMiddleware, mods9.NewAuthMiddleware, wire.Struct(new(middleware.Middleware), "*"))
+	MiddlewareProviderSet = wire.NewSet(wire.Struct(new(mods9.LoggingMiddleware), "*"), wire.Struct(new(mods9.PrometheusMiddleware), "*"), wire.Struct(new(mods9.AuthMiddleware), "*"), wire.Struct(new(middleware.Middleware), "*"))
 
-	SchedulerSet = wire.NewSet(cron.New)
+	SchedulerProviderSet = wire.NewSet(cron.New)
 )

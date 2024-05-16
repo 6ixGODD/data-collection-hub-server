@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	dao "data-collection-hub-server/internal/pkg/dal/mods"
+	dao "data-collection-hub-server/internal/pkg/dao/mods"
 	"data-collection-hub-server/internal/pkg/schema/admin"
 	"data-collection-hub-server/internal/pkg/service"
 	"data-collection-hub-server/pkg/errors"
@@ -22,28 +22,21 @@ type LogsService interface {
 		ctx context.Context, page, pageSize *int64, desc *bool, query, operation *string,
 		createTimeStart, createTimeEnd *time.Time,
 	) (*admin.GetOperationLogListResponse, error)
-	GetErrorLog(ctx context.Context, errorLogID *primitive.ObjectID) (*admin.GetErrorLogResponse, error)
-	GetErrorLogList(
-		ctx context.Context, page, pageSize *int64, desc *bool, requestURL, errorCode *string,
-		createTimeStart, createTimeEnd *time.Time,
-	) (*admin.GetErrorLogListResponse, error)
 }
 
 type LogsServiceImpl struct {
 	service         *service.Service
 	loginLogDao     dao.LoginLogDao
 	operationLogDao dao.OperationLogDao
-	errorLogDao     dao.ErrorLogDao
 }
 
 func NewLogsService(
-	s *service.Service, loginLogDao dao.LoginLogDao, operationLogDao dao.OperationLogDao, errorLogDao dao.ErrorLogDao,
+	s *service.Service, loginLogDao dao.LoginLogDao, operationLogDao dao.OperationLogDao,
 ) LogsService {
 	return &LogsServiceImpl{
 		service:         s,
 		loginLogDao:     loginLogDao,
 		operationLogDao: operationLogDao,
-		errorLogDao:     errorLogDao,
 	}
 }
 
@@ -147,65 +140,4 @@ func (l LogsServiceImpl) GetOperationLogList(
 		Total:            *total,
 		OperationLogList: operationLogList,
 	}, nil
-}
-
-func (l LogsServiceImpl) GetErrorLog(
-	ctx context.Context, errorLogID *primitive.ObjectID,
-) (*admin.GetErrorLogResponse, error) {
-	errorLog, err := l.errorLogDao.GetErrorLogById(ctx, *errorLogID)
-	if err != nil {
-		return nil, errors.MongoError(errors.ReadError(err))
-	}
-	return &admin.GetErrorLogResponse{
-		ErrorLogID:     errorLog.ErrorLogID.Hex(),
-		UserID:         errorLog.UserID.Hex(),
-		Username:       errorLog.Username,
-		IPAddress:      errorLog.IPAddress,
-		UserAgent:      errorLog.UserAgent,
-		RequestURL:     errorLog.RequestURL,
-		RequestMethod:  errorLog.RequestMethod,
-		RequestPayload: errorLog.RequestPayload,
-		ErrorCode:      errorLog.ErrorCode,
-		ErrorMsg:       errorLog.ErrorMsg,
-		Stack:          errorLog.Stack,
-		CreatedAt:      errorLog.CreatedAt.Format(time.RFC3339),
-	}, nil
-}
-
-func (l LogsServiceImpl) GetErrorLogList(
-	ctx context.Context, page, pageSize *int64, desc *bool, requestURL, errorCode *string,
-	createTimeStart, createTimeEnd *time.Time,
-) (*admin.GetErrorLogListResponse, error) {
-	offset := (*page - 1) * *pageSize
-	errorLogs, total, err := l.errorLogDao.GetErrorLogList(
-		ctx, offset, *pageSize, *desc, createTimeStart, createTimeEnd, nil,
-		nil, requestURL, errorCode, nil,
-	)
-	if err != nil {
-		return nil, errors.MongoError(errors.ReadError(err))
-	}
-	errorLogList := make([]*admin.GetErrorLogResponse, 0, len(errorLogs))
-	for _, errorLog := range errorLogs {
-		errorLogList = append(
-			errorLogList, &admin.GetErrorLogResponse{
-				ErrorLogID:     errorLog.ErrorLogID.Hex(),
-				UserID:         errorLog.UserID.Hex(),
-				Username:       errorLog.Username,
-				IPAddress:      errorLog.IPAddress,
-				UserAgent:      errorLog.UserAgent,
-				RequestURL:     errorLog.RequestURL,
-				RequestMethod:  errorLog.RequestMethod,
-				RequestPayload: errorLog.RequestPayload,
-				ErrorCode:      errorLog.ErrorCode,
-				ErrorMsg:       errorLog.ErrorMsg,
-				Stack:          errorLog.Stack,
-				CreatedAt:      errorLog.CreatedAt.Format(time.RFC3339),
-			},
-		)
-	}
-	return &admin.GetErrorLogListResponse{
-		Total:        *total,
-		ErrorLogList: errorLogList,
-	}, nil
-
 }

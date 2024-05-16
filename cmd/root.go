@@ -30,18 +30,14 @@ import (
 	"go.uber.org/zap"
 )
 
-type cliFlags struct {
-	configFile  *string // config file path (default is $HOME/.data-collection-hub-server.prob.yaml)
-	port        *string // port to listen on (default is 3000)
-	host        *string // host to listen on (default is localhost)
-	logLevel    *string // log level (default is info)
-	tls         *bool   // enable tls (default is false)
-	tlsCertFile *string // tls cert file path (default is "")
-	tlsKeyFile  *string // tls key file path (default is "")
-}
-
 var (
-	flags = &cliFlags{}
+	configFile  string // config file path (default is $HOME/.data-collection-hub-server.yaml)
+	port        string // port to listen on (default is 3000)
+	host        string // host to listen on (default is localhost)
+	logLevel    string // log level (default is info)
+	tls         bool   // enable tls
+	tlsCertFile string // tls cert file path (default is "")
+	tlsKeyFile  string // tls key file path (default is "")
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -99,60 +95,60 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	rootCmd.PersistentFlags().StringVar(
-		flags.configFile,
+		&configFile,
 		"config",
 		"",
-		"config file (default is $HOME/.data-collection-hub-server.prob.yaml)",
+		"config file",
 	)
 	rootCmd.PersistentFlags().StringVarP(
-		flags.port,
+		&port,
 		"port",
 		"p",
 		"",
 		"port to listen on (default is 8080)",
 	)
 	rootCmd.PersistentFlags().StringVarP(
-		flags.host,
+		&host,
 		"host",
 		"H",
 		"",
 		"host to listen on (default is localhost)",
 	)
 	rootCmd.PersistentFlags().StringVarP(
-		flags.logLevel,
+		&logLevel,
 		"log-level",
 		"l",
 		"info",
 		"log level (default is info)",
 	)
 	rootCmd.PersistentFlags().BoolVar(
-		flags.tls,
+		&tls,
 		"tls",
 		false,
 		"enable tls (default is false)",
 	)
 	rootCmd.PersistentFlags().StringVar(
-		flags.tlsCertFile,
+		&tlsCertFile,
 		"tls-cert-file",
 		"",
 		"tls cert file path (default is \"\")",
 	)
 	rootCmd.PersistentFlags().StringVar(
-		flags.tlsKeyFile,
+		&tlsKeyFile,
 		"tls-key-file",
 		"",
 		"tls key file path (default is \"\")",
 	)
 }
 
-// initConfig creates a new config object and initializes it with the values from the config file and flags.
+// initConfig creates a new config object and initializes it with the values from the config file and
 // priority: flags > config file > default values
 func initConfig() {
 	cfg, err := config.New()
 	cobra.CheckErr(err)
-	if flags.configFile != nil {
+	if configFile != "" {
 		// Use config file from the flag.
-		viper.SetConfigFile(*flags.configFile)
+		viper.SetConfigFile(configFile)
 	} else {
 		// Find home directory.
 		var home string
@@ -168,40 +164,40 @@ func initConfig() {
 	cobra.CheckErr(err)
 	err = viper.Unmarshal(cfg)
 	cobra.CheckErr(err)
-	if flags.port != nil {
-		if !check.IsValidAppPort(*flags.port) {
-			cobra.CheckErr(fmt.Errorf("invalid port: %s", *flags.port))
+	if port != "" {
+		if !check.IsValidAppPort(port) {
+			cobra.CheckErr(fmt.Errorf("invalid port: %s", port))
 		}
-		cfg.BaseConfig.AppPort = *flags.port
+		cfg.BaseConfig.AppPort = port
 	}
-	if flags.host != nil {
-		if !check.IsValidAppHost(*flags.host) {
-			cobra.CheckErr(fmt.Errorf("invalid host: %s", *flags.host))
+	if host != "" {
+		if !check.IsValidAppHost(host) {
+			cobra.CheckErr(fmt.Errorf("invalid host: %s", host))
 		}
-		cfg.BaseConfig.AppHost = *flags.host
+		cfg.BaseConfig.AppHost = host
 	}
-	if flags.logLevel != nil {
-		if !check.IsValidLogLevel(*flags.logLevel) {
-			cobra.CheckErr(fmt.Errorf("invalid log level: %s", *flags.logLevel))
+	if logLevel != "" {
+		if !check.IsValidLogLevel(logLevel) {
+			cobra.CheckErr(fmt.Errorf("invalid log level: %s", logLevel))
 		}
-		cfg.ZapConfig.Level = *flags.logLevel
+		cfg.ZapConfig.Level = logLevel
 	}
-	if flags.tls != nil {
-		cfg.BaseConfig.EnableTls = *flags.tls
+	if tls {
+		cfg.BaseConfig.EnableTls = true
 	}
-	if flags.tlsCertFile != nil {
+	if tlsCertFile != "" {
 		// Check if the tls cert file exists
-		if _, err := os.Stat(*flags.tlsCertFile); os.IsNotExist(err) {
-			cobra.CheckErr(fmt.Errorf("tls cert file does not exist: %s", *flags.tlsCertFile))
+		if _, err := os.Stat(tlsCertFile); os.IsNotExist(err) {
+			cobra.CheckErr(fmt.Errorf("tls cert file does not exist: %s", tlsCertFile))
 		}
-		cfg.BaseConfig.TlsCertFile = *flags.tlsCertFile
+		cfg.BaseConfig.TlsCertFile = tlsCertFile
 	}
-	if flags.tlsKeyFile != nil {
+	if tlsKeyFile != "" {
 		// Check if the tls key file exists
-		if _, err := os.Stat(*flags.tlsKeyFile); os.IsNotExist(err) {
-			cobra.CheckErr(fmt.Errorf("tls key file does not exist: %s", *flags.tlsKeyFile))
+		if _, err := os.Stat(tlsKeyFile); os.IsNotExist(err) {
+			cobra.CheckErr(fmt.Errorf("tls key file does not exist: %s", tlsKeyFile))
 		}
-		cfg.BaseConfig.TlsKeyFile = *flags.tlsKeyFile
+		cfg.BaseConfig.TlsKeyFile = tlsKeyFile
 	}
 	config.Update(cfg)
 }

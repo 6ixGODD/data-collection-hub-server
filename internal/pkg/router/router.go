@@ -12,13 +12,7 @@ type Router struct {
 	RouterV1 *router.Router
 }
 
-func New(routerV1 *router.Router) *Router {
-	return &Router{
-		RouterV1: routerV1,
-	}
-}
-
 func (r *Router) RegisterRouter(app *fiber.App, rbac *casbin.Middleware) {
-	group := app.Group(prefix) // TODO: Implement
+	group := app.Group(prefix)
 	r.RouterV1.RegisterRouter(&group, rbac)
 }

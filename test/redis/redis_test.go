@@ -9,13 +9,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNew(t *testing.T) {
+func TestRedis(t *testing.T) {
 	cfg, err := config.New()
 	assert.NoError(t, err)
 	assert.NotNil(t, cfg)
 
 	ctx := context.Background()
-	r, err := redis.New(ctx, cfg.RedisConfig.GetRedisOptions())
+	r, err := redis.New(ctx, cfg.CacheConfig.GetRedisOptions())
 	assert.NoError(t, err)
 	assert.NotNil(t, r)
 	t.Logf("redis: %+v", r)

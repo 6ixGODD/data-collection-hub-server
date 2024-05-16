@@ -42,7 +42,7 @@ func New(ctx context.Context, options *redis.Options) (*Redis, error) {
 	return redisInstance, err
 }
 
-func Update(options *redis.Options) error {
+func Set(options *redis.Options) error {
 	var err error
 	redisInstance = &Redis{
 		redisConfig: &Config{
@@ -54,6 +54,7 @@ func Update(options *redis.Options) error {
 	}
 	return nil
 }
+
 func (r *Redis) Init() error {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()

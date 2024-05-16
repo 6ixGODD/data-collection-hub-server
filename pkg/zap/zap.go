@@ -35,16 +35,17 @@ func New(config *zap.Config, options ...zap.Option) (*Zap, error) {
 	return zapInstance, nil
 }
 
-func Update(config *zap.Config, options ...zap.Option) error {
-	zapInstance = &Zap{
+func Set(config *zap.Config, options ...zap.Option) error {
+	z := &Zap{
 		config: &Config{
 			zapConfig:  config,
 			zapOptions: options,
 		},
 	}
-	if err := zapInstance.Init(); err != nil {
+	if err := z.Init(); err != nil {
 		return err
 	}
+	zapInstance = z
 	return nil
 }
 

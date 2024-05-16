@@ -1,4 +1,4 @@
-package zap__test
+package zap_test
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func TestZap__New(t *testing.T) {
+func TestZap(t *testing.T) {
 	ctx := context.Background()
 	zapConfig := &zap.Config{
 		Level:            zap.NewAtomicLevelAt(zap.DebugLevel),

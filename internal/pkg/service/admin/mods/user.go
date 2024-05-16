@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	dao "data-collection-hub-server/internal/pkg/dal/mods"
+	dao "data-collection-hub-server/internal/pkg/dao/mods"
 	"data-collection-hub-server/internal/pkg/schema/admin"
 	"data-collection-hub-server/internal/pkg/service"
 	"data-collection-hub-server/pkg/errors"

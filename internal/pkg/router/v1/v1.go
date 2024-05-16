@@ -16,17 +16,6 @@ type Router struct {
 	UserRouter   *mods.UserRouter
 }
 
-func New(
-	apiV1 *api.Api, adminRouter *mods.AdminRouter, commonRouter *mods.CommonRouter, userRouter *mods.UserRouter,
-) *Router {
-	return &Router{
-		ApiV1:        apiV1,
-		AdminRouter:  adminRouter,
-		CommonRouter: commonRouter,
-		UserRouter:   userRouter,
-	}
-}
-
 func (a *Router) RegisterRouter(router *fiber.Router, rbac *casbin.Middleware) {
 	a.registerV1Router(router, rbac)
 }

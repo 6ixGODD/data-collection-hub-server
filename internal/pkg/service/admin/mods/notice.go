@@ -3,7 +3,7 @@ package mods
 import (
 	"context"
 
-	dao "data-collection-hub-server/internal/pkg/dal/mods"
+	dao "data-collection-hub-server/internal/pkg/dao/mods"
 	"data-collection-hub-server/internal/pkg/service"
 	"data-collection-hub-server/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson/primitive"

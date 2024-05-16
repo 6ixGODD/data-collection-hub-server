@@ -7,9 +7,9 @@ import (
 	"data-collection-hub-server/internal/pkg/config"
 	"data-collection-hub-server/internal/pkg/errors"
 	"data-collection-hub-server/internal/pkg/hooks"
+	"data-collection-hub-server/internal/pkg/middleware"
 	"data-collection-hub-server/internal/pkg/router"
 	"data-collection-hub-server/pkg/cron"
-	"data-collection-hub-server/pkg/middleware"
 	logging "data-collection-hub-server/pkg/zap"
 	"github.com/casbin/mongodb-adapter/v3"
 	"github.com/goccy/go-json"
@@ -78,6 +78,9 @@ func (a *App) Init() error {
 
 	// Register Middleware
 	// Register limiter Middleware
+	if err := a.Middleware.Register(app); err != nil {
+		return err
+	}
 	app.Use(
 		limiter.New(
 			limiter.Config{
@@ -108,8 +111,6 @@ func (a *App) Init() error {
 	app.Use(requestid.New())
 
 	// Register Logger Middleware
-
-	// TODO: Add more Middleware here
 
 	// Register hooks
 	app.Hooks().OnShutdown(

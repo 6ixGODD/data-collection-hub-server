@@ -39,3 +39,9 @@ const (
 	OperationLogCollectionName    = "operation_log"
 	UserCollectionName            = "user"
 )
+
+const (
+	NoticeCachePrefix        = "dao:notice"
+	UserCachePrefix          = "dao:user"
+	DocumentationCachePrefix = "dao:documentation"
+)

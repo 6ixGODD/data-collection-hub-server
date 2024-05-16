@@ -11,44 +11,40 @@ const adminPrefix = "/admin"
 
 type AdminRouter struct{}
 
-func NewAdminRouter() *AdminRouter {
-	return &AdminRouter{}
-}
-
 // RegisterAdminRouter registers the admin router.
 func (a *AdminRouter) RegisterAdminRouter(app fiber.Router, api *admin.Admin, rbac *casbin.Middleware) {
 	group := app.Group(adminPrefix)
 
-	group.Get("/dataStatistic", rbac.RequiresRoles([]string{config.UserRoleAdmin}), api.StatisticApi.GetDataStatistic)
+	group.Get("/data-statistic", rbac.RequiresRoles([]string{config.UserRoleAdmin}), api.StatisticApi.GetDataStatistic)
 	group.Get(
-		"/userStatistic", rbac.RequiresRoles([]string{config.UserRoleAdmin}), api.StatisticApi.GetUserStatistic,
+		"/user-statistic", rbac.RequiresRoles([]string{config.UserRoleAdmin}), api.StatisticApi.GetUserStatistic,
 	)
 	group.Get(
-		"/userStatistic/list", rbac.RequiresRoles([]string{config.UserRoleAdmin}),
+		"/user-statistic/list", rbac.RequiresRoles([]string{config.UserRoleAdmin}),
 		api.StatisticApi.GetUserStatisticList,
 	)
 
 	group.Get(
-		"/instructionData", rbac.RequiresRoles([]string{config.UserRoleAdmin}), api.DataAuditApi.GetInstructionData,
+		"/instruction-data", rbac.RequiresRoles([]string{config.UserRoleAdmin}), api.DataAuditApi.GetInstructionData,
 	)
 	group.Get(
-		"/instructionData/list", rbac.RequiresRoles([]string{config.UserRoleAdmin}),
+		"/instruction-data/list", rbac.RequiresRoles([]string{config.UserRoleAdmin}),
 		api.DataAuditApi.GetInstructionDataList,
 	)
 	group.Get(
-		"instructionData/approve", rbac.RequiresRoles([]string{config.UserRoleAdmin}),
+		"instruction-data/approve", rbac.RequiresRoles([]string{config.UserRoleAdmin}),
 		api.DataAuditApi.ApproveInstructionData,
 	)
 	group.Get(
-		"/instructionData/reject", rbac.RequiresRoles([]string{config.UserRoleAdmin}),
+		"/instruction-data/reject", rbac.RequiresRoles([]string{config.UserRoleAdmin}),
 		api.DataAuditApi.RejectInstructionData,
 	)
 	group.Get(
-		"/instructionData/update", rbac.RequiresRoles([]string{config.UserRoleAdmin}),
+		"/instruction-data/update", rbac.RequiresRoles([]string{config.UserRoleAdmin}),
 		api.DataAuditApi.UpdateInstructionData,
 	)
 	group.Get(
-		"/instructionData/delete", rbac.RequiresRoles([]string{config.UserRoleAdmin}),
+		"/instruction-data/delete", rbac.RequiresRoles([]string{config.UserRoleAdmin}),
 		api.DataAuditApi.DeleteInstructionData,
 	)
 
@@ -92,21 +88,15 @@ func (a *AdminRouter) RegisterAdminRouter(app fiber.Router, api *admin.Admin, rb
 	)
 
 	group.Get(
-		"/loginLog", rbac.RequiresRoles([]string{config.UserRoleAdmin}), api.LogsApi.GetLoginLog,
+		"/login-log", rbac.RequiresRoles([]string{config.UserRoleAdmin}), api.LogsApi.GetLoginLog,
 	)
 	group.Get(
-		"/loginLog/list", rbac.RequiresRoles([]string{config.UserRoleAdmin}), api.LogsApi.GetLoginLogList,
+		"/login-log/list", rbac.RequiresRoles([]string{config.UserRoleAdmin}), api.LogsApi.GetLoginLogList,
 	)
 	group.Get(
-		"/operationLog", rbac.RequiresRoles([]string{config.UserRoleAdmin}), api.LogsApi.GetOperationLog,
+		"/operation-log", rbac.RequiresRoles([]string{config.UserRoleAdmin}), api.LogsApi.GetOperationLog,
 	)
 	group.Get(
-		"/operationLog/list", rbac.RequiresRoles([]string{config.UserRoleAdmin}), api.LogsApi.GetOperationLogList,
-	)
-	group.Get(
-		"/errorLog", rbac.RequiresRoles([]string{config.UserRoleAdmin}), api.LogsApi.GetErrorLog,
-	)
-	group.Get(
-		"/errorLog/list", rbac.RequiresRoles([]string{config.UserRoleAdmin}), api.LogsApi.GetErrorLogList,
+		"/operation-log/list", rbac.RequiresRoles([]string{config.UserRoleAdmin}), api.LogsApi.GetOperationLogList,
 	)
 }

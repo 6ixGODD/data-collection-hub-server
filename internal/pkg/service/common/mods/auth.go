@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"data-collection-hub-server/internal/pkg/config"
-	dao "data-collection-hub-server/internal/pkg/dal/mods"
+	dao "data-collection-hub-server/internal/pkg/dao/mods"
 	"data-collection-hub-server/internal/pkg/schema/common"
 	"data-collection-hub-server/internal/pkg/service"
 	"data-collection-hub-server/pkg/errors"
@@ -115,7 +115,7 @@ func (a AuthServiceImpl) Logout(ctx context.Context) error {
 	if err != nil {
 		return errors.InvalidToken(err)
 	}
-	// TODO: Implement logout
+	// TODO: Implement logout, use redis to store token
 	return nil
 }
 

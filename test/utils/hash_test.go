@@ -8,14 +8,10 @@ import (
 )
 
 func TestHash(t *testing.T) {
-	a := assert.New(t)
+	hash, err := crypt.PasswordHash("foo")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, hash)
 
-	// Test1 hash
-	hash, err := crypt.PasswordHash("123456")
-	a.NoError(err)
-	a.NotEmpty(hash)
-
-	// Test1 verify
-	a.True(crypt.VerifyPassword("123456", hash))
-	a.False(crypt.VerifyPassword("1234567", hash))
+	assert.True(t, crypt.VerifyPassword("foo", hash))
+	assert.False(t, crypt.VerifyPassword("bar", hash))
 }

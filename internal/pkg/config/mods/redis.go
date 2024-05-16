@@ -22,7 +22,7 @@ type RedisConfig struct {
 	PoolTimeout     time.Duration `mapstructure:"redis_pool_timeout" yaml:"redis_pool_timeout" default:"4s"`
 	MinIdleConns    int           `mapstructure:"redis_min_idle_conns" yaml:"redis_min_idle_conns" default:"0"`
 	MaxIdleConns    int           `mapstructure:"redis_max_idle_conns" yaml:"redis_max_idle_conns" default:"0"`
-	MaxActiveConns  int           `mapstructure:"redis_max_active_conns" yaml:"redis_max_active_conns" default:"30m"`
+	MaxActiveConns  int           `mapstructure:"redis_max_active_conns" yaml:"redis_max_active_conns" default:"0"`
 	ConnMaxIdleTime time.Duration `mapstructure:"redis_conn_max_idle_time" yaml:"redis_conn_max_idle_time" default:"30m"`
 	ConnMaxLifetime time.Duration `mapstructure:"redis_conn_max_lifetime" yaml:"redis_conn_max_lifetime" default:"-1"`
 }

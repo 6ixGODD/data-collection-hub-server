@@ -64,7 +64,7 @@ func (p *Prometheus) PrometheusFiberHandler() fiber.Handler {
 
 		err := c.Next()
 		if err != nil {
-			return c.SendStatus(fiber.StatusInternalServerError)
+			return c.SendStatus(fiber.StatusInternalServerError) // TODO: Change to return err
 		}
 
 		r := c.Route()

@@ -15,8 +15,10 @@ import (
 	userapi "data-collection-hub-server/internal/pkg/api/v1/user"
 	userapis "data-collection-hub-server/internal/pkg/api/v1/user/mods"
 	"data-collection-hub-server/internal/pkg/config"
-	"data-collection-hub-server/internal/pkg/dal"
-	dao "data-collection-hub-server/internal/pkg/dal/mods"
+	"data-collection-hub-server/internal/pkg/dao"
+	daos "data-collection-hub-server/internal/pkg/dao/mods"
+	"data-collection-hub-server/internal/pkg/middleware"
+	wares "data-collection-hub-server/internal/pkg/middleware/mods"
 	"data-collection-hub-server/internal/pkg/router"
 	routerv1 "data-collection-hub-server/internal/pkg/router/v1"
 	routers "data-collection-hub-server/internal/pkg/router/v1/mods"
@@ -28,13 +30,11 @@ import (
 	userservice "data-collection-hub-server/internal/pkg/service/user"
 	userservices "data-collection-hub-server/internal/pkg/service/user/mods"
 	"data-collection-hub-server/pkg/cron"
-	"data-collection-hub-server/pkg/middleware"
-	middlewares "data-collection-hub-server/pkg/middleware/mods"
 	"github.com/google/wire"
 )
 
 var (
-	RouterSet = wire.NewSet(
+	RouterProviderSet = wire.NewSet(
 		wire.Struct(new(routers.AdminRouter), "*"),
 		wire.Struct(new(routers.UserRouter), "*"),
 		wire.Struct(new(routers.CommonRouter), "*"),
@@ -42,7 +42,7 @@ var (
 		wire.Struct(new(router.Router), "*"),
 	)
 
-	ApiSet = wire.NewSet(
+	ApiProviderSet = wire.NewSet(
 		wire.Struct(new(commonapis.AuthApi), "*"),
 		wire.Struct(new(commonapis.ProfileApi), "*"),
 		wire.Struct(new(commonapis.DocumentationApi), "*"),
@@ -61,7 +61,7 @@ var (
 		wire.Struct(new(api.Api), "*"),
 	)
 
-	ServiceSet = wire.NewSet(
+	ServiceProviderSet = wire.NewSet(
 		wire.Struct(new(service.Service), "*"),
 		wire.Struct(new(adminservice.Admin), "*"),
 		wire.Struct(new(userservice.User), "*"),
@@ -80,25 +80,25 @@ var (
 		userservices.NewStatisticService,
 	)
 
-	DaoSet = wire.NewSet(
-		wire.Struct(new(dal.Dao), "*"),
-		dao.NewUserDao,
-		dao.NewInstructionDataDao,
-		dao.NewNoticeDao,
-		dao.NewLoginLogDao,
-		dao.NewOperationLogDao,
-		dao.NewErrorLogDao,
-		dao.NewDocumentationDao,
+	DaoProviderSet = wire.NewSet(
+		dao.New,
+		wire.Struct(new(dao.Cache), "*"),
+		daos.NewUserDao,
+		daos.NewInstructionDataDao,
+		daos.NewNoticeDao,
+		daos.NewLoginLogDao,
+		daos.NewOperationLogDao,
+		daos.NewDocumentationDao,
 	)
 
-	MiddlewareSet = wire.NewSet(
-		middlewares.NewLoggingMiddleware,
-		middlewares.NewPrometheusMiddleware,
-		middlewares.NewAuthMiddleware,
+	MiddlewareProviderSet = wire.NewSet(
+		wire.Struct(new(wares.LoggingMiddleware), "*"),
+		wire.Struct(new(wares.PrometheusMiddleware), "*"),
+		wire.Struct(new(wares.AuthMiddleware), "*"),
 		wire.Struct(new(middleware.Middleware), "*"),
 	)
 
-	SchedulerSet = wire.NewSet(
+	SchedulerProviderSet = wire.NewSet(
 		cron.New,
 	)
 )
@@ -112,12 +112,12 @@ func InitializeApp(ctx context.Context) (*app.App, error) {
 		InitializeZap,
 		InitializeJwt,
 		InitializePrometheus,
-		DaoSet,
-		ServiceSet,
-		ApiSet,
-		RouterSet,
-		MiddlewareSet,
-		SchedulerSet,
+		DaoProviderSet,
+		ServiceProviderSet,
+		ApiProviderSet,
+		RouterProviderSet,
+		MiddlewareProviderSet,
+		SchedulerProviderSet,
 		app.New,
 	)
 	return new(app.App), nil
