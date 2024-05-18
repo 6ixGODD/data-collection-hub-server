@@ -47,8 +47,9 @@ type UserDao interface {
 }
 
 type UserDaoImpl struct {
-	Dao   *dao.Dao
-	Cache *dao.Cache
+	Dao         *dao.Dao
+	Cache       *dao.Cache
+	CachePrefix string
 }
 
 func NewUserDao(ctx context.Context, dao *dao.Dao, cache *dao.Cache) (UserDao, error) {
@@ -74,12 +75,12 @@ func NewUserDao(ctx context.Context, dao *dao.Dao, cache *dao.Cache) (UserDao, e
 		)
 		return nil, err
 	}
-	return &UserDaoImpl{dao, cache}, nil
+	return &UserDaoImpl{dao, cache, config.UserCachePrefix}, nil
 }
 
 func (u *UserDaoImpl) GetUserById(ctx context.Context, userID primitive.ObjectID) (*models.UserModel, error) {
 	var user models.UserModel
-	key := fmt.Sprintf("%s:userID:%s", config.UserCachePrefix, userID.Hex())
+	key := fmt.Sprintf("%s:userID:%s", u.CachePrefix, userID.Hex())
 	cache, err := u.Cache.Get(ctx, key)
 	if err != nil {
 		u.Dao.Logger.Error("UserDaoImpl.GetUserById: cache get failed", zap.Error(err), zap.String("key", key))
@@ -121,7 +122,7 @@ func (u *UserDaoImpl) GetUserByEmail(ctx context.Context, email *string) (*model
 	if email == nil {
 		return nil, fmt.Errorf("email is nil")
 	}
-	key := fmt.Sprintf("%s:email:%s", config.UserCachePrefix, *email)
+	key := fmt.Sprintf("%s:email:%s", u.CachePrefix, *email)
 	cache, err := u.Cache.Get(ctx, key)
 	if err != nil {
 		u.Dao.Logger.Error("UserDaoImpl.GetUserByEmail: cache get failed", zap.Error(err), zap.String("key", key))
@@ -175,7 +176,7 @@ func (u *UserDaoImpl) GetUserList(
 	var userList []models.UserModel
 	var err error
 	doc := bson.M{"deleted": false}
-	key := fmt.Sprintf("%s:offset:%d:limit:%d", config.UserCachePrefix, offset, limit)
+	key := fmt.Sprintf("%s:offset:%d:limit:%d", u.CachePrefix, offset, limit)
 	if organization != nil {
 		doc["organization"] = *organization
 		key += fmt.Sprintf(":organization:%s", *organization)
@@ -274,7 +275,7 @@ func (u *UserDaoImpl) CountUser(
 ) (*int64, error) {
 	coll := u.Dao.Mongo.MongoClient.Database(u.Dao.Mongo.DatabaseName).Collection(config.UserCollectionName)
 	doc := bson.M{"deleted": false}
-	key := fmt.Sprintf("%s:count", config.UserCachePrefix)
+	key := fmt.Sprintf("%s:count", u.CachePrefix)
 	if organization != nil {
 		doc["organization"] = *organization
 		key += fmt.Sprintf(":organization:%s", *organization)
@@ -311,17 +312,13 @@ func (u *UserDaoImpl) CountUser(
 		if count, err := strconv.ParseInt(*cache, 10, 64); err != nil {
 			u.Dao.Logger.Error(
 				"UserDaoImpl.CountUser: failed to parse cache",
-				zap.Error(err),
-				zap.String("key", key), zap.String("value", *cache),
+				zap.Error(err), zap.String("key", key), zap.String("value", *cache),
 			)
 		} else {
 			return &count, nil
 		}
 	} else {
-		u.Dao.Logger.Info(
-			"UserDaoImpl.CountUser: cache miss",
-			zap.String("key", key),
-		)
+		u.Dao.Logger.Info("UserDaoImpl.CountUser: cache miss", zap.String("key", key))
 	}
 	count, err := coll.Find(ctx, doc).Count()
 	if err != nil {
@@ -359,8 +356,7 @@ func (u *UserDaoImpl) InsertUser(
 	result, err := coll.InsertOne(ctx, doc)
 	if err != nil {
 		u.Dao.Logger.Error(
-			"UserDaoImpl.InsertUser",
-			zap.Error(err), zap.ByteString(config.UserCollectionName, docJSON),
+			"UserDaoImpl.InsertUser", zap.Error(err), zap.ByteString(config.UserCollectionName, docJSON),
 		)
 		return primitive.NilObjectID, err
 	} else {
@@ -369,8 +365,7 @@ func (u *UserDaoImpl) InsertUser(
 			zap.String("userID", result.InsertedID.(primitive.ObjectID).Hex()),
 			zap.ByteString(config.UserCollectionName, docJSON),
 		)
-		prefix := config.UserCachePrefix
-		if err = u.Cache.Flush(ctx, &prefix); err != nil {
+		if err = u.Cache.Flush(ctx, &u.CachePrefix); err != nil {
 			u.Dao.Logger.Error("UserDaoImpl.InsertUser: failed to flush cache", zap.Error(err))
 		} else {
 			u.Dao.Logger.Info("UserDaoImpl.InsertUser: cache flushed")
@@ -411,8 +406,7 @@ func (u *UserDaoImpl) UpdateUser(
 			"UserDaoImpl.UpdateUser: success",
 			zap.String("userID", userID.Hex()), zap.ByteString(config.UserCollectionName, docJSON),
 		)
-		prefix := config.UserCachePrefix
-		if err = u.Cache.Flush(ctx, &prefix); err != nil {
+		if err = u.Cache.Flush(ctx, &u.CachePrefix); err != nil {
 			u.Dao.Logger.Error("UserDaoImpl.UpdateUser: failed to flush cache", zap.Error(err))
 		} else {
 			u.Dao.Logger.Info("UserDaoImpl.UpdateUser: cache flushed")
@@ -428,8 +422,7 @@ func (u *UserDaoImpl) SoftDeleteUser(ctx context.Context, userID primitive.Objec
 		u.Dao.Logger.Error("UserDaoImpl.DeleteUser", zap.Error(err), zap.String("userID", userID.Hex()))
 	} else {
 		u.Dao.Logger.Info("UserDaoImpl.DeleteUser", zap.String("userID", userID.Hex()))
-		prefix := config.UserCachePrefix
-		if err = u.Cache.Flush(ctx, &prefix); err != nil {
+		if err = u.Cache.Flush(ctx, &u.CachePrefix); err != nil {
 			u.Dao.Logger.Error("UserDaoImpl.SoftDeleteUser: failed to flush cache", zap.Error(err))
 		} else {
 			u.Dao.Logger.Info("UserDaoImpl.SoftDeleteUser: cache flushed")
@@ -464,17 +457,14 @@ func (u *UserDaoImpl) SoftDeleteUserList(
 	if err != nil {
 		u.Dao.Logger.Error(
 			"UserDaoImpl.DeleteUserList: failed",
-			zap.Error(err),
-			zap.ByteString(config.UserCollectionName, docJSON),
+			zap.Error(err), zap.ByteString(config.UserCollectionName, docJSON),
 		)
 	} else {
 		u.Dao.Logger.Info(
 			"UserDaoImpl.DeleteUserList: success",
-			zap.Int64("count", result.ModifiedCount),
-			zap.ByteString(config.UserCollectionName, docJSON),
+			zap.Int64("count", result.ModifiedCount), zap.ByteString(config.UserCollectionName, docJSON),
 		)
-		prefix := config.UserCachePrefix
-		if err = u.Cache.Flush(ctx, &prefix); err != nil {
+		if err = u.Cache.Flush(ctx, &u.CachePrefix); err != nil {
 			u.Dao.Logger.Error("UserDaoImpl.SoftDeleteUserList: failed to flush cache", zap.Error(err))
 		} else {
 			u.Dao.Logger.Info("UserDaoImpl.SoftDeleteUserList: cache flushed")
@@ -489,12 +479,8 @@ func (u *UserDaoImpl) DeleteUser(ctx context.Context, userID primitive.ObjectID)
 	if err != nil {
 		u.Dao.Logger.Error("UserDaoImpl.DeleteUser: failed", zap.Error(err), zap.String("userID", userID.Hex()))
 	} else {
-		u.Dao.Logger.Info(
-			"UserDaoImpl.DeleteUser: success",
-			zap.String("userID", userID.Hex()),
-		)
-		prefix := config.UserCachePrefix
-		if err = u.Cache.Flush(ctx, &prefix); err != nil {
+		u.Dao.Logger.Info("UserDaoImpl.DeleteUser: success", zap.String("userID", userID.Hex()))
+		if err = u.Cache.Flush(ctx, &u.CachePrefix); err != nil {
 			u.Dao.Logger.Error("UserDaoImpl.DeleteUser: failed to flush cache", zap.Error(err))
 		} else {
 			u.Dao.Logger.Info("UserDaoImpl.DeleteUser: cache flushed")
@@ -535,8 +521,7 @@ func (u *UserDaoImpl) DeleteUserList(
 			"UserDaoImpl.DeleteUserList: success", zap.Int64("count", result.DeletedCount),
 			zap.ByteString(config.UserCollectionName, docJSON),
 		)
-		prefix := config.UserCachePrefix
-		if err = u.Cache.Flush(ctx, &prefix); err != nil {
+		if err = u.Cache.Flush(ctx, &u.CachePrefix); err != nil {
 			u.Dao.Logger.Error(
 				"UserDaoImpl.DeleteUserList: failed to flush cache",
 				zap.Error(err),

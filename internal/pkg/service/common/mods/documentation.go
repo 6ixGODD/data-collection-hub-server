@@ -19,11 +19,11 @@ type DocumentationService interface {
 }
 
 type DocumentationServiceImpl struct {
-	service          *service.Service
+	service          *service.Core
 	documentationDao dao.DocumentationDao
 }
 
-func NewDocumentationService(s *service.Service, documentationDao dao.DocumentationDao) DocumentationService {
+func NewDocumentationService(s *service.Core, documentationDao dao.DocumentationDao) DocumentationService {
 	return &DocumentationServiceImpl{
 		service:          s,
 		documentationDao: documentationDao,

@@ -51,7 +51,7 @@ func InitializeApp(ctx context.Context) (*app.App, error) {
 	if err != nil {
 		return nil, err
 	}
-	serviceService := &service.Service{
+	serviceService := &service.Core{
 		Logger: zap,
 		Redis:  redis,
 		Config: configConfig,
@@ -212,7 +212,7 @@ var (
 
 	ApiProviderSet = wire.NewSet(wire.Struct(new(mods5.AuthApi), "*"), wire.Struct(new(mods5.ProfileApi), "*"), wire.Struct(new(mods5.DocumentationApi), "*"), wire.Struct(new(mods5.NoticeApi), "*"), wire.Struct(new(mods7.DatasetApi), "*"), wire.Struct(new(mods7.StatisticApi), "*"), wire.Struct(new(mods3.UserApi), "*"), wire.Struct(new(mods3.DocumentationApi), "*"), wire.Struct(new(mods3.NoticeApi), "*"), wire.Struct(new(mods3.StatisticApi), "*"), wire.Struct(new(mods3.LogsApi), "*"), wire.Struct(new(mods3.DataAuditApi), "*"), wire.Struct(new(common.Common), "*"), wire.Struct(new(user.User), "*"), wire.Struct(new(admin.Admin), "*"), wire.Struct(new(api.Api), "*"))
 
-	ServiceProviderSet = wire.NewSet(wire.Struct(new(service.Service), "*"), wire.Struct(new(admin2.Admin), "*"), wire.Struct(new(user2.User), "*"), wire.Struct(new(common2.Common), "*"), mods2.NewDataAuditService, mods2.NewStatisticService, mods2.NewUserService, mods2.NewNoticeService, mods2.NewDocumentationService, mods2.NewLogsService, mods4.NewAuthService, mods4.NewProfileService, mods4.NewDocumentationService, mods4.NewNoticeService, mods6.NewDatasetService, mods6.NewStatisticService)
+	ServiceProviderSet = wire.NewSet(wire.Struct(new(service.Core), "*"), wire.Struct(new(admin2.Admin), "*"), wire.Struct(new(user2.User), "*"), wire.Struct(new(common2.Common), "*"), mods2.NewDataAuditService, mods2.NewStatisticService, mods2.NewUserService, mods2.NewNoticeService, mods2.NewDocumentationService, mods2.NewLogsService, mods4.NewAuthService, mods4.NewProfileService, mods4.NewDocumentationService, mods4.NewNoticeService, mods6.NewDatasetService, mods6.NewStatisticService)
 
 	DaoProviderSet = wire.NewSet(dao.New, wire.Struct(new(dao.Cache), "*"), mods.NewUserDao, mods.NewInstructionDataDao, mods.NewNoticeDao, mods.NewLoginLogDao, mods.NewOperationLogDao, mods.NewDocumentationDao)
 

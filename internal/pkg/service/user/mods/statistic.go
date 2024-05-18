@@ -17,11 +17,11 @@ type StatisticService interface {
 }
 
 type StatisticServiceImpl struct {
-	Service            *service.Service
+	Service            *service.Core
 	instructionDataDao dao.InstructionDataDao
 }
 
-func NewStatisticService(s *service.Service, instructionDataDao dao.InstructionDataDao) StatisticService {
+func NewStatisticService(s *service.Core, instructionDataDao dao.InstructionDataDao) StatisticService {
 	return &StatisticServiceImpl{
 		Service:            s,
 		instructionDataDao: instructionDataDao,

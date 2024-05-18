@@ -25,11 +25,11 @@ type UserService interface {
 }
 
 type UserServiceImpl struct {
-	service *service.Service
+	service *service.Core
 	userDao dao.UserDao
 }
 
-func NewUserService(s *service.Service, userDao dao.UserDao) UserService {
+func NewUserService(s *service.Core, userDao dao.UserDao) UserService {
 	return &UserServiceImpl{
 		service: s,
 		userDao: userDao,

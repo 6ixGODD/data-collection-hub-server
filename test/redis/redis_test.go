@@ -15,7 +15,7 @@ func TestRedis(t *testing.T) {
 	assert.NotNil(t, cfg)
 
 	ctx := context.Background()
-	r, err := redis.New(ctx, cfg.CacheConfig.GetRedisOptions())
+	r, err := redis.New(ctx, cfg.RedisConfig.GetRedisOptions())
 	assert.NoError(t, err)
 	assert.NotNil(t, r)
 	t.Logf("redis: %+v", r)

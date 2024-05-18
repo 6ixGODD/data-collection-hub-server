@@ -250,8 +250,7 @@ func (i *InstructionDataDaoImpl) InsertInstructionData(
 	if err != nil {
 		i.Dao.Logger.Error(
 			"InstructionDataDaoImpl.InsertInstructionData: failed to insert instruction data",
-			zap.Error(err),
-			zap.ByteString(config.InstructionDataCollectionName, docJSON),
+			zap.Error(err), zap.ByteString(config.InstructionDataCollectionName, docJSON),
 		)
 	} else {
 		i.Dao.Logger.Info(
@@ -315,8 +314,7 @@ func (i *InstructionDataDaoImpl) UpdateInstructionData(
 		i.Dao.Logger.Error(
 			"InstructionDataDaoImpl.UpdateInstructionData: failed to update instruction data",
 			zap.String("instructionDataID", instructionDataID.Hex()),
-			zap.ByteString(config.InstructionDataCollectionName, docJSON),
-			zap.Error(err),
+			zap.ByteString(config.InstructionDataCollectionName, docJSON), zap.Error(err),
 		)
 	} else {
 		i.Dao.Logger.Info(

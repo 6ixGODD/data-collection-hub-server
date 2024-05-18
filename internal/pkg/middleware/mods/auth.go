@@ -3,7 +3,6 @@ package mods
 import (
 	"fmt"
 
-	"data-collection-hub-server/internal/pkg/config"
 	"data-collection-hub-server/pkg/errors"
 	"data-collection-hub-server/pkg/jwt"
 	logging "data-collection-hub-server/pkg/zap"
@@ -29,7 +28,8 @@ func (a *AuthMiddleware) authMiddleware() fiber.Handler {
 		if err != nil {
 			return errors.InvalidToken(err)
 		}
-		c.Locals(config.KeyUserID, sub)
+		userCtx := a.Zap.SetUserIDWithContext(c.UserContext(), sub)
+		c.SetUserContext(userCtx)
 		return c.Next()
 	}
 }

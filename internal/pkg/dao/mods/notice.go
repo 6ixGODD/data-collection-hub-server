@@ -148,8 +148,7 @@ func (n *NoticeDaoImpl) GetNoticeList(
 		)
 	} else {
 		n.Dao.Logger.Info(
-			"NoticeDaoImpl.GetNoticeList: cache set",
-			zap.String("key", key),
+			"NoticeDaoImpl.GetNoticeList: cache set", zap.String("key", key),
 			zap.ByteString(config.NoticeCollectionName, docJSON),
 		)
 	}
@@ -171,15 +170,14 @@ func (n *NoticeDaoImpl) InsertNotice(
 	result, err := collection.InsertOne(ctx, doc)
 	if err != nil {
 		n.Dao.Logger.Error(
-			"NoticeDaoImpl.InsertNotice: failed to insert notice",
+			"NoticeDaoImpl.InsertNotice: failed to insert notice", zap.Error(err),
 			zap.ByteString(config.NoticeCollectionName, docJSON),
-			zap.Error(err),
 		)
 	} else {
 		n.Dao.Logger.Info(
 			"NoticeDaoImpl.InsertNotice: success",
-			zap.ByteString(config.NoticeCollectionName, docJSON),
 			zap.String("noticeID", result.InsertedID.(primitive.ObjectID).Hex()),
+			zap.ByteString(config.NoticeCollectionName, docJSON),
 		)
 		prefix := config.NoticeCachePrefix
 		if err = n.Cache.Flush(ctx, &prefix); err != nil {
@@ -281,8 +279,7 @@ func (n *NoticeDaoImpl) DeleteNoticeList(
 		)
 	} else {
 		n.Dao.Logger.Info(
-			"NoticeDaoImpl.DeleteNoticeList: success",
-			zap.ByteString(config.NoticeCollectionName, docJSON),
+			"NoticeDaoImpl.DeleteNoticeList: success", zap.ByteString(config.NoticeCollectionName, docJSON),
 		)
 		prefix := config.NoticeCachePrefix
 		if err = n.Cache.Flush(ctx, &prefix); err != nil {

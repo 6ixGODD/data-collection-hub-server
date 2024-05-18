@@ -25,9 +25,9 @@ func (l *LoggingMiddleware) loggingMiddleware() fiber.Handler {
 			reqLogger,
 			loginLogger *zap.Logger
 			err      error
-			sysCtx   = l.Zap.SetTagInContext(c.Context(), logging.SystemTag)
-			reqCtx   = l.Zap.SetTagInContext(c.Context(), logging.RequestTag)
-			loginCtx = l.Zap.SetTagInContext(c.Context(), logging.LoginTag)
+			sysCtx   = l.Zap.SetTagInContext(c.UserContext(), logging.SystemTag)
+			reqCtx   = l.Zap.SetTagInContext(c.UserContext(), logging.RequestTag)
+			loginCtx = l.Zap.SetTagInContext(c.UserContext(), logging.LoginTag)
 		)
 		if sysLogger, err = l.Zap.GetLogger(sysCtx); err != nil {
 			return err

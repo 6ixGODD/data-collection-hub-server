@@ -19,7 +19,7 @@ type NoticeService interface {
 }
 
 type NoticeServiceImpl struct {
-	service   *service.Service
+	service   *service.Core
 	noticeDao dao.NoticeDao
 }
 
@@ -67,7 +67,7 @@ func (n NoticeServiceImpl) GetNoticeList(
 	}, nil
 }
 
-func NewNoticeService(s *service.Service, noticeDao dao.NoticeDao) NoticeService {
+func NewNoticeService(s *service.Core, noticeDao dao.NoticeDao) NoticeService {
 	return &NoticeServiceImpl{
 		service:   s,
 		noticeDao: noticeDao,

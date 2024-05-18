@@ -31,13 +31,13 @@ type DataAuditService interface {
 }
 
 type DataAuditServiceImpl struct {
-	service            *service.Service
+	core               *service.Core
 	instructionDataDao dao.InstructionDataDao
 }
 
-func NewDataAuditService(s *service.Service, instructionDataDao dao.InstructionDataDao) DataAuditService {
+func NewDataAuditService(core *service.Core, instructionDataDao dao.InstructionDataDao) DataAuditService {
 	return &DataAuditServiceImpl{
-		service:            s,
+		core:               core,
 		instructionDataDao: instructionDataDao,
 	}
 }

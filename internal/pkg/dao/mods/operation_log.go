@@ -64,15 +64,13 @@ func (o *OperationLogDaoImpl) GetOperationLogById(
 	err := collection.Find(ctx, bson.M{"_id": operationLogID}).One(&operationLog)
 	if err != nil {
 		o.Dao.Logger.Error(
-			"OperationLogDaoImpl.GetOperationLogById: error",
-			zap.Error(err),
+			"OperationLogDaoImpl.GetOperationLogById: error", zap.Error(err),
 			zap.String("operationLogID", operationLogID.Hex()),
 		)
 		return nil, err
 	} else {
 		o.Dao.Logger.Info(
-			"OperationLogDaoImpl.GetOperationLogById: success",
-			zap.String("operationLogID", operationLogID.Hex()),
+			"OperationLogDaoImpl.GetOperationLogById: success", zap.String("operationLogID", operationLogID.Hex()),
 		)
 		return &operationLog, nil
 	}
@@ -379,8 +377,7 @@ func (o *OperationLogDaoImpl) DeleteOperationLog(ctx context.Context, operationL
 		)
 	} else {
 		o.Dao.Logger.Info(
-			"OperationLogDaoImpl.DeleteOperationLog: success",
-			zap.String("operationLogID", operationLogID.Hex()),
+			"OperationLogDaoImpl.DeleteOperationLog: success", zap.String("operationLogID", operationLogID.Hex()),
 		)
 	}
 	return err
@@ -419,8 +416,7 @@ func (o *OperationLogDaoImpl) DeleteOperationLogList(
 	if err != nil {
 		o.Dao.Logger.Error(
 			"OperationLogDaoImpl.DeleteOperationLogList: failed to delete operation logs",
-			zap.Error(err),
-			zap.ByteString(config.OperationLogCollectionName, docJSON),
+			zap.Error(err), zap.ByteString(config.OperationLogCollectionName, docJSON),
 		)
 	} else {
 		o.Dao.Logger.Info(

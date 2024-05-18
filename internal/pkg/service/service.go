@@ -6,8 +6,8 @@ import (
 	"data-collection-hub-server/pkg/zap"
 )
 
-// Service is the service core struct.
-type Service struct {
+// Core is the service core struct.
+type Core struct {
 	Logger *zap.Zap
 	Redis  *redis.Redis
 	Config *config.Config

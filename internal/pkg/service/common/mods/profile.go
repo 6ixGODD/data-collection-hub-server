@@ -17,11 +17,11 @@ type ProfileService interface {
 }
 
 type ProfileServiceImpl struct {
-	service *service.Service
+	service *service.Core
 	userDao dao.UserDao
 }
 
-func NewProfileService(s *service.Service, userDao dao.UserDao) ProfileService {
+func NewProfileService(s *service.Core, userDao dao.UserDao) ProfileService {
 	var _ ProfileService = (*ProfileServiceImpl)(nil)
 	return &ProfileServiceImpl{
 		service: s,
