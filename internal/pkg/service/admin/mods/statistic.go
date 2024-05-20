@@ -148,7 +148,7 @@ func (s StatisticServiceImpl) GetUserStatistic(
 	pendingStatus := config.InstructionDataStatusPending
 	approvedStatus := config.InstructionDataStatusApproved
 	rejectedStatus := config.InstructionDataStatusRejected
-	user, err := s.userDao.GetUserById(ctx, *userID)
+	user, err := s.userDao.GetUserByID(ctx, *userID)
 	if err != nil {
 		return nil, errors.DBError(errors.ReadError(err))
 	}

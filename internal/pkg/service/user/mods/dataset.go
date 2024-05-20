@@ -49,7 +49,7 @@ func NewDatasetService(
 func (d DatasetServiceImpl) InsertInstructionData(
 	ctx context.Context, userID *primitive.ObjectID, Instruction, Input, Output, Theme, Source, Note *string,
 ) (string, error) {
-	usr, err := d.userDao.GetUserById(ctx, *userID)
+	usr, err := d.userDao.GetUserByID(ctx, *userID)
 	if err != nil {
 		return "", errors.UserNotFound(err) // TODO: change error type
 	}
@@ -66,7 +66,7 @@ func (d DatasetServiceImpl) InsertInstructionData(
 func (d DatasetServiceImpl) GetInstructionData(ctx context.Context, instructionDataID *primitive.ObjectID) (
 	*user.GetInstructionDataResponse, error,
 ) {
-	instructionData, err := d.instructionDataDao.GetInstructionDataById(ctx, instructionDataID)
+	instructionData, err := d.instructionDataDao.GetInstructionDataByID(ctx, instructionDataID)
 	if err != nil {
 		return nil, errors.DBError(errors.ReadError(err))
 	}

@@ -55,11 +55,11 @@ func ConnError(err error) *AppError {
 }
 
 func ReadError(err error) *AppError {
-	return NewAppErrorWithCause(CodeReadError, fiber.StatusInternalServerError, MessageReadError, err)
+	return NewAppErrorWithCause(CodeDBReadError, fiber.StatusInternalServerError, MessageReadError, err)
 }
 
 func WriteError(err error) *AppError {
-	return NewAppErrorWithCause(CodeWriteError, fiber.StatusInternalServerError, MessageWriteError, err)
+	return NewAppErrorWithCause(CodeDBWriteError, fiber.StatusInternalServerError, MessageWriteError, err)
 }
 
 func DBError(err error) *AppError {

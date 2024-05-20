@@ -45,7 +45,7 @@ func NewDataAuditService(core *service.Core, instructionDataDao dao.InstructionD
 func (d DataAuditServiceImpl) GetInstructionData(
 	ctx context.Context, instructionDataID *primitive.ObjectID,
 ) (*admin.GetInstructionDataResponse, error) {
-	instructionData, err := d.instructionDataDao.GetInstructionDataById(ctx, instructionDataID)
+	instructionData, err := d.instructionDataDao.GetInstructionDataByID(ctx, instructionDataID)
 	if err != nil {
 		return nil, errors.ReadError(err)
 	}

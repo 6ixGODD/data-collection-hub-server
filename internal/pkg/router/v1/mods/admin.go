@@ -43,8 +43,8 @@ func (a *AdminRouter) RegisterAdminRouter(app fiber.Router, api *admin.Admin, rb
 		"/instruction-data/update", rbac.RequiresRoles([]string{config.UserRoleAdmin}),
 		api.DataAuditApi.UpdateInstructionData,
 	)
-	group.Get(
-		"/instruction-data/delete", rbac.RequiresRoles([]string{config.UserRoleAdmin}),
+	group.Delete(
+		"/instruction-data/", rbac.RequiresRoles([]string{config.UserRoleAdmin}),
 		api.DataAuditApi.DeleteInstructionData,
 	)
 

@@ -33,7 +33,7 @@ func (p ProfileServiceImpl) GetProfile(ctx context.Context) (*common.GetProfileR
 	if err != nil {
 		return nil, errors.UserNotFound(err) // TODO: change error type
 	}
-	user, err := p.userDao.GetUserById(ctx, userID)
+	user, err := p.userDao.GetUserByID(ctx, userID)
 	if err != nil {
 		return nil, errors.DBError(errors.ReadError(err))
 	}

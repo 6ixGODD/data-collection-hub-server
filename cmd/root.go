@@ -149,15 +149,15 @@ func init() {
 // initConfig creates a new config object and initializes it with the values from the config file and
 // priority: flags > config file > default values
 func initConfig() {
-	cfg, err := config.New()
-	cobra.CheckErr(err)
+	cfg := config.New()
 	if configFile != "" {
 		// Use config file from the flag.
 		viper.SetConfigFile(configFile)
 	} else {
 		// Find home directory.
 		var home string
-		home, err = os.UserHomeDir()
+		home, err := os.UserHomeDir()
+		cobra.CheckErr(err)
 
 		viper.AddConfigPath(home)
 		viper.SetConfigType("yaml")
@@ -165,7 +165,7 @@ func initConfig() {
 	}
 
 	// If a config file is found, read it in.
-	err = viper.ReadInConfig()
+	err := viper.ReadInConfig()
 	cobra.CheckErr(err)
 	err = viper.Unmarshal(cfg)
 	cobra.CheckErr(err)
@@ -213,7 +213,7 @@ func initConfig() {
 				fmt.Printf("error reading config: %s\n", err)
 			}
 			config.Set(cfg)
-			if err := redis.Set(cfg.RedisConfig.GetRedisOptions()); err != nil {
+			if err := redis.Set(cfg.CacheConfig.RedisConfig.GetRedisOptions()); err != nil {
 				fmt.Printf("error setting redis: %s\n", err)
 			}
 			if err := logging.Set(cfg.ZapConfig.GetZapConfig()); err != nil {

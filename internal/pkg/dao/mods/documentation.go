@@ -18,7 +18,7 @@ import (
 
 // DocumentationDao defines the crud methods that the infrastructure layer should implement
 type DocumentationDao interface {
-	GetDocumentationById(ctx context.Context, documentationId primitive.ObjectID) (*models.DocumentationModel, error)
+	GetDocumentationByID(ctx context.Context, documentationId primitive.ObjectID) (*models.DocumentationModel, error)
 	GetDocumentationList(
 		ctx context.Context,
 		offset, limit int64, desc bool, createStartTime, createEndTime, updateStartTime, updateEndTime *time.Time,
@@ -39,9 +39,9 @@ type DocumentationDaoImpl struct {
 }
 
 // NewDocumentationDao creates a new instance of DocumentationDaoImpl with the qmgo.Collection instance
-func NewDocumentationDao(ctx context.Context, dao *dao.Core, cache *dao.Cache) (DocumentationDao, error) {
+func NewDocumentationDao(ctx context.Context, core *dao.Core, cache *dao.Cache) (DocumentationDao, error) {
 	var _ DocumentationDao = (*DocumentationDaoImpl)(nil) // Ensure that the interface is implemented
-	coll := dao.Mongo.MongoClient.Database(dao.Mongo.DatabaseName).Collection(config.DocumentationCollectionName)
+	coll := core.Mongo.MongoClient.Database(core.Mongo.DatabaseName).Collection(config.DocumentationCollectionName)
 	err := coll.CreateIndexes(
 		ctx, []options.IndexModel{
 			{
@@ -52,15 +52,15 @@ func NewDocumentationDao(ctx context.Context, dao *dao.Core, cache *dao.Cache) (
 		},
 	)
 	if err != nil {
-		dao.Logger.Error(
+		core.Logger.Error(
 			fmt.Sprintf("Failed to create indexes for %s", config.DocumentationCollectionName), zap.Error(err),
 		)
 		return nil, err
 	}
-	return &DocumentationDaoImpl{dao, cache}, nil
+	return &DocumentationDaoImpl{core, cache}, nil
 }
 
-func (d *DocumentationDaoImpl) GetDocumentationById(
+func (d *DocumentationDaoImpl) GetDocumentationByID(
 	ctx context.Context, documentationId primitive.ObjectID,
 ) (*models.DocumentationModel, error) {
 	var documentation models.DocumentationModel
@@ -68,37 +68,37 @@ func (d *DocumentationDaoImpl) GetDocumentationById(
 	cache, err := d.Cache.Get(ctx, key)
 	if err != nil {
 		d.Dao.Logger.Error(
-			"DocumentationDaoImpl.GetDocumentationById: failed to get cache",
+			"DocumentationDaoImpl.GetDocumentationByID: failed to get cache",
 			zap.Error(err), zap.String("key", key),
 		)
 	} else if cache != nil {
 		err = json.Unmarshal([]byte(*cache), &documentation)
 		if err != nil {
 			d.Dao.Logger.Error(
-				"DocumentationDaoImpl.GetDocumentationById: failed to unmarshal cache",
+				"DocumentationDaoImpl.GetDocumentationByID: failed to unmarshal cache",
 				zap.Error(err), zap.String("key", key),
 			)
 		} else {
 			d.Dao.Logger.Info(
-				"DocumentationDaoImpl.GetDocumentationById: success",
+				"DocumentationDaoImpl.GetDocumentationByID: success",
 				zap.String("documentationId", documentationId.Hex()),
 			)
 			return &documentation, nil
 		}
 	} else {
-		d.Dao.Logger.Info("DocumentationDaoImpl.GetDocumentationById: cache miss", zap.String("key", key))
+		d.Dao.Logger.Info("DocumentationDaoImpl.GetDocumentationByID: cache miss", zap.String("key", key))
 	}
 	coll := d.Dao.Mongo.MongoClient.Database(d.Dao.Mongo.DatabaseName).Collection(config.DocumentationCollectionName)
 	err = coll.Find(ctx, bson.M{"_id": documentationId}).One(&documentation)
 	if err != nil {
 		d.Dao.Logger.Error(
-			"DocumentationDaoImpl.GetDocumentationById: failed to find documentation",
+			"DocumentationDaoImpl.GetDocumentationByID: failed to find documentation",
 			zap.Error(err), zap.String("documentationId", documentationId.Hex()),
 		)
 		return nil, err
 	} else {
 		d.Dao.Logger.Info(
-			"DocumentationDaoImpl.GetDocumentationById: success",
+			"DocumentationDaoImpl.GetDocumentationByID: success",
 			zap.String("documentationId", documentationId.Hex()),
 		)
 		return &documentation, nil

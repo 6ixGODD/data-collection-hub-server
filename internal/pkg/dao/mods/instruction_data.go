@@ -16,7 +16,7 @@ import (
 )
 
 type InstructionDataDao interface {
-	GetInstructionDataById(
+	GetInstructionDataByID(
 		ctx context.Context, instructionDataID *primitive.ObjectID,
 	) (*models.InstructionDataModel, error)
 	GetInstructionDataList(
@@ -54,9 +54,9 @@ type InstructionDataDaoImpl struct {
 	UserDao UserDao
 }
 
-func NewInstructionDataDao(ctx context.Context, dao *dao.Core, userDao UserDao) (InstructionDataDao, error) {
+func NewInstructionDataDao(ctx context.Context, core *dao.Core, userDao UserDao) (InstructionDataDao, error) {
 	var _ InstructionDataDao = (*InstructionDataDaoImpl)(nil) // Ensure that the interface is implemented
-	collection := dao.Mongo.MongoClient.Database(dao.Mongo.DatabaseName).Collection(config.InstructionDataCollectionName)
+	collection := core.Mongo.MongoClient.Database(core.Mongo.DatabaseName).Collection(config.InstructionDataCollectionName)
 	err := collection.CreateIndexes(
 		ctx, []options.IndexModel{
 			{Key: []string{"user_id"}}, {Key: []string{"theme"}}, {Key: []string{"status_code"}},
@@ -64,16 +64,16 @@ func NewInstructionDataDao(ctx context.Context, dao *dao.Core, userDao UserDao) 
 		},
 	)
 	if err != nil {
-		dao.Logger.Error(
+		core.Logger.Error(
 			fmt.Sprintf("Failed to create indexes for %s", config.InstructionDataCollectionName),
 			zap.Error(err),
 		)
 		return nil, err
 	}
-	return &InstructionDataDaoImpl{dao, userDao}, nil
+	return &InstructionDataDaoImpl{core, userDao}, nil
 }
 
-func (i *InstructionDataDaoImpl) GetInstructionDataById(
+func (i *InstructionDataDaoImpl) GetInstructionDataByID(
 	ctx context.Context, instructionDataID *primitive.ObjectID,
 ) (*models.InstructionDataModel, error) {
 	var instructionData models.InstructionDataModel
@@ -81,13 +81,13 @@ func (i *InstructionDataDaoImpl) GetInstructionDataById(
 	err := collection.Find(ctx, bson.M{"_id": instructionDataID, "deleted": false}).One(&instructionData)
 	if err != nil {
 		i.Dao.Logger.Error(
-			"InstructionDataDaoImpl.GetInstructionDataById: failed to find instruction data",
+			"InstructionDataDaoImpl.GetInstructionDataByID: failed to find instruction data",
 			zap.Error(err), zap.String("instructionDataID", instructionDataID.Hex()),
 		)
 		return nil, err
 	} else {
 		i.Dao.Logger.Info(
-			"InstructionDataDaoImpl.GetInstructionDataById: success",
+			"InstructionDataDaoImpl.GetInstructionDataByID: success",
 			zap.String("instructionDataID", instructionDataID.Hex()),
 		)
 		return &instructionData, nil
@@ -271,10 +271,10 @@ func (i *InstructionDataDaoImpl) UpdateInstructionData(
 	doc := bson.M{"updated_at": time.Now()}
 	if userID != nil {
 		doc["user_id"] = *userID
-		user, err := i.UserDao.GetUserById(ctx, *userID)
+		user, err := i.UserDao.GetUserByID(ctx, *userID)
 		if err != nil {
 			i.Dao.Logger.Error(
-				"InstructionDataDaoImpl.UpdateInstructionData: failed to GetUserById",
+				"InstructionDataDaoImpl.UpdateInstructionData: failed to GetUserByID",
 				zap.String("userID", userID.Hex()),
 				zap.String("instructionDataID", instructionDataID.Hex()),
 				zap.Error(err),

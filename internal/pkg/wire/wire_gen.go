@@ -41,10 +41,7 @@ import (
 
 // InitializeApp initialize app
 func InitializeApp(ctx context.Context) (*app.App, error) {
-	configConfig, err := config.New()
-	if err != nil {
-		return nil, err
-	}
+	configConfig := config.New()
 	zap, err := InitializeZap(configConfig)
 	if err != nil {
 		return nil, err
@@ -173,7 +170,9 @@ func InitializeApp(ctx context.Context) (*app.App, error) {
 		UserApi:   userUser,
 	}
 	adminRouter := &mods9.AdminRouter{}
-	commonRouter := &mods9.CommonRouter{}
+	commonRouter := &mods9.CommonRouter{
+		Config: configConfig,
+	}
 	userRouter := &mods9.UserRouter{}
 	routerRouter := &router.Router{
 		ApiV1:        apiApi,
@@ -185,8 +184,9 @@ func InitializeApp(ctx context.Context) (*app.App, error) {
 		RouterV1: routerRouter,
 	}
 	authMiddleware := &mods10.AuthMiddleware{
-		Jwt: jwt,
-		Zap: zap,
+		Jwt:    jwt,
+		Zap:    zap,
+		Config: configConfig,
 	}
 	loggingMiddleware := &mods10.LoggingMiddleware{
 		Zap: zap,
@@ -196,12 +196,20 @@ func InitializeApp(ctx context.Context) (*app.App, error) {
 		Prometheus: prometheus,
 		Zap:        zap,
 	}
+	contextMiddleware := &mods10.ContextMiddleware{
+		Zap: zap,
+	}
 	middlewareMiddleware := &middleware.Middleware{
 		AuthMiddleware:       authMiddleware,
 		LoggingMiddleware:    loggingMiddleware,
 		PrometheusMiddleware: prometheusMiddleware,
+		ContextMiddleware:    contextMiddleware,
+		Config:               configConfig,
 	}
-	tasksTasks := tasks.New(ctx, configConfig, loginLogDao, operationLogDao)
+	tasksTasks, err := tasks.New(ctx, configConfig, loginLogDao, operationLogDao, jwt, zap)
+	if err != nil {
+		return nil, err
+	}
 	appApp, err := app.New(ctx, zap, configConfig, router3, middlewareMiddleware, tasksTasks, mongo, redis)
 	if err != nil {
 		return nil, err
@@ -220,7 +228,7 @@ var (
 
 	DaoProviderSet = wire.NewSet(dao.NewCore, dao.NewCache, mods.NewUserDao, mods.NewInstructionDataDao, mods.NewNoticeDao, mods.NewLoginLogDao, mods.NewOperationLogDao, mods.NewDocumentationDao)
 
-	MiddlewareProviderSet = wire.NewSet(wire.Struct(new(mods10.LoggingMiddleware), "*"), wire.Struct(new(mods10.PrometheusMiddleware), "*"), wire.Struct(new(mods10.AuthMiddleware), "*"), wire.Struct(new(middleware.Middleware), "*"))
+	MiddlewareProviderSet = wire.NewSet(wire.Struct(new(mods10.LoggingMiddleware), "*"), wire.Struct(new(mods10.PrometheusMiddleware), "*"), wire.Struct(new(mods10.AuthMiddleware), "*"), wire.Struct(new(mods10.ContextMiddleware), "*"), wire.Struct(new(middleware.Middleware), "*"))
 
 	SchedulerProviderSet = wire.NewSet(tasks.New)
 )

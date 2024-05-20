@@ -1,15 +1,13 @@
-package hooks
+package app
 
 import (
 	"context"
 	"fmt"
 	"time"
-
-	"data-collection-hub-server/internal/app"
 )
 
 // ShutdownHandler hooks to close the application gracefully
-func ShutdownHandler(ctx context.Context, app *app.App) error {
+func ShutdownHandler(ctx context.Context, app *App) error {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 

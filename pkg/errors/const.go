@@ -17,13 +17,11 @@ const ( // Business error code
 	CodeInvalidParams  = 3002
 	CodeMissingParams  = 3003
 
-	CodeConnError  = 4001
-	CodeReadError  = 4002
-	CodeWriteError = 4003
-	CodeDBError    = 4004
-	CodeCacheError = 4005
-	CodeMongoError = 4006
-	CodeRedisError = 4007
+	CodeConnError    = 4001
+	CodeDBReadError  = 4002
+	CodeDBWriteError = 4003
+	CodeDBError      = 4004
+	CodeCacheError   = 4005
 
 	CodeServerBusy   = 5001
 	CodeServerDown   = 5002
@@ -53,8 +51,6 @@ const ( // Default Message
 	MessageConnError  = "Connection error"
 	MessageReadError  = "Read error"
 	MessageWriteError = "Write error"
-	MessageDBError    = "Database error"
-	MessageCacheError = "Cache error"
 	MessageMongoError = "Mongo error"
 	MessageRedisError = "Redis error"
 

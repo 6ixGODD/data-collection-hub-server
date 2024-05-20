@@ -99,6 +99,7 @@ var (
 		wire.Struct(new(wares.LoggingMiddleware), "*"),
 		wire.Struct(new(wares.PrometheusMiddleware), "*"),
 		wire.Struct(new(wares.AuthMiddleware), "*"),
+		wire.Struct(new(wares.ContextMiddleware), "*"),
 		wire.Struct(new(middleware.Middleware), "*"),
 	)
 

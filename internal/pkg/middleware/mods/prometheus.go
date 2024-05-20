@@ -33,10 +33,7 @@ func (p *PrometheusMiddleware) setupPath(app *fiber.App) error {
 		return err
 	}
 	logger.Info(
-		"Prometheus middleware setup path", zap.String(
-			"path",
-			p.Prometheus.PrometheusConfig.MetricPath,
-		),
+		"Prometheus middleware setup path", zap.String("path", p.Prometheus.PrometheusConfig.MetricPath),
 	)
 	app.Get(
 		p.Prometheus.PrometheusConfig.MetricPath, func(c *fiber.Ctx) error {

@@ -17,7 +17,7 @@ import (
 )
 
 type NoticeDao interface {
-	GetNoticeById(ctx context.Context, noticeID primitive.ObjectID) (*models.NoticeModel, error)
+	GetNoticeByID(ctx context.Context, noticeID primitive.ObjectID) (*models.NoticeModel, error)
 	GetNoticeList(
 		ctx context.Context,
 		offset, limit int64, desc bool, createStartTime, createEndTime, updateStartTime, updateEndTime *time.Time,
@@ -38,9 +38,9 @@ type NoticeDaoImpl struct {
 	*dao.Cache
 }
 
-func NewNoticeDao(ctx context.Context, dao *dao.Core, cache *dao.Cache) (NoticeDao, error) {
+func NewNoticeDao(ctx context.Context, core *dao.Core, cache *dao.Cache) (NoticeDao, error) {
 	var _ NoticeDao = (*NoticeDaoImpl)(nil)
-	collection := dao.Mongo.MongoClient.Database(dao.Mongo.DatabaseName).Collection(config.NoticeCollectionName)
+	collection := core.Mongo.MongoClient.Database(core.Mongo.DatabaseName).Collection(config.NoticeCollectionName)
 	err := collection.CreateIndexes(
 		ctx, []options.IndexModel{
 			{
@@ -51,24 +51,24 @@ func NewNoticeDao(ctx context.Context, dao *dao.Core, cache *dao.Cache) (NoticeD
 		},
 	)
 	if err != nil {
-		dao.Logger.Error(fmt.Sprintf("Failed to create indexes for %s", config.NoticeCollectionName), zap.Error(err))
+		core.Logger.Error(fmt.Sprintf("Failed to create indexes for %s", config.NoticeCollectionName), zap.Error(err))
 		return nil, err
 	}
-	return &NoticeDaoImpl{dao, cache}, nil
+	return &NoticeDaoImpl{core, cache}, nil
 }
 
-func (n *NoticeDaoImpl) GetNoticeById(ctx context.Context, noticeID primitive.ObjectID) (*models.NoticeModel, error) {
+func (n *NoticeDaoImpl) GetNoticeByID(ctx context.Context, noticeID primitive.ObjectID) (*models.NoticeModel, error) {
 	collection := n.Core.Mongo.MongoClient.Database(n.Core.Mongo.DatabaseName).Collection(config.NoticeCollectionName)
 	var notice models.NoticeModel
 	err := collection.Find(ctx, bson.M{"_id": noticeID}).One(&notice)
 	if err != nil {
 		n.Core.Logger.Error(
-			"NoticeDaoImpl.GetNoticeById: failed to find notice",
+			"NoticeDaoImpl.GetNoticeByID: failed to find notice",
 			zap.Error(err), zap.String("noticeID", noticeID.Hex()),
 		)
 		return nil, err
 	} else {
-		n.Core.Logger.Info("NoticeDaoImpl.GetNoticeById: success", zap.String("noticeID", noticeID.Hex()))
+		n.Core.Logger.Info("NoticeDaoImpl.GetNoticeByID: success", zap.String("noticeID", noticeID.Hex()))
 		return &notice, nil
 	}
 }

@@ -11,8 +11,9 @@ import (
 )
 
 type AuthMiddleware struct {
-	Jwt *jwt.Jwt
-	Zap *logging.Zap
+	Jwt    *jwt.Jwt
+	Zap    *logging.Zap
+	Config *config.Config
 }
 
 func (a *AuthMiddleware) Register(app *fiber.App) {
@@ -21,6 +22,11 @@ func (a *AuthMiddleware) Register(app *fiber.App) {
 
 func (a *AuthMiddleware) authMiddleware() fiber.Handler {
 	return func(c *fiber.Ctx) error {
+		for _, path := range a.Config.MiddlewareConfig.AuthConfig.SkippedPathPrefixes {
+			if c.Path() == path {
+				return c.Next()
+			}
+		}
 		token := c.Get(fiber.HeaderAuthorization)
 		if token == "" {
 			return errors.TokenMissed(fmt.Errorf("token missed"))

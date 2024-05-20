@@ -10,8 +10,8 @@ import (
 )
 
 type AuthApi struct {
-	commonservice.AuthService
-	sysservice.LogsService
+	AuthService commonservice.AuthService
+	LogsService sysservice.LogsService
 }
 
 func (api *AuthApi) Login(c *fiber.Ctx) error {

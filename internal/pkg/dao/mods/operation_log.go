@@ -17,7 +17,7 @@ import (
 )
 
 type OperationLogDao interface {
-	GetOperationLogById(ctx context.Context, operationLogID primitive.ObjectID) (*models.OperationLogModel, error)
+	GetOperationLogByID(ctx context.Context, operationLogID primitive.ObjectID) (*models.OperationLogModel, error)
 	GetOperationLogList(
 		ctx context.Context,
 		offset, limit int64, desc bool, startTime, endTime *time.Time, userID, entityID *primitive.ObjectID,
@@ -46,11 +46,11 @@ type OperationLogDaoImpl struct {
 	userDao UserDao
 }
 
-func NewOperationLogDao(ctx context.Context, dao *dao.Core, cache *dao.Cache, userDao UserDao) (
+func NewOperationLogDao(ctx context.Context, core *dao.Core, cache *dao.Cache, userDao UserDao) (
 	OperationLogDao, error,
 ) {
 	var _ OperationLogDao = (*OperationLogDaoImpl)(nil) // Ensure that the interface is implemented
-	collection := dao.Mongo.MongoClient.Database(dao.Mongo.DatabaseName).Collection(config.OperationLogCollectionName)
+	collection := core.Mongo.MongoClient.Database(core.Mongo.DatabaseName).Collection(config.OperationLogCollectionName)
 	err := collection.CreateIndexes(
 		ctx, []options.IndexModel{
 			{Key: []string{"created_at"}}, {Key: []string{"operation"}}, {Key: []string{"entity_type"}},
@@ -58,20 +58,20 @@ func NewOperationLogDao(ctx context.Context, dao *dao.Core, cache *dao.Cache, us
 		},
 	)
 	if err != nil {
-		dao.Logger.Error(
+		core.Logger.Error(
 			fmt.Sprintf("Failed to create index for %s", config.OperationLogCollectionName),
 			zap.Error(err),
 		)
 		return nil, err
 	}
 	return &OperationLogDaoImpl{
-		core:    dao,
+		core:    core,
 		cache:   cache,
 		userDao: userDao,
 	}, nil
 }
 
-func (o *OperationLogDaoImpl) GetOperationLogById(
+func (o *OperationLogDaoImpl) GetOperationLogByID(
 	ctx context.Context, operationLogID primitive.ObjectID,
 ) (*models.OperationLogModel, error) {
 	collection := o.core.Mongo.MongoClient.Database(o.core.Mongo.DatabaseName).Collection(config.OperationLogCollectionName)
@@ -79,13 +79,13 @@ func (o *OperationLogDaoImpl) GetOperationLogById(
 	err := collection.Find(ctx, bson.M{"_id": operationLogID}).One(&operationLog)
 	if err != nil {
 		o.core.Logger.Error(
-			"OperationLogDaoImpl.GetOperationLogById: error", zap.Error(err),
+			"OperationLogDaoImpl.GetOperationLogByID: error", zap.Error(err),
 			zap.String("operationLogID", operationLogID.Hex()),
 		)
 		return nil, err
 	} else {
 		o.core.Logger.Info(
-			"OperationLogDaoImpl.GetOperationLogById: success", zap.String("operationLogID", operationLogID.Hex()),
+			"OperationLogDaoImpl.GetOperationLogByID: success", zap.String("operationLogID", operationLogID.Hex()),
 		)
 		return &operationLog, nil
 	}
@@ -200,7 +200,7 @@ func (o *OperationLogDaoImpl) CacheOperationLog(
 	ctx context.Context, userID, entityID primitive.ObjectID,
 	ipAddress, userAgent, operation, entityType, description, status string,
 ) error {
-	user, err := o.userDao.GetUserById(ctx, userID)
+	user, err := o.userDao.GetUserByID(ctx, userID)
 	if err != nil {
 		o.core.Logger.Error(
 			"OperationLogDaoImpl.CacheOperationLog: failed to get user",

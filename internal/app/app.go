@@ -5,7 +5,6 @@ import (
 
 	"data-collection-hub-server/internal/pkg/config"
 	"data-collection-hub-server/internal/pkg/errors"
-	"data-collection-hub-server/internal/pkg/hooks"
 	"data-collection-hub-server/internal/pkg/middleware"
 	"data-collection-hub-server/internal/pkg/router"
 	"data-collection-hub-server/internal/pkg/tasks"
@@ -16,9 +15,6 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/gofiber/contrib/casbin"
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/cors"
-	"github.com/gofiber/fiber/v2/middleware/limiter"
-	"github.com/gofiber/fiber/v2/middleware/requestid"
 	"go.uber.org/zap"
 )
 
@@ -58,12 +54,15 @@ func New(
 }
 
 func (a *App) Init(ctx context.Context) error {
+	// Set logger
 	ctx = a.Zap.SetTagInContext(ctx, logging.SystemTag)
 	logger, err := a.Zap.GetLogger(ctx)
 	if err != nil {
 		return err
 	}
 	a.Logger = logger
+
+	// Set Fiber app
 	app := fiber.New(
 		fiber.Config{
 			Prefork:                 a.Config.FiberConfig.Prefork,
@@ -82,61 +81,28 @@ func (a *App) Init(ctx context.Context) error {
 			EnableTrustedProxyCheck: a.Config.FiberConfig.EnableTrustedProxyCheck,
 			TrustedProxies:          a.Config.FiberConfig.TrustedProxies,
 			EnablePrintRoutes:       a.Config.FiberConfig.EnablePrintRoutes,
-			ErrorHandler:            errors.ErrorHandler,
-			JSONDecoder:             json.Unmarshal, // Use go-json for enhanced JSON decoding performance
+			ErrorHandler:            errors.ErrorHandler, // Custom error handler
+			JSONDecoder:             json.Unmarshal,      // Use go-json for enhanced JSON decoding performance
 			JSONEncoder:             json.Marshal,
 		},
 	)
-
-	// Register limiter Middleware
-	app.Use(
-		limiter.New(
-			limiter.Config{
-				Max:               a.Config.LimiterConfig.Max,
-				Expiration:        a.Config.LimiterConfig.Expiration,
-				LimiterMiddleware: limiter.SlidingWindow{},
-				// LimitReached: nil,
-			},
-		),
-	)
-
-	// Register cors Middleware
-	app.Use(
-		cors.New(
-			cors.Config{
-				// Next:             nil,
-				AllowOrigins:     a.Config.CorsConfig.AllowOrigins,
-				AllowMethods:     a.Config.CorsConfig.AllowMethods,
-				AllowHeaders:     a.Config.CorsConfig.AllowHeaders,
-				AllowCredentials: a.Config.CorsConfig.AllowCredentials,
-				ExposeHeaders:    a.Config.CorsConfig.ExposeHeaders,
-				MaxAge:           a.Config.CorsConfig.MaxAge,
-			},
-		),
-	)
-
-	// Register request id Middleware
-	app.Use(requestid.New())
 
 	// Register Middleware
 	if err := a.Middleware.Register(app); err != nil {
 		return err
 	}
-	// Register hooks
+
+	// Set hooks
 	app.Hooks().OnShutdown(
 		func() error {
-			return hooks.ShutdownHandler(a.Ctx, a)
+			return ShutdownHandler(a.Ctx, a)
 		},
 	)
 
 	// Ping
-	app.Get(
-		"/ping", func(c *fiber.Ctx) error {
-			return c.SendString("pong")
-		},
-	)
+	app.Get("/ping", func(c *fiber.Ctx) error { return c.SendString("pong") })
 
-	// Register routers
+	// Set Casbin
 	adapter, err := mongodbadapter.NewAdapter(a.Config.CasbinConfig.PolicyAdapterUrl)
 	if err != nil {
 		return err
@@ -150,10 +116,14 @@ func (a *App) Init(ctx context.Context) error {
 			},
 		},
 	)
+
+	// Register routers
 	a.Router.RegisterRouter(app, rbac)
 
+	// Set app
 	a.App = app
 
+	// Start scheduled tasks
 	if err := a.Tasks.Start(); err != nil {
 		return err
 	}

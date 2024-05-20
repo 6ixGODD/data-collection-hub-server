@@ -28,7 +28,7 @@ func InitializeMongo(ctx context.Context, config *config.Config) (*mongo.Mongo, 
 
 // InitializeRedis initializes redis injection with context and config.
 func InitializeRedis(ctx context.Context, config *config.Config) (*redis.Redis, error) {
-	r, err := redis.New(ctx, config.RedisConfig.GetRedisOptions())
+	r, err := redis.New(ctx, config.CacheConfig.RedisConfig.GetRedisOptions())
 	if err != nil {
 		return nil, err
 	}

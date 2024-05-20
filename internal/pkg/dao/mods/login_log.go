@@ -17,7 +17,7 @@ import (
 )
 
 type LoginLogDao interface {
-	GetLoginLogById(ctx context.Context, loginLogID primitive.ObjectID) (*models.LoginLogModel, error)
+	GetLoginLogByID(ctx context.Context, loginLogID primitive.ObjectID) (*models.LoginLogModel, error)
 	GetLoginLogList(
 		ctx context.Context,
 		offset, limit int64, desc bool, startTime, endTime *time.Time, userID *primitive.ObjectID,
@@ -44,27 +44,27 @@ type LoginLogDaoImpl struct {
 	userDao UserDao
 }
 
-func NewLoginLogDao(ctx context.Context, dao *dao.Core, cache *dao.Cache, userDao UserDao) (LoginLogDao, error) {
+func NewLoginLogDao(ctx context.Context, core *dao.Core, cache *dao.Cache, userDao UserDao) (LoginLogDao, error) {
 	var _ LoginLogDao = (*LoginLogDaoImpl)(nil) // Ensure that the interface is implemented
-	coll := dao.Mongo.MongoClient.Database(dao.Mongo.DatabaseName).Collection(config.LoginLogCollectionName)
+	coll := core.Mongo.MongoClient.Database(core.Mongo.DatabaseName).Collection(config.LoginLogCollectionName)
 	err := coll.CreateIndexes(
 		ctx, []options.IndexModel{{Key: []string{"created_at"}}, {Key: []string{"user_id"}}},
 	)
 	if err != nil {
-		dao.Logger.Error(
+		core.Logger.Error(
 			fmt.Sprintf("Failed to create index for %s", config.LoginLogCollectionName),
 			zap.Error(err),
 		)
 		return nil, err
 	}
 	return &LoginLogDaoImpl{
-		core:    dao,
+		core:    core,
 		userDao: userDao,
 		cache:   cache,
 	}, nil
 }
 
-func (l *LoginLogDaoImpl) GetLoginLogById(
+func (l *LoginLogDaoImpl) GetLoginLogByID(
 	ctx context.Context, loginLogID primitive.ObjectID,
 ) (*models.LoginLogModel, error) {
 	coll := l.core.Mongo.MongoClient.Database(l.core.Mongo.DatabaseName).Collection(config.LoginLogCollectionName)
@@ -72,12 +72,12 @@ func (l *LoginLogDaoImpl) GetLoginLogById(
 	err := coll.Find(ctx, bson.M{"_id": loginLogID}).One(&loginLog)
 	if err != nil {
 		l.core.Logger.Error(
-			"LoginLogDaoImpl.GetLoginLogById: failed to find login log",
+			"LoginLogDaoImpl.GetLoginLogByID: failed to find login log",
 			zap.Error(err), zap.String("loginLogID", loginLogID.Hex()),
 		)
 		return nil, err
 	} else {
-		l.core.Logger.Info("LoginLogDaoImpl.GetLoginLogById: success", zap.String("loginLogID", loginLogID.Hex()))
+		l.core.Logger.Info("LoginLogDaoImpl.GetLoginLogByID: success", zap.String("loginLogID", loginLogID.Hex()))
 		return &loginLog, nil
 	}
 }

@@ -5,6 +5,7 @@ const (
 	SystemTag  = "SYSTEM"
 	MongoTag   = "MONGO"
 	RequestTag = "REQUEST"
+	CronTag    = "CRON"
 
 	TagKey       = "Tag"
 	RequestIDKey = "RequestID"

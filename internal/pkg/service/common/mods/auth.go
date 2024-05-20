@@ -84,7 +84,7 @@ func (a AuthServiceImpl) RefreshToken(ctx context.Context, refreshToken *string)
 	if err != nil {
 		return nil, errors.InvalidToken(err) // TODO: Change error type
 	}
-	user, err := a.userDao.GetUserById(ctx, userID)
+	user, err := a.userDao.GetUserByID(ctx, userID)
 	if err != nil {
 		return nil, errors.UserNotFound(err)
 	}
@@ -133,7 +133,7 @@ func (a AuthServiceImpl) ChangePassword(ctx context.Context, oldPassword, newPas
 	if err != nil {
 		return errors.InvalidToken(err) // TODO: Change error type
 	}
-	user, err := a.userDao.GetUserById(ctx, userID)
+	user, err := a.userDao.GetUserByID(ctx, userID)
 	if err != nil {
 		return errors.UserNotFound(err)
 	}

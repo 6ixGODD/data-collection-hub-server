@@ -1,7 +1,6 @@
 package mods
 
 import (
-	"data-collection-hub-server/internal/pkg/config"
 	logging "data-collection-hub-server/pkg/zap"
 	"github.com/gofiber/fiber/v2"
 	"go.uber.org/zap"
@@ -18,24 +17,20 @@ func (l *LoggingMiddleware) Register(app *fiber.App) {
 func (l *LoggingMiddleware) loggingMiddleware() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		var (
-			ctx = c.UserContext()
-			sysLogger,
-			reqLogger *zap.Logger
-			err    error
-			sysCtx = l.Zap.SetTagInContext(c.Context(), logging.SystemTag)
-			reqCtx = l.Zap.SetTagInContext(c.Context(), logging.RequestTag)
+			// ctx                  = c.UserContext()
+			sysLogger, reqLogger *zap.Logger
+			err                  error
+			sysCtx               = l.Zap.SetTagInContext(c.Context(), logging.SystemTag)
+			reqCtx               = l.Zap.SetTagInContext(c.Context(), logging.RequestTag)
 		)
 		sysLogger, _ = l.Zap.GetLogger(sysCtx)
 		reqLogger, _ = l.Zap.GetLogger(reqCtx)
-		ctx = l.Zap.SetRequestIDInContext(ctx, c.Get(fiber.HeaderXRequestID))
-		ctx = l.Zap.SetUserIDInContext(ctx, c.Locals(config.UserIDKey).(string))
-		c.SetUserContext(ctx)
+		// ctx = l.Zap.SetRequestIDInContext(ctx, c.Get(fiber.HeaderXRequestID))
+		// ctx = l.Zap.SetUserIDInContext(ctx, c.Locals(config.UserIDKey).(string))
+		// c.SetUserContext(ctx)
 		err = c.Next()
 		if err != nil {
-			sysLogger.Error(
-				"Failed to execute request",
-				zap.Error(err),
-			)
+			sysLogger.Warn("Failed to execute request", zap.Error(err))
 			return err
 		}
 

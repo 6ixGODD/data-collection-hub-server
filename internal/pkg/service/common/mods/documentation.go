@@ -33,7 +33,7 @@ func NewDocumentationService(core *service.Core, documentationDao dao.Documentat
 func (d DocumentationServiceImpl) GetDocumentation(
 	ctx context.Context, documentationID *primitive.ObjectID,
 ) (*common.GetDocumentationResponse, error) {
-	documentation, err := d.documentationDao.GetDocumentationById(ctx, *documentationID)
+	documentation, err := d.documentationDao.GetDocumentationByID(ctx, *documentationID)
 	if err != nil {
 		return nil, errors.DBError(errors.ReadError(err))
 	}

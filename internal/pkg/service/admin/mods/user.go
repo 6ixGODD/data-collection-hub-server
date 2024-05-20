@@ -46,7 +46,7 @@ func (u UserServiceImpl) InsertUser(ctx context.Context, username, email, passwo
 }
 
 func (u UserServiceImpl) GetUser(ctx context.Context, userID *primitive.ObjectID) (*admin.GetUserResponse, error) {
-	user, err := u.userDao.GetUserById(ctx, *userID)
+	user, err := u.userDao.GetUserByID(ctx, *userID)
 	if err != nil {
 		return nil, errors.DBError(errors.ReadError(err))
 	}

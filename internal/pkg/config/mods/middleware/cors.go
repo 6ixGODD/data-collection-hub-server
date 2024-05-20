@@ -1,4 +1,4 @@
-package mods
+package middleware
 
 type CorsConfig struct {
 	AllowOrigins     string `mapstructure:"allow_origins" yaml:"allow_origins" default:"*"`

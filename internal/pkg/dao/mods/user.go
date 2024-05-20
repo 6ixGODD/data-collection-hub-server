@@ -19,7 +19,7 @@ import (
 )
 
 type UserDao interface {
-	GetUserById(ctx context.Context, userID primitive.ObjectID) (*models.UserModel, error)
+	GetUserByID(ctx context.Context, userID primitive.ObjectID) (*models.UserModel, error)
 	GetUserByUsername(ctx context.Context, username string) (*models.UserModel, error)
 	GetUserByEmail(ctx context.Context, email string) (*models.UserModel, error)
 	GetUserList(
@@ -54,9 +54,9 @@ type UserDaoImpl struct {
 	CachePrefix string
 }
 
-func NewUserDao(ctx context.Context, dao *dao.Core, cache *dao.Cache) (UserDao, error) {
+func NewUserDao(ctx context.Context, core *dao.Core, cache *dao.Cache) (UserDao, error) {
 	var _ UserDao = (*UserDaoImpl)(nil)
-	coll := dao.Mongo.MongoClient.Database(dao.Mongo.DatabaseName).Collection(config.UserCollectionName)
+	coll := core.Mongo.MongoClient.Database(core.Mongo.DatabaseName).Collection(config.UserCollectionName)
 	err := coll.CreateIndexes(
 		ctx, []options.IndexModel{
 			{
@@ -71,33 +71,33 @@ func NewUserDao(ctx context.Context, dao *dao.Core, cache *dao.Cache) (UserDao, 
 		},
 	)
 	if err != nil {
-		dao.Logger.Error(
+		core.Logger.Error(
 			fmt.Sprintf("Failed to create indexes for %s", config.UserCollectionName),
 			zap.Error(err),
 		)
 		return nil, err
 	}
-	return &UserDaoImpl{dao, cache, config.UserCachePrefix}, nil
+	return &UserDaoImpl{core, cache, config.UserCachePrefix}, nil
 }
 
-func (u *UserDaoImpl) GetUserById(ctx context.Context, userID primitive.ObjectID) (*models.UserModel, error) {
+func (u *UserDaoImpl) GetUserByID(ctx context.Context, userID primitive.ObjectID) (*models.UserModel, error) {
 	var user models.UserModel
 	key := fmt.Sprintf("%s:userID:%s", u.CachePrefix, userID.Hex())
 	cache, err := u.Cache.Get(ctx, key)
 	if err != nil {
-		u.Dao.Logger.Error("UserDaoImpl.GetUserById: cache get failed", zap.Error(err), zap.String("key", key))
+		u.Dao.Logger.Error("UserDaoImpl.GetUserByID: cache get failed", zap.Error(err), zap.String("key", key))
 	} else if cache != nil && *cache != "" {
 		err := json.Unmarshal([]byte(*cache), &user)
 		if err != nil {
 			u.Dao.Logger.Error(
-				"UserDaoImpl.GetUserById: failed to unmarshal cache", zap.Error(err), zap.String("key", key),
+				"UserDaoImpl.GetUserByID: failed to unmarshal cache", zap.Error(err), zap.String("key", key),
 			)
 		} else {
-			u.Dao.Logger.Info("UserDaoImpl.GetUserById: cache hit", zap.String("key", key))
+			u.Dao.Logger.Info("UserDaoImpl.GetUserByID: cache hit", zap.String("key", key))
 			return &user, nil
 		}
 	} else {
-		u.Dao.Logger.Info("UserDaoImpl.GetUserById: cache miss", zap.String("key", key))
+		u.Dao.Logger.Info("UserDaoImpl.GetUserByID: cache miss", zap.String("key", key))
 	}
 	coll := u.Dao.Mongo.MongoClient.Database(u.Dao.Mongo.DatabaseName).Collection(config.UserCollectionName)
 	err = coll.Find(
@@ -105,11 +105,11 @@ func (u *UserDaoImpl) GetUserById(ctx context.Context, userID primitive.ObjectID
 	).One(&user)
 	if err != nil {
 		u.Dao.Logger.Error(
-			"UserDaoImpl.GetUserById: failed to find user", zap.Error(err), zap.String("userID", userID.Hex()),
+			"UserDaoImpl.GetUserByID: failed to find user", zap.Error(err), zap.String("userID", userID.Hex()),
 		)
 		return nil, err
 	} else {
-		u.Dao.Logger.Info("UserDaoImpl.GetUserById: success", zap.String("userID", userID.Hex()))
+		u.Dao.Logger.Info("UserDaoImpl.GetUserByID: success", zap.String("userID", userID.Hex()))
 		return &user, nil
 	}
 }

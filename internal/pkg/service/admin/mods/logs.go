@@ -43,7 +43,7 @@ func NewLogsService(
 func (l LogsServiceImpl) GetLoginLog(
 	ctx context.Context, loginLogID *primitive.ObjectID,
 ) (*admin.GetLoginLogResponse, error) {
-	loginLog, err := l.loginLogDao.GetLoginLogById(ctx, *loginLogID)
+	loginLog, err := l.loginLogDao.GetLoginLogByID(ctx, *loginLogID)
 	if err != nil {
 		return nil, errors.DBError(errors.ReadError(err))
 	}
@@ -91,7 +91,7 @@ func (l LogsServiceImpl) GetLoginLogList(
 func (l LogsServiceImpl) GetOperationLog(
 	ctx context.Context, operationLogID *primitive.ObjectID,
 ) (*admin.GetOperationLogResponse, error) {
-	operationLog, err := l.operationLogDao.GetOperationLogById(ctx, *operationLogID)
+	operationLog, err := l.operationLogDao.GetOperationLogByID(ctx, *operationLogID)
 	if err != nil {
 		return nil, errors.DBError(errors.ReadError(err))
 	}

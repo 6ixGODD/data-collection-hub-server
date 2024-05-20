@@ -33,7 +33,7 @@ func NewNoticeService(core *service.Core, noticeDao dao.NoticeDao) NoticeService
 func (n NoticeServiceImpl) GetNotice(ctx context.Context, noticeID *primitive.ObjectID) (
 	*common.GetNoticeResponse, error,
 ) {
-	notice, err := n.noticeDao.GetNoticeById(ctx, *noticeID)
+	notice, err := n.noticeDao.GetNoticeByID(ctx, *noticeID)
 	if err != nil {
 		return nil, errors.DBError(errors.ReadError(err))
 	}
