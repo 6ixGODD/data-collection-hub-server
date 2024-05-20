@@ -12,7 +12,7 @@ type ProfileApi struct {
 }
 
 func (api *ProfileApi) GetProfile(c *fiber.Ctx) error {
-	resp, err := api.ProfileService.GetProfile(c.Context())
+	resp, err := api.ProfileService.GetProfile(c.UserContext())
 	if err != nil {
 		return err
 	}

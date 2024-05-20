@@ -23,7 +23,7 @@ func TestZap(t *testing.T) {
 	assert.NoError(t, err)
 	ctx = zp.SetTagInContext(ctx, "TestZap__New")
 	ctx = zp.SetRequestIDInContext(ctx, "TestZap__New_RequestID")
-	ctx = zp.SetUserIDWithContext(ctx, "TestZap__New_UserID")
+	ctx = zp.SetUserIDInContext(ctx, "TestZap__New_UserID")
 	logger, err := zp.GetLogger(ctx)
 	assert.NoError(t, err)
 	logger.Info("TestZap__New: Info log")

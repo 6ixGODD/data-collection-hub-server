@@ -10,29 +10,29 @@ import (
 )
 
 type DocumentationService interface {
-	InsertDocumentation(ctx context.Context, title, content *string) error
+	InsertDocumentation(ctx context.Context, title, content *string) (string, error)
 	UpdateDocumentation(ctx context.Context, documentationID *primitive.ObjectID, title, content *string) error
 	DeleteDocumentation(ctx context.Context, documentationID *primitive.ObjectID) error
 }
 
 type DocumentationServiceImpl struct {
-	service          *service.Core
+	core             *service.Core
 	documentationDao dao.DocumentationDao
 }
 
-func NewDocumentationService(s *service.Core, documentationDao dao.DocumentationDao) DocumentationService {
+func NewDocumentationService(core *service.Core, documentationDao dao.DocumentationDao) DocumentationService {
 	return &DocumentationServiceImpl{
-		service:          s,
+		core:             core,
 		documentationDao: documentationDao,
 	}
 }
 
-func (d DocumentationServiceImpl) InsertDocumentation(ctx context.Context, title, content *string) error {
-	_, err := d.documentationDao.InsertDocumentation(ctx, *title, *content)
+func (d DocumentationServiceImpl) InsertDocumentation(ctx context.Context, title, content *string) (string, error) {
+	documentationID, err := d.documentationDao.InsertDocumentation(ctx, *title, *content)
 	if err != nil {
-		return errors.MongoError(errors.WriteError(err))
+		return "", errors.DBError(errors.WriteError(err))
 	}
-	return nil
+	return documentationID.Hex(), nil
 }
 
 func (d DocumentationServiceImpl) UpdateDocumentation(
@@ -40,7 +40,7 @@ func (d DocumentationServiceImpl) UpdateDocumentation(
 ) error {
 	err := d.documentationDao.UpdateDocumentation(ctx, *documentationID, title, content)
 	if err != nil {
-		return errors.MongoError(errors.WriteError(err))
+		return errors.DBError(errors.WriteError(err))
 	}
 	return nil
 }
@@ -48,7 +48,7 @@ func (d DocumentationServiceImpl) UpdateDocumentation(
 func (d DocumentationServiceImpl) DeleteDocumentation(ctx context.Context, documentationID *primitive.ObjectID) error {
 	err := d.documentationDao.DeleteDocumentation(ctx, *documentationID)
 	if err != nil {
-		return errors.MongoError(errors.WriteError(err))
+		return errors.DBError(errors.WriteError(err))
 	}
 	return nil
 }

@@ -25,16 +25,16 @@ type LogsService interface {
 }
 
 type LogsServiceImpl struct {
-	service         *service.Core
+	core            *service.Core
 	loginLogDao     dao.LoginLogDao
 	operationLogDao dao.OperationLogDao
 }
 
 func NewLogsService(
-	s *service.Core, loginLogDao dao.LoginLogDao, operationLogDao dao.OperationLogDao,
+	core *service.Core, loginLogDao dao.LoginLogDao, operationLogDao dao.OperationLogDao,
 ) LogsService {
 	return &LogsServiceImpl{
-		service:         s,
+		core:            core,
 		loginLogDao:     loginLogDao,
 		operationLogDao: operationLogDao,
 	}
@@ -45,7 +45,7 @@ func (l LogsServiceImpl) GetLoginLog(
 ) (*admin.GetLoginLogResponse, error) {
 	loginLog, err := l.loginLogDao.GetLoginLogById(ctx, *loginLogID)
 	if err != nil {
-		return nil, errors.MongoError(errors.ReadError(err))
+		return nil, errors.DBError(errors.ReadError(err))
 	}
 	return &admin.GetLoginLogResponse{
 		LoginLogID: loginLog.LoginLogID.Hex(),
@@ -66,7 +66,7 @@ func (l LogsServiceImpl) GetLoginLogList(
 		ctx, offset, *pageSize, *desc, createTimeStart, createTimeEnd, nil, nil, nil, query,
 	)
 	if err != nil {
-		return nil, errors.MongoError(errors.ReadError(err))
+		return nil, errors.DBError(errors.ReadError(err))
 	}
 	loginLogList := make([]*admin.GetLoginLogResponse, 0, len(loginLogs))
 	for _, loginLog := range loginLogs {
@@ -93,7 +93,7 @@ func (l LogsServiceImpl) GetOperationLog(
 ) (*admin.GetOperationLogResponse, error) {
 	operationLog, err := l.operationLogDao.GetOperationLogById(ctx, *operationLogID)
 	if err != nil {
-		return nil, errors.MongoError(errors.ReadError(err))
+		return nil, errors.DBError(errors.ReadError(err))
 	}
 	return &admin.GetOperationLogResponse{
 		OperationLogID: operationLog.OperationLogID.Hex(),
@@ -118,7 +118,7 @@ func (l LogsServiceImpl) GetOperationLogList(
 		nil, operation, nil, nil, query,
 	)
 	if err != nil {
-		return nil, errors.MongoError(errors.ReadError(err))
+		return nil, errors.DBError(errors.ReadError(err))
 	}
 	operationLogList := make([]*admin.GetOperationLogResponse, 0, len(operationLogs))
 	for _, operationLog := range operationLogs {

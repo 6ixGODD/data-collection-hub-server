@@ -8,18 +8,18 @@ import (
 	"go.uber.org/zap"
 )
 
-type Dao struct {
+type Core struct {
 	Mongo  *mongo.Mongo
 	Logger *zap.Logger
 }
 
-func New(ctx context.Context, mongo *mongo.Mongo, zap *logging.Zap) (*Dao, error) {
+func NewCore(ctx context.Context, mongo *mongo.Mongo, zap *logging.Zap) (*Core, error) {
 	c := zap.SetTagInContext(ctx, logging.MongoTag)
 	logger, err := zap.GetLogger(c)
 	if err != nil {
 		return nil, err
 	}
-	return &Dao{
+	return &Core{
 		Mongo:  mongo,
 		Logger: logger,
 	}, nil

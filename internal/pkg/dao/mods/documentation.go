@@ -34,12 +34,12 @@ type DocumentationDao interface {
 
 // DocumentationDaoImpl implements the DocumentationDao interface and contains a qmgo.Collection instance
 type DocumentationDaoImpl struct {
-	Dao   *dao.Dao
+	Dao   *dao.Core
 	Cache *dao.Cache
 }
 
 // NewDocumentationDao creates a new instance of DocumentationDaoImpl with the qmgo.Collection instance
-func NewDocumentationDao(ctx context.Context, dao *dao.Dao, cache *dao.Cache) (DocumentationDao, error) {
+func NewDocumentationDao(ctx context.Context, dao *dao.Core, cache *dao.Cache) (DocumentationDao, error) {
 	var _ DocumentationDao = (*DocumentationDaoImpl)(nil) // Ensure that the interface is implemented
 	coll := dao.Mongo.MongoClient.Database(dao.Mongo.DatabaseName).Collection(config.DocumentationCollectionName)
 	err := coll.CreateIndexes(
@@ -132,13 +132,16 @@ func (d *DocumentationDaoImpl) GetDocumentationList(
 			"DocumentationDaoImpl.GetDocumentationList: failed to get cache", zap.Error(err), zap.String("key", key),
 		)
 	} else if cache != nil {
-		d.Dao.Logger.Info("DocumentationDaoImpl.GetDocumentationList: cache hit", zap.String("key", key))
-		return cache.List.([]models.DocumentationModel), &cache.Total, nil
+		if documentationList, ok := cache.List.([]models.DocumentationModel); ok {
+			d.Dao.Logger.Info("DocumentationDaoImpl.GetDocumentationList: cache hit", zap.String("key", key))
+			return documentationList, &cache.Total, nil
+		} else {
+			d.Dao.Logger.Error(
+				"DocumentationDaoImpl.GetDocumentationList: failed to type assert cache", zap.String("key", key),
+			)
+		}
 	} else {
-		d.Dao.Logger.Info(
-			"DocumentationDaoImpl.GetDocumentationList: cache miss",
-			zap.String("key", key),
-		)
+		d.Dao.Logger.Info("DocumentationDaoImpl.GetDocumentationList: cache miss", zap.String("key", key))
 	}
 	coll := d.Dao.Mongo.MongoClient.Database(d.Dao.Mongo.DatabaseName).Collection(config.DocumentationCollectionName)
 	if desc {

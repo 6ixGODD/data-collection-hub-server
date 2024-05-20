@@ -2,16 +2,33 @@ package dao
 
 import (
 	"context"
+	"errors"
 
 	"data-collection-hub-server/internal/pkg/config"
 	"data-collection-hub-server/internal/pkg/models"
-	"data-collection-hub-server/pkg/redis"
+	rds "data-collection-hub-server/pkg/redis"
 	"github.com/goccy/go-json"
+	"github.com/redis/go-redis/v9"
 )
 
 type Cache struct {
-	Redis  *redis.Redis
+	Redis  *rds.Redis
 	Config *config.Config
+	Nil    CacheNil
+}
+
+type CacheNil struct{}
+
+func (c CacheNil) Error() string {
+	return "cache: nil"
+}
+
+func NewCache(redis *rds.Redis, config *config.Config) *Cache {
+	return &Cache{
+		Redis:  redis,
+		Config: config,
+		Nil:    CacheNil{},
+	}
 }
 
 func (c *Cache) Get(ctx context.Context, key string) (*string, error) {
@@ -48,19 +65,26 @@ func (c *Cache) SetList(ctx context.Context, key string, cacheList *models.Cache
 	if err != nil {
 		return err
 	}
-	err = c.Redis.RedisClient.Set(ctx, key, cacheListJSON, c.Config.BaseConfig.CacheTTL).Err()
-	if err != nil {
-		return err
+	return c.Redis.RedisClient.Set(ctx, key, cacheListJSON, c.Config.BaseConfig.CacheTTL).Err()
+}
+
+func (c *Cache) RightPush(ctx context.Context, key string, value string) error {
+	return c.Redis.RedisClient.RPush(ctx, key, value).Err()
+}
+
+func (c *Cache) LeftPop(ctx context.Context, key string) (*string, error) {
+	result, err := c.Redis.RedisClient.LPop(ctx, key).Result()
+	if errors.Is(err, redis.Nil) {
+		return nil, c.Nil
 	}
-	return nil
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
 }
 
 func (c *Cache) Delete(ctx context.Context, key string) error {
-	err := c.Redis.RedisClient.Del(ctx, key).Err()
-	if err != nil {
-		return err
-	}
-	return nil
+	return c.Redis.RedisClient.Del(ctx, key).Err()
 }
 
 func (c *Cache) Flush(ctx context.Context, prefix *string) error {

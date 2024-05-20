@@ -21,16 +21,16 @@ type StatisticService interface {
 }
 
 type StatisticServiceImpl struct {
-	service            *service.Core
+	core               *service.Core
 	instructionDataDao dao.InstructionDataDao
 	userDao            dao.UserDao
 }
 
 func NewStatisticService(
-	s *service.Core, instructionDataDao dao.InstructionDataDao, userDao dao.UserDao,
+	core *service.Core, instructionDataDao dao.InstructionDataDao, userDao dao.UserDao,
 ) StatisticService {
 	return &StatisticServiceImpl{
-		service:            s,
+		core:               core,
 		instructionDataDao: instructionDataDao,
 		userDao:            userDao,
 	}
@@ -48,7 +48,7 @@ func (s StatisticServiceImpl) GetDataStatistic(
 		nil, nil, nil,
 	)
 	if err != nil {
-		return nil, errors.MongoError(errors.ReadError(err))
+		return nil, errors.DBError(errors.ReadError(err))
 	}
 
 	pendingCount, err := s.instructionDataDao.CountInstructionData(
@@ -56,7 +56,7 @@ func (s StatisticServiceImpl) GetDataStatistic(
 		nil, nil, nil,
 	)
 	if err != nil {
-		return nil, errors.MongoError(errors.ReadError(err))
+		return nil, errors.DBError(errors.ReadError(err))
 	}
 
 	approvedCount, err := s.instructionDataDao.CountInstructionData(
@@ -64,7 +64,7 @@ func (s StatisticServiceImpl) GetDataStatistic(
 		nil, nil, nil,
 	)
 	if err != nil {
-		return nil, errors.MongoError(errors.ReadError(err))
+		return nil, errors.DBError(errors.ReadError(err))
 	}
 
 	rejectedCount, err := s.instructionDataDao.CountInstructionData(
@@ -72,12 +72,12 @@ func (s StatisticServiceImpl) GetDataStatistic(
 		nil, nil, nil,
 	)
 	if err != nil {
-		return nil, errors.MongoError(errors.ReadError(err))
+		return nil, errors.DBError(errors.ReadError(err))
 	}
 
 	themeCount, err := s.instructionDataDao.AggregateCountInstructionData(ctx, &themeField)
 	if err != nil {
-		return nil, errors.MongoError(errors.ReadError(err))
+		return nil, errors.DBError(errors.ReadError(err))
 	}
 
 	timeRangeStatistic := make([]*admin.TimeRangeStatistic, 0, int(endDate.Sub(*startDate).Hours()/24)+1)
@@ -89,7 +89,7 @@ func (s StatisticServiceImpl) GetDataStatistic(
 			nil, nil,
 		)
 		if err != nil {
-			return nil, errors.MongoError(errors.ReadError(err))
+			return nil, errors.DBError(errors.ReadError(err))
 		}
 
 		_pendingCount, err := s.instructionDataDao.CountInstructionData(
@@ -97,7 +97,7 @@ func (s StatisticServiceImpl) GetDataStatistic(
 			nil, nil,
 		)
 		if err != nil {
-			return nil, errors.MongoError(errors.ReadError(err))
+			return nil, errors.DBError(errors.ReadError(err))
 		}
 
 		_approvedCount, err := s.instructionDataDao.CountInstructionData(
@@ -105,7 +105,7 @@ func (s StatisticServiceImpl) GetDataStatistic(
 			nil, nil,
 		)
 		if err != nil {
-			return nil, errors.MongoError(errors.ReadError(err))
+			return nil, errors.DBError(errors.ReadError(err))
 		}
 
 		_rejectedCount, err := s.instructionDataDao.CountInstructionData(
@@ -113,12 +113,12 @@ func (s StatisticServiceImpl) GetDataStatistic(
 			nil, nil,
 		)
 		if err != nil {
-			return nil, errors.MongoError(errors.ReadError(err))
+			return nil, errors.DBError(errors.ReadError(err))
 		}
 
 		_themeCount, err := s.instructionDataDao.AggregateCountInstructionData(ctx, &themeField)
 		if err != nil {
-			return nil, errors.MongoError(errors.ReadError(err))
+			return nil, errors.DBError(errors.ReadError(err))
 		}
 
 		timeRangeStatistic = append(
@@ -150,14 +150,14 @@ func (s StatisticServiceImpl) GetUserStatistic(
 	rejectedStatus := config.InstructionDataStatusRejected
 	user, err := s.userDao.GetUserById(ctx, *userID)
 	if err != nil {
-		return nil, errors.MongoError(errors.ReadError(err))
+		return nil, errors.DBError(errors.ReadError(err))
 	}
 	total, err := s.instructionDataDao.CountInstructionData(
 		ctx, userID, nil, nil, nil,
 		nil, nil, nil,
 	)
 	if err != nil {
-		return nil, errors.MongoError(errors.ReadError(err))
+		return nil, errors.DBError(errors.ReadError(err))
 	}
 
 	pendingCount, err := s.instructionDataDao.CountInstructionData(
@@ -165,7 +165,7 @@ func (s StatisticServiceImpl) GetUserStatistic(
 		nil, nil, nil,
 	)
 	if err != nil {
-		return nil, errors.MongoError(errors.ReadError(err))
+		return nil, errors.DBError(errors.ReadError(err))
 	}
 
 	approvedCount, err := s.instructionDataDao.CountInstructionData(
@@ -173,7 +173,7 @@ func (s StatisticServiceImpl) GetUserStatistic(
 		nil, nil, nil,
 	)
 	if err != nil {
-		return nil, errors.MongoError(errors.ReadError(err))
+		return nil, errors.DBError(errors.ReadError(err))
 	}
 
 	rejectedCount, err := s.instructionDataDao.CountInstructionData(
@@ -181,7 +181,7 @@ func (s StatisticServiceImpl) GetUserStatistic(
 		nil, nil, nil,
 	)
 	if err != nil {
-		return nil, errors.MongoError(errors.ReadError(err))
+		return nil, errors.DBError(errors.ReadError(err))
 	}
 
 	return &admin.GetUserStatisticResponse{
@@ -207,7 +207,7 @@ func (s StatisticServiceImpl) GetUserStatisticList(
 		nil, nil, loginBefore, loginAfter, nil,
 	)
 	if err != nil {
-		return nil, errors.MongoError(errors.ReadError(err))
+		return nil, errors.DBError(errors.ReadError(err))
 	}
 	resp := make([]*admin.GetUserStatisticResponse, 0, len(users))
 	for _, user := range users {
@@ -216,7 +216,7 @@ func (s StatisticServiceImpl) GetUserStatisticList(
 			nil, nil, nil,
 		)
 		if err != nil {
-			return nil, errors.MongoError(errors.ReadError(err))
+			return nil, errors.DBError(errors.ReadError(err))
 		}
 
 		pendingCount, err := s.instructionDataDao.CountInstructionData(
@@ -224,7 +224,7 @@ func (s StatisticServiceImpl) GetUserStatisticList(
 			nil, nil, nil,
 		)
 		if err != nil {
-			return nil, errors.MongoError(errors.ReadError(err))
+			return nil, errors.DBError(errors.ReadError(err))
 		}
 
 		approvedCount, err := s.instructionDataDao.CountInstructionData(
@@ -232,7 +232,7 @@ func (s StatisticServiceImpl) GetUserStatisticList(
 			nil, nil, nil,
 		)
 		if err != nil {
-			return nil, errors.MongoError(errors.ReadError(err))
+			return nil, errors.DBError(errors.ReadError(err))
 		}
 
 		rejectedCount, err := s.instructionDataDao.CountInstructionData(
@@ -240,7 +240,7 @@ func (s StatisticServiceImpl) GetUserStatisticList(
 			nil, nil, nil,
 		)
 		if err != nil {
-			return nil, errors.MongoError(errors.ReadError(err))
+			return nil, errors.DBError(errors.ReadError(err))
 		}
 
 		resp = append(

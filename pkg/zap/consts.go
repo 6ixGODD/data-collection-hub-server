@@ -1,14 +1,12 @@
 package zap
 
 const (
-	MainTag      = "MAIN"
-	SystemTag    = "SYSTEM"
-	MongoTag     = "MONGO"
-	RequestTag   = "REQUEST"
-	LoginTag     = "LOGIN"
-	OperationTag = "OPERATION"
+	MainTag    = "MAIN"
+	SystemTag  = "SYSTEM"
+	MongoTag   = "MONGO"
+	RequestTag = "REQUEST"
 
-	tagKey       = "TAG"
-	requestIDKey = "REQUEST_ID"
-	userIDKey    = "USER_ID"
+	TagKey       = "Tag"
+	RequestIDKey = "RequestID"
+	UserIDKey    = "UserID"
 )

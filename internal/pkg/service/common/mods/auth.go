@@ -21,18 +21,27 @@ type AuthService interface {
 }
 
 type AuthServiceImpl struct {
-	service     *service.Core
+	core        *service.Core
 	userDao     dao.UserDao
 	loginLogDao dao.LoginLogDao
 	Jwt         *jwt.Jwt
 }
 
-func (a AuthServiceImpl) Login(ctx context.Context, email, password *string) (*common.LoginResponse, error) {
-	user, err := a.userDao.GetUserByEmail(ctx, email)
-	if err != nil {
-		return nil, errors.MongoError(errors.ReadError(err))
+func NewAuthService(core *service.Core, userDao dao.UserDao, loginLogDao dao.LoginLogDao, jwt *jwt.Jwt) AuthService {
+	return &AuthServiceImpl{
+		core:        core,
+		userDao:     userDao,
+		loginLogDao: loginLogDao,
+		Jwt:         jwt,
 	}
-	if !crypt.VerifyPassword(*password, user.Password) {
+}
+
+func (a AuthServiceImpl) Login(ctx context.Context, email, password *string) (*common.LoginResponse, error) {
+	user, err := a.userDao.GetUserByEmail(ctx, *email)
+	if err != nil {
+		return nil, errors.DBError(errors.ReadError(err))
+	}
+	if !crypt.VerifyHash(*password, user.Password) {
 		return nil, errors.PasswordWrong(err)
 	}
 	accessToken, err := a.Jwt.GenerateAccessToken(user.UserID.Hex())
@@ -46,7 +55,7 @@ func (a AuthServiceImpl) Login(ctx context.Context, email, password *string) (*c
 	return &common.LoginResponse{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
-		ExpiresIn:    a.service.Config.JWTConfig.TokenDuration.Seconds(),
+		ExpiresIn:    a.core.Config.JWTConfig.TokenDuration.Seconds(),
 		Meta: struct {
 			UserID   string `json:"user_id"`
 			Username string `json:"username"`
@@ -90,7 +99,7 @@ func (a AuthServiceImpl) RefreshToken(ctx context.Context, refreshToken *string)
 	return &common.RefreshTokenResponse{
 		AccessToken:  accessToken,
 		RefreshToken: newRefreshToken,
-		ExpiresIn:    a.service.Config.JWTConfig.TokenDuration.Seconds(),
+		ExpiresIn:    a.core.Config.JWTConfig.TokenDuration.Seconds(),
 		Meta: struct {
 			UserID   string `json:"user_id"`
 			Username string `json:"username"`
@@ -111,7 +120,7 @@ func (a AuthServiceImpl) RefreshToken(ctx context.Context, refreshToken *string)
 }
 
 func (a AuthServiceImpl) Logout(ctx context.Context) error {
-	_, err := primitive.ObjectIDFromHex(ctx.Value(config.KeyUserID).(string))
+	_, err := primitive.ObjectIDFromHex(ctx.Value(config.UserIDKey).(string))
 	if err != nil {
 		return errors.InvalidToken(err)
 	}
@@ -120,7 +129,7 @@ func (a AuthServiceImpl) Logout(ctx context.Context) error {
 }
 
 func (a AuthServiceImpl) ChangePassword(ctx context.Context, oldPassword, newPassword *string) error {
-	userID, err := primitive.ObjectIDFromHex(ctx.Value(config.KeyUserID).(string))
+	userID, err := primitive.ObjectIDFromHex(ctx.Value(config.UserIDKey).(string))
 	if err != nil {
 		return errors.InvalidToken(err) // TODO: Change error type
 	}
@@ -128,25 +137,16 @@ func (a AuthServiceImpl) ChangePassword(ctx context.Context, oldPassword, newPas
 	if err != nil {
 		return errors.UserNotFound(err)
 	}
-	if !crypt.VerifyPassword(*oldPassword, user.Password) {
+	if !crypt.VerifyHash(*oldPassword, user.Password) {
 		return errors.PasswordWrong(err)
 	}
-	hashedPassword, err := crypt.PasswordHash(*newPassword)
+	hashedPassword, err := crypt.Hash(*newPassword)
 	if err != nil {
 		return errors.ServiceError(err)
 	}
 	err = a.userDao.UpdateUser(ctx, userID, nil, nil, nil, &hashedPassword, nil)
 	if err != nil {
-		return errors.MongoError(errors.WriteError(err))
+		return errors.DBError(errors.WriteError(err))
 	}
 	return nil
-}
-
-func NewAuthService(s *service.Core, userDao dao.UserDao, loginLogDao dao.LoginLogDao, jwt *jwt.Jwt) AuthService {
-	return &AuthServiceImpl{
-		service:     s,
-		userDao:     userDao,
-		loginLogDao: loginLogDao,
-		Jwt:         jwt,
-	}
 }

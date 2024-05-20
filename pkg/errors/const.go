@@ -61,7 +61,7 @@ const ( // Default Message
 	MessageServerBusy   = "Server busy"
 	MessageServerDown   = "Server down"
 	MessageServerCrash  = "Server crash"
-	MessageServiceError = "Service error"
+	MessageServiceError = "core error"
 
 	MessageUnknownError = "Unknown error"
 )

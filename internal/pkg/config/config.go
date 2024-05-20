@@ -37,6 +37,6 @@ func New() (config *Config, err error) {
 	return configInstance, nil
 }
 
-func Update(cfg *Config) {
+func Set(cfg *Config) {
 	configInstance = cfg
 }

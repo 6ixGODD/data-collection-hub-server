@@ -10,29 +10,29 @@ import (
 )
 
 type NoticeService interface {
-	InsertNotice(ctx context.Context, title, content, noticeType *string) error
+	InsertNotice(ctx context.Context, title, content, noticeType *string) (string, error)
 	UpdateNotice(ctx context.Context, noticeID *primitive.ObjectID, title, content, noticeType *string) error
 	DeleteNotice(ctx context.Context, noticeID *primitive.ObjectID) error
 }
 
 type NoticeServiceImpl struct {
-	service   *service.Core
+	core      *service.Core
 	noticeDao dao.NoticeDao
 }
 
-func NewNoticeService(s *service.Core, noticeDao dao.NoticeDao) NoticeService {
+func NewNoticeService(core *service.Core, noticeDao dao.NoticeDao) NoticeService {
 	return &NoticeServiceImpl{
-		service:   s,
+		core:      core,
 		noticeDao: noticeDao,
 	}
 }
 
-func (n NoticeServiceImpl) InsertNotice(ctx context.Context, title, content, noticeType *string) error {
-	_, err := n.noticeDao.InsertNotice(ctx, *title, *content, *noticeType)
+func (n NoticeServiceImpl) InsertNotice(ctx context.Context, title, content, noticeType *string) (string, error) {
+	noticeID, err := n.noticeDao.InsertNotice(ctx, *title, *content, *noticeType)
 	if err != nil {
-		return errors.MongoError(errors.WriteError(err))
+		return "", errors.DBError(errors.WriteError(err))
 	}
-	return nil
+	return noticeID.Hex(), nil
 }
 
 func (n NoticeServiceImpl) UpdateNotice(
@@ -40,7 +40,7 @@ func (n NoticeServiceImpl) UpdateNotice(
 ) error {
 	err := n.noticeDao.UpdateNotice(ctx, *noticeID, title, content, noticeType)
 	if err != nil {
-		return errors.MongoError(errors.WriteError(err))
+		return errors.DBError(errors.WriteError(err))
 	}
 	return nil
 }
@@ -48,7 +48,7 @@ func (n NoticeServiceImpl) UpdateNotice(
 func (n NoticeServiceImpl) DeleteNotice(ctx context.Context, noticeID *primitive.ObjectID) error {
 	err := n.noticeDao.DeleteNotice(ctx, *noticeID)
 	if err != nil {
-		return errors.MongoError(errors.WriteError(err))
+		return errors.DBError(errors.WriteError(err))
 	}
 	return nil
 }

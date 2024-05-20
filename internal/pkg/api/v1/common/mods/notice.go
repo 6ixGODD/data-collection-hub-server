@@ -26,7 +26,7 @@ func (n *NoticeApi) GetNotice(c *fiber.Ctx) error {
 	if err != nil {
 		return errors.InvalidRequest(err)
 	}
-	resp, err := n.NoticeService.GetNotice(c.Context(), &noticeID)
+	resp, err := n.NoticeService.GetNotice(c.UserContext(), &noticeID)
 	if err != nil {
 		return err
 	}
@@ -65,7 +65,7 @@ func (n *NoticeApi) GetNoticeList(c *fiber.Ctx) error {
 	}
 
 	resp, err := n.NoticeService.GetNoticeList(
-		c.Context(), req.Page, req.PageSize, req.NoticeType, updateBefore, updateAfter,
+		c.UserContext(), req.Page, req.PageSize, req.NoticeType, updateBefore, updateAfter,
 	)
 	if err != nil {
 		return err

@@ -22,7 +22,7 @@ func (u *UserApi) InsertUser(c *fiber.Ctx) error {
 		return errors.InvalidRequest(err)
 	}
 
-	err := u.UserService.InsertUser(c.Context(), req.Username, req.Email, req.Password, req.Role, req.Organization)
+	err := u.UserService.InsertUser(c.UserContext(), req.Username, req.Email, req.Password, req.Role, req.Organization)
 	if err != nil {
 		return err
 	}
@@ -48,7 +48,7 @@ func (u *UserApi) GetUser(c *fiber.Ctx) error {
 		return errors.InvalidRequest(err)
 	}
 
-	resp, err := u.UserService.GetUser(c.Context(), &userID)
+	resp, err := u.UserService.GetUser(c.UserContext(), &userID)
 	if err != nil {
 		return err
 	}
@@ -101,7 +101,7 @@ func (u *UserApi) GetUserList(c *fiber.Ctx) error {
 	}
 
 	resp, err := u.UserService.GetUserList(
-		c.Context(), req.Page, req.PageSize, req.Desc, req.Role, lastLoginTimeStart, lastLoginTimeEnd,
+		c.UserContext(), req.Page, req.PageSize, req.Desc, req.Role, lastLoginTimeStart, lastLoginTimeEnd,
 		createdTimeStart, createdTimeEnd, req.Query,
 	)
 	if err != nil {
@@ -129,7 +129,7 @@ func (u *UserApi) UpdateUser(c *fiber.Ctx) error {
 		return errors.InvalidRequest(err)
 	}
 
-	err = u.UserService.UpdateUser(c.Context(), &userID, req.Username, req.Email, req.Role, req.Organization)
+	err = u.UserService.UpdateUser(c.UserContext(), &userID, req.Username, req.Email, req.Role, req.Organization)
 	if err != nil {
 		return err
 	}
@@ -154,7 +154,7 @@ func (u *UserApi) DeleteUser(c *fiber.Ctx) error {
 	if err != nil {
 		return errors.InvalidRequest(err)
 	}
-	err = u.UserService.DeleteUser(c.Context(), &userID)
+	err = u.UserService.DeleteUser(c.UserContext(), &userID)
 	if err != nil {
 		return err
 	}
@@ -179,7 +179,7 @@ func (u *UserApi) ChangeUserPassword(c *fiber.Ctx) error {
 	if err != nil {
 		return errors.InvalidRequest(err)
 	}
-	err = u.UserService.ChangeUserPassword(c.Context(), &userID, req.NewPassword)
+	err = u.UserService.ChangeUserPassword(c.UserContext(), &userID, req.NewPassword)
 	if err != nil {
 		return err
 	}

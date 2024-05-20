@@ -2,14 +2,15 @@ package app
 
 import (
 	"context"
-	"os"
 
 	"data-collection-hub-server/internal/pkg/config"
 	"data-collection-hub-server/internal/pkg/errors"
 	"data-collection-hub-server/internal/pkg/hooks"
 	"data-collection-hub-server/internal/pkg/middleware"
 	"data-collection-hub-server/internal/pkg/router"
-	"data-collection-hub-server/pkg/cron"
+	"data-collection-hub-server/internal/pkg/tasks"
+	"data-collection-hub-server/pkg/mongo"
+	"data-collection-hub-server/pkg/redis"
 	logging "data-collection-hub-server/pkg/zap"
 	"github.com/casbin/mongodb-adapter/v3"
 	"github.com/goccy/go-json"
@@ -23,35 +24,46 @@ import (
 
 type App struct {
 	App        *fiber.App
-	Logger     *logging.Zap
+	Zap        *logging.Zap
+	Logger     *zap.Logger
 	Config     *config.Config
 	Router     *router.Router
 	Middleware *middleware.Middleware
-	Scheduler  *cron.Scheduler
+	Tasks      *tasks.Tasks
+	Mongo      *mongo.Mongo
+	Redis      *redis.Redis
 	Ctx        context.Context
 }
 
 // New factory function that initializes the application and returns a fiber.App instance.
 func New(
-	ctx context.Context, logger *logging.Zap, config *config.Config, router *router.Router,
-	middleware *middleware.Middleware, scheduler *cron.Scheduler,
+	ctx context.Context, zap *logging.Zap, config *config.Config, router *router.Router,
+	middleware *middleware.Middleware, tasks *tasks.Tasks, mongo *mongo.Mongo, redis *redis.Redis,
 ) (*App, error) {
 	app := &App{
-		Logger:     logger,
+		Zap:        zap,
 		Config:     config,
 		Router:     router,
 		Middleware: middleware,
-		Scheduler:  scheduler,
+		Tasks:      tasks,
+		Mongo:      mongo,
+		Redis:      redis,
 		Ctx:        ctx,
 	}
 
-	if err := app.Init(); err != nil {
+	if err := app.Init(ctx); err != nil {
 		return nil, err
 	}
 	return app, nil
 }
 
-func (a *App) Init() error {
+func (a *App) Init(ctx context.Context) error {
+	ctx = a.Zap.SetTagInContext(ctx, logging.SystemTag)
+	logger, err := a.Zap.GetLogger(ctx)
+	if err != nil {
+		return err
+	}
+	a.Logger = logger
 	app := fiber.New(
 		fiber.Config{
 			Prefork:                 a.Config.FiberConfig.Prefork,
@@ -76,11 +88,7 @@ func (a *App) Init() error {
 		},
 	)
 
-	// Register Middleware
 	// Register limiter Middleware
-	if err := a.Middleware.Register(app); err != nil {
-		return err
-	}
 	app.Use(
 		limiter.New(
 			limiter.Config{
@@ -110,18 +118,16 @@ func (a *App) Init() error {
 	// Register request id Middleware
 	app.Use(requestid.New())
 
-	// Register Logger Middleware
-
+	// Register Middleware
+	if err := a.Middleware.Register(app); err != nil {
+		return err
+	}
 	// Register hooks
 	app.Hooks().OnShutdown(
 		func() error {
-			return hooks.Shutdown(a.Ctx, app)
+			return hooks.ShutdownHandler(a.Ctx, a)
 		},
 	)
-
-	// TODO: Add more hooks here
-
-	// TODO: Add scheduler tasks
 
 	// Ping
 	app.Get(
@@ -140,7 +146,7 @@ func (a *App) Init() error {
 			ModelFilePath: a.Config.CasbinConfig.ModelPath,
 			PolicyAdapter: adapter,
 			Lookup: func(c *fiber.Ctx) string {
-				return c.Locals(config.KeyUserID).(string)
+				return c.Locals(config.UserIDKey).(string)
 			},
 		},
 	)
@@ -148,26 +154,8 @@ func (a *App) Init() error {
 
 	a.App = app
 
-	return nil
-}
-
-// Run function starts the application server.
-func (a *App) Run(addr string, enableTls bool) {
-	a.Logger.SetTagInContext(a.Ctx, logging.SystemTag)
-	a.Logger.Logger.Info(
-		"Server is starting",
-		zap.String("Addr", addr),
-		zap.String("version", a.Config.BaseConfig.AppVersion),
-		zap.Int64("pid", int64(os.Getpid())),
-	)
-
-	if a.Config.BaseConfig.EnableTls || enableTls {
-		if err := a.App.ListenTLS(addr, a.Config.BaseConfig.TlsCertFile, a.Config.BaseConfig.TlsKeyFile); err != nil {
-			a.Logger.Logger.Fatal("Server run failed", zap.Error(err))
-		}
-	} else {
-		if err := a.App.Listen(addr); err != nil {
-			a.Logger.Logger.Fatal("Server run failed", zap.Error(err))
-		}
+	if err := a.Tasks.Start(); err != nil {
+		return err
 	}
+	return nil
 }

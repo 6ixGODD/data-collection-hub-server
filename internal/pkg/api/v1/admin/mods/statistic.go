@@ -37,7 +37,7 @@ func (s *StatisticApi) GetDataStatistic(c *fiber.Ctx) error {
 			return errors.InvalidRequest(err)
 		}
 	}
-	resp, err := s.StatisticService.GetDataStatistic(c.Context(), startDate, endDate)
+	resp, err := s.StatisticService.GetDataStatistic(c.UserContext(), startDate, endDate)
 	if err != nil {
 		return err
 	}
@@ -61,7 +61,7 @@ func (s *StatisticApi) GetUserStatistic(c *fiber.Ctx) error {
 		return errors.InvalidRequest(err)
 	}
 
-	resp, err := s.StatisticService.GetUserStatistic(c.Context(), &userID)
+	resp, err := s.StatisticService.GetUserStatistic(c.UserContext(), &userID)
 	if err != nil {
 		return err
 	}
@@ -112,7 +112,7 @@ func (s *StatisticApi) GetUserStatisticList(c *fiber.Ctx) error {
 	}
 
 	resp, err := s.StatisticService.GetUserStatisticList(
-		c.Context(), req.Page, req.PageSize, loginStartTime, loginEndTime, createStartTime, createEndTime,
+		c.UserContext(), req.Page, req.PageSize, loginStartTime, loginEndTime, createStartTime, createEndTime,
 	)
 	if err != nil {
 		return err

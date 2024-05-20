@@ -17,26 +17,25 @@ type ProfileService interface {
 }
 
 type ProfileServiceImpl struct {
-	service *service.Core
+	core    *service.Core
 	userDao dao.UserDao
 }
 
-func NewProfileService(s *service.Core, userDao dao.UserDao) ProfileService {
-	var _ ProfileService = (*ProfileServiceImpl)(nil)
+func NewProfileService(core *service.Core, userDao dao.UserDao) ProfileService {
 	return &ProfileServiceImpl{
-		service: s,
+		core:    core,
 		userDao: userDao,
 	}
 }
 
 func (p ProfileServiceImpl) GetProfile(ctx context.Context) (*common.GetProfileResponse, error) {
-	userID, err := primitive.ObjectIDFromHex(ctx.Value(config.KeyUserID).(string))
+	userID, err := primitive.ObjectIDFromHex(ctx.Value(config.UserIDKey).(string))
 	if err != nil {
 		return nil, errors.UserNotFound(err) // TODO: change error type
 	}
 	user, err := p.userDao.GetUserById(ctx, userID)
 	if err != nil {
-		return nil, errors.MongoError(errors.ReadError(err))
+		return nil, errors.DBError(errors.ReadError(err))
 	}
 	return &common.GetProfileResponse{
 		UserID:       user.UserID.Hex(),

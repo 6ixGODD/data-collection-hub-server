@@ -25,22 +25,22 @@ type UserService interface {
 }
 
 type UserServiceImpl struct {
-	service *service.Core
+	core    *service.Core
 	userDao dao.UserDao
 }
 
-func NewUserService(s *service.Core, userDao dao.UserDao) UserService {
+func NewUserService(core *service.Core, userDao dao.UserDao) UserService {
 	return &UserServiceImpl{
-		service: s,
+		core:    core,
 		userDao: userDao,
 	}
 }
 
 func (u UserServiceImpl) InsertUser(ctx context.Context, username, email, password, role, organization *string) error {
-	passwordHash, err := crypt.PasswordHash(*password)
+	passwordHash, err := crypt.Hash(*password)
 	_, err = u.userDao.InsertUser(ctx, *username, *email, passwordHash, *role, *organization)
 	if err != nil {
-		return errors.MongoError(errors.WriteError(err))
+		return errors.DBError(errors.WriteError(err))
 	}
 	return nil
 }
@@ -48,7 +48,7 @@ func (u UserServiceImpl) InsertUser(ctx context.Context, username, email, passwo
 func (u UserServiceImpl) GetUser(ctx context.Context, userID *primitive.ObjectID) (*admin.GetUserResponse, error) {
 	user, err := u.userDao.GetUserById(ctx, *userID)
 	if err != nil {
-		return nil, errors.MongoError(errors.ReadError(err))
+		return nil, errors.DBError(errors.ReadError(err))
 	}
 	return &admin.GetUserResponse{
 		UserID:       user.UserID.Hex(),
@@ -72,7 +72,7 @@ func (u UserServiceImpl) GetUserList(
 		nil, nil, lastLoginBefore, lastLoginAfter, query,
 	)
 	if err != nil {
-		return nil, errors.MongoError(errors.ReadError(err))
+		return nil, errors.DBError(errors.ReadError(err))
 	}
 	resp := make([]*admin.GetUserResponse, 0, len(users))
 	for _, user := range users {
@@ -101,7 +101,7 @@ func (u UserServiceImpl) UpdateUser(
 ) error {
 	err := u.userDao.UpdateUser(ctx, *userID, username, email, nil, role, organization)
 	if err != nil {
-		return errors.MongoError(errors.WriteError(err))
+		return errors.DBError(errors.WriteError(err))
 	}
 	return nil
 }
@@ -109,7 +109,7 @@ func (u UserServiceImpl) UpdateUser(
 func (u UserServiceImpl) DeleteUser(ctx context.Context, userID *primitive.ObjectID) error {
 	err := u.userDao.DeleteUser(ctx, *userID)
 	if err != nil {
-		return errors.MongoError(errors.WriteError(err))
+		return errors.DBError(errors.WriteError(err))
 	}
 	return nil
 }
@@ -119,7 +119,7 @@ func (u UserServiceImpl) ChangeUserPassword(
 ) error {
 	err := u.userDao.UpdateUser(ctx, *userID, nil, nil, newPassword, nil, nil)
 	if err != nil {
-		return errors.MongoError(errors.WriteError(err))
+		return errors.DBError(errors.WriteError(err))
 	}
 	return nil
 }

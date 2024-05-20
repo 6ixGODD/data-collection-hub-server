@@ -1,17 +1,14 @@
 package mods
 
 import (
-	"time"
-
-	"data-collection-hub-server/pkg/redis"
+	"data-collection-hub-server/internal/pkg/config"
 	logging "data-collection-hub-server/pkg/zap"
 	"github.com/gofiber/fiber/v2"
 	"go.uber.org/zap"
 )
 
 type LoggingMiddleware struct {
-	Zap   *logging.Zap
-	Redis *redis.Redis
+	Zap *logging.Zap
 }
 
 func (l *LoggingMiddleware) Register(app *fiber.App) {
@@ -21,80 +18,71 @@ func (l *LoggingMiddleware) Register(app *fiber.App) {
 func (l *LoggingMiddleware) loggingMiddleware() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		var (
+			ctx = c.UserContext()
 			sysLogger,
-			reqLogger,
-			loginLogger *zap.Logger
-			err      error
-			sysCtx   = l.Zap.SetTagInContext(c.UserContext(), logging.SystemTag)
-			reqCtx   = l.Zap.SetTagInContext(c.UserContext(), logging.RequestTag)
-			loginCtx = l.Zap.SetTagInContext(c.UserContext(), logging.LoginTag)
+			reqLogger *zap.Logger
+			err    error
+			sysCtx = l.Zap.SetTagInContext(c.Context(), logging.SystemTag)
+			reqCtx = l.Zap.SetTagInContext(c.Context(), logging.RequestTag)
 		)
-		if sysLogger, err = l.Zap.GetLogger(sysCtx); err != nil {
-			return err
-		}
-		if reqLogger, err = l.Zap.GetLogger(reqCtx); err != nil {
-			return err
-		}
-		if loginLogger, err = l.Zap.GetLogger(loginCtx); err != nil {
-			return err
-		}
-		if err != nil {
-			return err
-		}
+		sysLogger, _ = l.Zap.GetLogger(sysCtx)
+		reqLogger, _ = l.Zap.GetLogger(reqCtx)
+		ctx = l.Zap.SetRequestIDInContext(ctx, c.Get(fiber.HeaderXRequestID))
+		ctx = l.Zap.SetUserIDInContext(ctx, c.Locals(config.UserIDKey).(string))
+		c.SetUserContext(ctx)
 		err = c.Next()
 		if err != nil {
 			sysLogger.Error(
-				"c.Next()",
+				"Failed to execute request",
 				zap.Error(err),
 			)
 			return err
 		}
 
-		if c.Response().StatusCode() >= 400 {
-			reqLogger.Warn(
+		if c.Response().StatusCode() >= fiber.StatusInternalServerError {
+			reqLogger.Error(
 				"Request",
-				zap.String("request-id", c.Get("X-Request-Id")),
+				zap.String("requestID", c.Get(fiber.HeaderXRequestID)),
 				zap.String("path", c.Path()),
 				zap.String("method", c.Method()),
 				zap.String("ip", c.IP()),
-				zap.String("user-agent", c.Get("User-Agent")),
+				zap.String("userAgent", c.Get(fiber.HeaderUserAgent)),
 				zap.Any("query", c.Request().URI().QueryArgs()),
 				zap.Any("form", c.Request().PostArgs()),
 				zap.Any("body", c.Body()),
 				zap.Int("status", c.Response().StatusCode()),
 				zap.Any("response", c.Response().Body()),
-				zap.Duration("latency", *c.Context().Value("latency").(*time.Duration)),
+			)
+		} else if c.Response().StatusCode() >= fiber.StatusBadRequest {
+			reqLogger.Warn(
+				"Request",
+				zap.String("requestID", c.Get(fiber.HeaderXRequestID)),
+				zap.String("path", c.Path()),
+				zap.String("method", c.Method()),
+				zap.String("ip", c.IP()),
+				zap.String("userAgent", c.Get(fiber.HeaderUserAgent)),
+				zap.Any("query", c.Request().URI().QueryArgs()),
+				zap.Any("form", c.Request().PostArgs()),
+				zap.Any("body", c.Body()),
+				zap.Int("status", c.Response().StatusCode()),
+				zap.Any("response", c.Response().Body()),
 			)
 		} else {
 			reqLogger.Info(
 				"Request",
-				zap.String("request-id", c.Get("X-Request-Id")),
+				zap.String("requestID", c.Get(fiber.HeaderXRequestID)),
 				zap.String("path", c.Path()),
 				zap.String("method", c.Method()),
 				zap.String("ip", c.IP()),
-				zap.String("user-agent", c.Get("User-Agent")),
+				zap.String("userAgent", c.Get(fiber.HeaderUserAgent)),
 				zap.Any("query", c.Request().URI().QueryArgs()),
 				zap.Any("form", c.Request().PostArgs()),
 				zap.Any("body", c.Body()),
 				zap.Int("status", c.Response().StatusCode()),
 				zap.Any("response", c.Response().Body()),
-				zap.Duration("latency", *c.Context().Value("latency").(*time.Duration)),
 			)
 		}
 
-		if c.Path() == "/api/v1/login" && c.Response().StatusCode() < 400 {
-			loginLogger.Info(
-				"Login",
-				zap.String("request-id", c.Get("X-Request-Id")),
-				zap.String("user-id", c.Context().Value("userID").(string)),
-				zap.String("ip", c.IP()),
-				zap.String("user-agent", c.Get("User-Agent")),
-				zap.Any("body", c.Body()),
-				zap.Int("status", c.Response().StatusCode()),
-				zap.Any("response", c.Response().Body()),
-				zap.Duration("latency", *c.Context().Value("latency").(*time.Duration)),
-			)
-		}
 		return nil
 	}
 }

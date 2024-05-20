@@ -85,15 +85,20 @@ func (z *Zap) GetLogger(ctx context.Context) (logger *zap.Logger, err error) {
 			return nil, err
 		}
 	}
-	return z.Logger.With(fields...), nil
+	newLogger := z.Logger.With(fields...)
+
+	if err != nil {
+		return nil, err
+	}
+	return newLogger, nil
 }
 
 func (z *Zap) SetTagInContext(ctx context.Context, tag string) context.Context {
-	return context.WithValue(ctx, tagKey, tag)
+	return context.WithValue(ctx, TagKey, tag)
 }
 
 func (z *Zap) getTagFromContext(ctx context.Context) string {
-	if tag := ctx.Value(tagKey); tag != nil {
+	if tag := ctx.Value(TagKey); tag != nil {
 		if tagStr, ok := tag.(string); ok {
 			return tagStr
 		}
@@ -102,11 +107,11 @@ func (z *Zap) getTagFromContext(ctx context.Context) string {
 }
 
 func (z *Zap) SetRequestIDInContext(ctx context.Context, requestID string) context.Context {
-	return context.WithValue(ctx, requestIDKey, requestID)
+	return context.WithValue(ctx, RequestIDKey, requestID)
 }
 
 func (z *Zap) getRequestIDFromContext(ctx context.Context) string {
-	if requestID := ctx.Value(requestIDKey); requestID != nil {
+	if requestID := ctx.Value(RequestIDKey); requestID != nil {
 		if requestID, ok := requestID.(string); ok {
 			return requestID
 		}
@@ -114,15 +119,19 @@ func (z *Zap) getRequestIDFromContext(ctx context.Context) string {
 	return ""
 }
 
-func (z *Zap) SetUserIDWithContext(ctx context.Context, userID string) context.Context {
-	return context.WithValue(ctx, userIDKey, userID)
+func (z *Zap) SetUserIDInContext(ctx context.Context, userID string) context.Context {
+	return context.WithValue(ctx, UserIDKey, userID)
 }
 
 func (z *Zap) getUserIDFromContext(ctx context.Context) string {
-	if userID := ctx.Value(userIDKey); userID != nil {
+	if userID := ctx.Value(UserIDKey); userID != nil {
 		if userID, ok := userID.(string); ok {
 			return userID
 		}
 	}
 	return ""
+}
+
+func (z *Zap) Sync() error {
+	return z.Logger.Sync()
 }

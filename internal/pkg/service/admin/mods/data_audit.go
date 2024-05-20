@@ -13,9 +13,9 @@ import (
 )
 
 type DataAuditService interface {
-	GetInstructionData(ctx context.Context, instructionDataID *primitive.ObjectID) (
-		*admin.GetInstructionDataResponse, error,
-	)
+	GetInstructionData(
+		ctx context.Context, instructionDataID *primitive.ObjectID,
+	) (*admin.GetInstructionDataResponse, error)
 	GetInstructionDataList(
 		ctx context.Context, page, pageSize *int64, desc *bool, userID *primitive.ObjectID,
 		createTimeStart, createTimeEnd, updateTimeStart, updateTimeEnd *time.Time,
@@ -154,7 +154,7 @@ func (d DataAuditServiceImpl) ApproveInstructionData(ctx context.Context, instru
 		&status, &message,
 	)
 	if err != nil {
-		return errors.MongoError(errors.WriteError(err))
+		return errors.DBError(errors.WriteError(err))
 	}
 	return nil
 }
@@ -170,7 +170,7 @@ func (d DataAuditServiceImpl) RejectInstructionData(
 		&status, message,
 	)
 	if err != nil {
-		return errors.MongoError(errors.WriteError(err))
+		return errors.DBError(errors.WriteError(err))
 	}
 	return nil
 }
@@ -185,7 +185,7 @@ func (d DataAuditServiceImpl) UpdateInstructionData(
 		userID, instruction, input, output, theme, source, note, nil, nil,
 	)
 	if err != nil {
-		return errors.MongoError(errors.WriteError(err))
+		return errors.DBError(errors.WriteError(err))
 	}
 	return nil
 }
@@ -193,7 +193,7 @@ func (d DataAuditServiceImpl) UpdateInstructionData(
 func (d DataAuditServiceImpl) DeleteInstructionData(ctx context.Context, instructionDataID *primitive.ObjectID) error {
 	err := d.instructionDataDao.SoftDeleteInstructionData(ctx, *instructionDataID)
 	if err != nil {
-		return errors.MongoError(errors.WriteError(err))
+		return errors.DBError(errors.WriteError(err))
 	}
 	return nil
 }

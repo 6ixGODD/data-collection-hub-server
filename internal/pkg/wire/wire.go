@@ -27,6 +27,8 @@ import (
 	adminservices "data-collection-hub-server/internal/pkg/service/admin/mods"
 	commonservice "data-collection-hub-server/internal/pkg/service/common"
 	commonservices "data-collection-hub-server/internal/pkg/service/common/mods"
+	sysservice "data-collection-hub-server/internal/pkg/service/sys"
+	sysservices "data-collection-hub-server/internal/pkg/service/sys/mods"
 	userservice "data-collection-hub-server/internal/pkg/service/user"
 	userservices "data-collection-hub-server/internal/pkg/service/user/mods"
 	"data-collection-hub-server/pkg/cron"
@@ -66,6 +68,7 @@ var (
 		wire.Struct(new(adminservice.Admin), "*"),
 		wire.Struct(new(userservice.User), "*"),
 		wire.Struct(new(commonservice.Common), "*"),
+		wire.Struct(new(sysservice.Sys), "*"),
 		adminservices.NewDataAuditService,
 		adminservices.NewStatisticService,
 		adminservices.NewUserService,
@@ -78,11 +81,12 @@ var (
 		commonservices.NewNoticeService,
 		userservices.NewDatasetService,
 		userservices.NewStatisticService,
+		sysservices.NewLogsService,
 	)
 
 	DaoProviderSet = wire.NewSet(
-		dao.New,
-		wire.Struct(new(dao.Cache), "*"),
+		dao.NewCore,
+		dao.NewCache,
 		daos.NewUserDao,
 		daos.NewInstructionDataDao,
 		daos.NewNoticeDao,

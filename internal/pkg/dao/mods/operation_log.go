@@ -2,6 +2,7 @@ package mods
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -13,7 +14,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 type OperationLogDao interface {
@@ -28,6 +28,11 @@ type OperationLogDao interface {
 		userID, entityID primitive.ObjectID,
 		username, email, ipAddress, userAgent, operation, entityType, description, status string,
 	) (primitive.ObjectID, error)
+	CacheOperationLog(
+		ctx context.Context, userID, entityID primitive.ObjectID,
+		ipAddress, userAgent, operation, entityType, description, status string,
+	) error
+	SyncOperationLog(ctx context.Context)
 	DeleteOperationLog(ctx context.Context, operationLogID primitive.ObjectID) error
 	DeleteOperationLogList(
 		ctx context.Context, startTime, endTime *time.Time, userID, entityID *primitive.ObjectID,
@@ -35,9 +40,15 @@ type OperationLogDao interface {
 	) (*int64, error)
 }
 
-type OperationLogDaoImpl struct{ *dao.Dao }
+type OperationLogDaoImpl struct {
+	core    *dao.Core
+	cache   *dao.Cache
+	userDao UserDao
+}
 
-func NewOperationLogDao(ctx context.Context, dao *dao.Dao) (OperationLogDao, error) {
+func NewOperationLogDao(ctx context.Context, dao *dao.Core, cache *dao.Cache, userDao UserDao) (
+	OperationLogDao, error,
+) {
 	var _ OperationLogDao = (*OperationLogDaoImpl)(nil) // Ensure that the interface is implemented
 	collection := dao.Mongo.MongoClient.Database(dao.Mongo.DatabaseName).Collection(config.OperationLogCollectionName)
 	err := collection.CreateIndexes(
@@ -53,23 +64,27 @@ func NewOperationLogDao(ctx context.Context, dao *dao.Dao) (OperationLogDao, err
 		)
 		return nil, err
 	}
-	return &OperationLogDaoImpl{dao}, nil
+	return &OperationLogDaoImpl{
+		core:    dao,
+		cache:   cache,
+		userDao: userDao,
+	}, nil
 }
 
 func (o *OperationLogDaoImpl) GetOperationLogById(
 	ctx context.Context, operationLogID primitive.ObjectID,
 ) (*models.OperationLogModel, error) {
-	collection := o.Dao.Mongo.MongoClient.Database(o.Dao.Mongo.DatabaseName).Collection(config.OperationLogCollectionName)
+	collection := o.core.Mongo.MongoClient.Database(o.core.Mongo.DatabaseName).Collection(config.OperationLogCollectionName)
 	var operationLog models.OperationLogModel
 	err := collection.Find(ctx, bson.M{"_id": operationLogID}).One(&operationLog)
 	if err != nil {
-		o.Dao.Logger.Error(
+		o.core.Logger.Error(
 			"OperationLogDaoImpl.GetOperationLogById: error", zap.Error(err),
 			zap.String("operationLogID", operationLogID.Hex()),
 		)
 		return nil, err
 	} else {
-		o.Dao.Logger.Info(
+		o.core.Logger.Info(
 			"OperationLogDaoImpl.GetOperationLogById: success", zap.String("operationLogID", operationLogID.Hex()),
 		)
 		return &operationLog, nil
@@ -83,7 +98,7 @@ func (o *OperationLogDaoImpl) GetOperationLogList(
 ) ([]models.OperationLogModel, *int64, error) {
 	var operationLogList []models.OperationLogModel
 	var err error
-	collection := o.Dao.Mongo.MongoClient.Database(o.Dao.Mongo.DatabaseName).Collection(config.OperationLogCollectionName)
+	collection := o.core.Mongo.MongoClient.Database(o.core.Mongo.DatabaseName).Collection(config.OperationLogCollectionName)
 	doc := bson.M{}
 	if startTime != nil && endTime != nil {
 		doc["created_at"] = bson.M{"$gte": startTime, "$lte": endTime}
@@ -125,7 +140,7 @@ func (o *OperationLogDaoImpl) GetOperationLogList(
 	}
 
 	if err != nil {
-		o.Dao.Logger.Error(
+		o.core.Logger.Error(
 			"OperationLogDaoImpl.GetOperationLogList",
 			zap.Error(err), zap.ByteString(config.OperationLogCollectionName, docJSON),
 		)
@@ -133,203 +148,17 @@ func (o *OperationLogDaoImpl) GetOperationLogList(
 	}
 	count, err := collection.Find(ctx, doc).Count()
 	if err != nil {
-		o.Dao.Logger.Error(
+		o.core.Logger.Error(
 			"OperationLogDaoImpl.GetOperationLogList",
 			zap.Error(err), zap.ByteString(config.OperationLogCollectionName, docJSON),
 		)
 		return nil, nil, err
 	}
-	o.Dao.Logger.Info(
+	o.core.Logger.Info(
 		"OperationLogDaoImpl.GetOperationLogList",
 		zap.Int64("count", count), zap.ByteString(config.OperationLogCollectionName, docJSON),
 	)
 	return operationLogList, &count, nil
-}
-
-func (o *OperationLogDaoImpl) GetOperationLogListByUserID(
-	userID primitive.ObjectID, offset, limit int64, ctx context.Context,
-) ([]models.OperationLogModel, error) {
-	var operationLogList []models.OperationLogModel
-	collection := o.Dao.Mongo.MongoClient.Database(o.Dao.Mongo.DatabaseName).Collection(config.OperationLogCollectionName)
-	err := collection.Find(ctx, bson.M{"user_id": userID}).Skip(offset).Limit(limit).All(&operationLogList)
-	if err != nil {
-		o.Dao.Logger.Error(
-			"OperationLogDaoImpl.GetOperationLogListByUserID: failed to find operation logs",
-			zap.Field{Key: "userID", Type: zapcore.StringType, String: userID.Hex()},
-			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
-			zap.Field{Key: "limit", Type: zapcore.Int64Type, Integer: limit},
-			zap.Field{Key: "error", Type: zapcore.ErrorType, Interface: err},
-		)
-		return nil, err
-	} else {
-		o.Dao.Logger.Info(
-			"OperationLogDaoImpl.GetOperationLogListByUserID: success",
-			zap.Field{Key: "userID", Type: zapcore.StringType, String: userID.Hex()},
-			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
-			zap.Field{Key: "limit", Type: zapcore.Int64Type, Integer: limit},
-		)
-		return operationLogList, nil
-	}
-}
-
-func (o *OperationLogDaoImpl) GetOperationLogListByIPAddress(
-	ipAddress string, offset, limit int64, ctx context.Context,
-) ([]models.OperationLogModel, error) {
-	var operationLogList []models.OperationLogModel
-	collection := o.Dao.Mongo.MongoClient.Database(o.Dao.Mongo.DatabaseName).Collection(config.OperationLogCollectionName)
-	err := collection.Find(ctx, bson.M{"ip_address": ipAddress}).Skip(offset).Limit(limit).All(&operationLogList)
-	if err != nil {
-		o.Dao.Logger.Error(
-			"OperationLogDaoImpl.GetOperationLogListByIPAddress: failed to find operation logs",
-			zap.Field{Key: "ipAddress", Type: zapcore.StringType, String: ipAddress},
-			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
-			zap.Field{Key: "limit", Type: zapcore.Int64Type, Integer: limit},
-			zap.Field{Key: "error", Type: zapcore.ErrorType, Interface: err},
-		)
-		return nil, err
-	} else {
-		o.Dao.Logger.Info(
-			"OperationLogDaoImpl.GetOperationLogListByIPAddress: success",
-			zap.Field{Key: "ipAddress", Type: zapcore.StringType, String: ipAddress},
-			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
-			zap.Field{Key: "limit", Type: zapcore.Int64Type, Integer: limit},
-		)
-		return operationLogList, nil
-	}
-}
-
-func (o *OperationLogDaoImpl) GetOperationLogListByOperation(
-	operation string, offset, limit int64, ctx context.Context,
-) ([]models.OperationLogModel, error) {
-	var operationLogList []models.OperationLogModel
-	collection := o.Dao.Mongo.MongoClient.Database(o.Dao.Mongo.DatabaseName).Collection(config.OperationLogCollectionName)
-	err := collection.Find(ctx, bson.M{"operation": operation}).Skip(offset).Limit(limit).All(&operationLogList)
-	if err != nil {
-		o.Dao.Logger.Error(
-			"OperationLogDaoImpl.GetOperationLogListByOperation: failed to find operation logs",
-			zap.Field{Key: "operation", Type: zapcore.StringType, String: operation},
-			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
-			zap.Field{Key: "limit", Type: zapcore.Int64Type, Integer: limit},
-			zap.Field{Key: "error", Type: zapcore.ErrorType, Interface: err},
-		)
-		return nil, err
-	} else {
-		o.Dao.Logger.Info(
-			"OperationLogDaoImpl.GetOperationLogListByOperation: success",
-			zap.Field{Key: "operation", Type: zapcore.StringType, String: operation},
-			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
-			zap.Field{Key: "limit", Type: zapcore.Int64Type, Integer: limit},
-		)
-		return operationLogList, nil
-	}
-}
-
-func (o *OperationLogDaoImpl) GetOperationLogListByEntityID(
-	entityID primitive.ObjectID, offset, limit int64, ctx context.Context,
-) ([]models.OperationLogModel, error) {
-	var operationLogList []models.OperationLogModel
-	collection := o.Dao.Mongo.MongoClient.Database(o.Dao.Mongo.DatabaseName).Collection(config.OperationLogCollectionName)
-	err := collection.Find(ctx, bson.M{"entity_id": entityID}).Skip(offset).Limit(limit).All(&operationLogList)
-	if err != nil {
-		o.Dao.Logger.Error(
-			"OperationLogDaoImpl.GetOperationLogListByEntityID: failed to find operation logs",
-			zap.Field{Key: "entityID", Type: zapcore.StringType, String: entityID.Hex()},
-			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
-			zap.Field{Key: "limit", Type: zapcore.Int64Type, Integer: limit},
-			zap.Field{Key: "error", Type: zapcore.ErrorType, Interface: err},
-		)
-		return nil, err
-	} else {
-		o.Dao.Logger.Info(
-			"OperationLogDaoImpl.GetOperationLogListByEntityID: success",
-			zap.Field{Key: "entityID", Type: zapcore.StringType, String: entityID.Hex()},
-			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
-			zap.Field{Key: "limit", Type: zapcore.Int64Type, Integer: limit},
-		)
-		return operationLogList, nil
-	}
-}
-
-func (o *OperationLogDaoImpl) GetOperationLogListByEntityType(
-	entityType string, offset, limit int64, ctx context.Context,
-) ([]models.OperationLogModel, error) {
-	var operationLogList []models.OperationLogModel
-	collection := o.Dao.Mongo.MongoClient.Database(o.Dao.Mongo.DatabaseName).Collection(config.OperationLogCollectionName)
-	err := collection.Find(ctx, bson.M{"entity_type": entityType}).Skip(offset).Limit(limit).All(&operationLogList)
-	if err != nil {
-		o.Dao.Logger.Error(
-			"OperationLogDaoImpl.GetOperationLogListByEntityType: failed to find operation logs",
-			zap.Field{Key: "entityType", Type: zapcore.StringType, String: entityType},
-			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
-			zap.Field{Key: "limit", Type: zapcore.Int64Type, Integer: limit},
-			zap.Field{Key: "error", Type: zapcore.ErrorType, Interface: err},
-		)
-		return nil, err
-	} else {
-		o.Dao.Logger.Info(
-			"OperationLogDaoImpl.GetOperationLogListByEntityType: success",
-			zap.Field{Key: "entityType", Type: zapcore.StringType, String: entityType},
-			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
-			zap.Field{Key: "limit", Type: zapcore.Int64Type, Integer: limit},
-		)
-		return operationLogList, nil
-	}
-}
-
-func (o *OperationLogDaoImpl) GetOperationLogListByStatus(
-	status string, offset, limit int64, ctx context.Context,
-) ([]models.OperationLogModel, error) {
-	var operationLogList []models.OperationLogModel
-	collection := o.Dao.Mongo.MongoClient.Database(o.Dao.Mongo.DatabaseName).Collection(config.OperationLogCollectionName)
-	err := collection.Find(ctx, bson.M{"status": status}).Skip(offset).Limit(limit).All(&operationLogList)
-	if err != nil {
-		o.Dao.Logger.Error(
-			"OperationLogDaoImpl.GetOperationLogListByStatus: failed to find operation logs",
-			zap.Field{Key: "status", Type: zapcore.StringType, String: status},
-			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
-			zap.Field{Key: "limit", Type: zapcore.Int64Type, Integer: limit},
-			zap.Field{Key: "error", Type: zapcore.ErrorType, Interface: err},
-		)
-		return nil, err
-	} else {
-		o.Dao.Logger.Info(
-			"OperationLogDaoImpl.GetOperationLogListByStatus: success",
-			zap.Field{Key: "status", Type: zapcore.StringType, String: status},
-			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
-			zap.Field{Key: "limit", Type: zapcore.Int64Type, Integer: limit},
-		)
-		return operationLogList, nil
-	}
-}
-
-func (o *OperationLogDaoImpl) GetOperationLogListByCreatedTime(
-	startTime, endTime time.Time, offset, limit int64, ctx context.Context,
-) ([]models.OperationLogModel, error) {
-	var operationLogList []models.OperationLogModel
-	collection := o.Dao.Mongo.MongoClient.Database(o.Dao.Mongo.DatabaseName).Collection(config.OperationLogCollectionName)
-	err := collection.Find(
-		ctx, bson.M{"created_time": bson.M{"$gte": startTime, "$lte": endTime}},
-	).Skip(offset).Limit(limit).All(&operationLogList)
-	if err != nil {
-		o.Dao.Logger.Error(
-			"OperationLogDaoImpl.GetOperationLogListByCreatedTime: failed to find operation logs",
-			zap.Field{Key: "startTime", Type: zapcore.StringType, String: startTime.Format(time.RFC3339)},
-			zap.Field{Key: "endTime", Type: zapcore.StringType, String: endTime.Format(time.RFC3339)},
-			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
-			zap.Field{Key: "limit", Type: zapcore.Int64Type, Integer: limit},
-			zap.Field{Key: "error", Type: zapcore.ErrorType, Interface: err},
-		)
-		return nil, err
-	} else {
-		o.Dao.Logger.Info(
-			"OperationLogDaoImpl.GetOperationLogListByCreatedTime: success",
-			zap.Field{Key: "startTime", Type: zapcore.StringType, String: startTime.Format(time.RFC3339)},
-			zap.Field{Key: "endTime", Type: zapcore.StringType, String: endTime.Format(time.RFC3339)},
-			zap.Field{Key: "offset", Type: zapcore.Int64Type, Integer: offset},
-			zap.Field{Key: "limit", Type: zapcore.Int64Type, Integer: limit},
-		)
-		return operationLogList, nil
-	}
 }
 
 func (o *OperationLogDaoImpl) InsertOperationLog(
@@ -337,7 +166,7 @@ func (o *OperationLogDaoImpl) InsertOperationLog(
 	userID, entityID primitive.ObjectID,
 	username, email, ipAddress, userAgent, operation, entityType, description, status string,
 ) (primitive.ObjectID, error) {
-	collection := o.Dao.Mongo.MongoClient.Database(o.Dao.Mongo.DatabaseName).Collection(config.OperationLogCollectionName)
+	collection := o.core.Mongo.MongoClient.Database(o.core.Mongo.DatabaseName).Collection(config.OperationLogCollectionName)
 	doc := bson.M{
 		"user_id":     userID,
 		"entity_id":   entityID,
@@ -354,12 +183,12 @@ func (o *OperationLogDaoImpl) InsertOperationLog(
 	docJSON, _ := json.Marshal(doc)
 	result, err := collection.InsertOne(ctx, doc)
 	if err != nil {
-		o.Dao.Logger.Error(
+		o.core.Logger.Error(
 			"OperationLogDaoImpl.InsertOperationLog: failed to insert operation log",
 			zap.ByteString("doc", docJSON), zap.Error(err),
 		)
 	} else {
-		o.Dao.Logger.Info(
+		o.core.Logger.Info(
 			"OperationLogDaoImpl.InsertOperationLog: success",
 			zap.ByteString("doc", docJSON), zap.String("operationLogID", result.InsertedID.(primitive.ObjectID).Hex()),
 		)
@@ -367,16 +196,103 @@ func (o *OperationLogDaoImpl) InsertOperationLog(
 	return result.InsertedID.(primitive.ObjectID), err
 }
 
+func (o *OperationLogDaoImpl) CacheOperationLog(
+	ctx context.Context, userID, entityID primitive.ObjectID,
+	ipAddress, userAgent, operation, entityType, description, status string,
+) error {
+	user, err := o.userDao.GetUserById(ctx, userID)
+	if err != nil {
+		o.core.Logger.Error(
+			"OperationLogDaoImpl.CacheOperationLog: failed to get user",
+			zap.Error(err), zap.String("userID", userID.Hex()),
+		)
+		return err
+	}
+	operationLog := models.OperationLogCache{
+		UserIDHex:   user.UserID.Hex(),
+		Username:    user.Username,
+		Email:       user.Email,
+		IPAddress:   ipAddress,
+		UserAgent:   userAgent,
+		Operation:   operation,
+		EntityIDHex: entityID.Hex(),
+		EntityType:  entityType,
+		Description: description,
+		Status:      status,
+		CreatedAt:   time.Now(),
+	}
+	operationLogJSON, err := json.Marshal(operationLog)
+	if err != nil {
+		o.core.Logger.Error(
+			"OperationLogDaoImpl.CacheOperationLog: failed to marshal operation log",
+			zap.Error(err), zap.String("userID", userID.Hex()),
+		)
+		return err
+	}
+	return o.cache.RightPush(ctx, config.OperationLogCacheKey, string(operationLogJSON))
+}
+
+func (o *OperationLogDaoImpl) SyncOperationLog(ctx context.Context) {
+	for {
+		operationLogJSON, err := o.cache.LeftPop(ctx, config.OperationLogCacheKey)
+		if err != nil {
+			if errors.Is(err, dao.CacheNil{}) {
+				break
+			}
+			o.core.Logger.Error(
+				"OperationLogDaoImpl.SyncOperationLog: failed to left pop operation log",
+				zap.Error(err),
+			)
+		}
+		var operationLog models.OperationLogCache
+		err = json.Unmarshal([]byte(*operationLogJSON), &operationLog)
+		if err != nil {
+			o.core.Logger.Error(
+				"OperationLogDaoImpl.SyncOperationLog: failed to unmarshal operation log",
+				zap.Error(err), zap.String("operationLogJSON", *operationLogJSON),
+			)
+			continue
+		}
+		userID, err := primitive.ObjectIDFromHex(operationLog.UserIDHex)
+		if err != nil {
+			o.core.Logger.Error(
+				"OperationLogDaoImpl.SyncOperationLog: failed to get user ID",
+				zap.Error(err), zap.String("operationLogJSON", *operationLogJSON),
+			)
+			continue
+		}
+		entityID, err := primitive.ObjectIDFromHex(operationLog.EntityIDHex)
+		if err != nil {
+			o.core.Logger.Error(
+				"OperationLogDaoImpl.SyncOperationLog: failed to get entity ID",
+				zap.Error(err), zap.String("operationLogJSON", *operationLogJSON),
+			)
+			continue
+		}
+		_, err = o.InsertOperationLog(
+			ctx, userID, entityID,
+			operationLog.Username, operationLog.Email, operationLog.IPAddress, operationLog.UserAgent,
+			operationLog.Operation, operationLog.EntityType, operationLog.Description, operationLog.Status,
+		)
+		if err != nil {
+			o.core.Logger.Error(
+				"OperationLogDaoImpl.SyncOperationLog: failed to insert operation log",
+				zap.Error(err), zap.String("operationLogJSON", *operationLogJSON),
+			)
+		}
+	}
+}
+
 func (o *OperationLogDaoImpl) DeleteOperationLog(ctx context.Context, operationLogID primitive.ObjectID) error {
-	collection := o.Dao.Mongo.MongoClient.Database(o.Dao.Mongo.DatabaseName).Collection(config.OperationLogCollectionName)
+	collection := o.core.Mongo.MongoClient.Database(o.core.Mongo.DatabaseName).Collection(config.OperationLogCollectionName)
 	err := collection.RemoveId(ctx, operationLogID)
 	if err != nil {
-		o.Dao.Logger.Error(
+		o.core.Logger.Error(
 			"OperationLogDaoImpl.DeleteOperationLog: failed to delete operation log",
 			zap.Error(err), zap.String("operationLogID", operationLogID.Hex()),
 		)
 	} else {
-		o.Dao.Logger.Info(
+		o.core.Logger.Info(
 			"OperationLogDaoImpl.DeleteOperationLog: success", zap.String("operationLogID", operationLogID.Hex()),
 		)
 	}
@@ -387,7 +303,7 @@ func (o *OperationLogDaoImpl) DeleteOperationLogList(
 	ctx context.Context, startTime, endTime *time.Time, userID, entityID *primitive.ObjectID,
 	ipAddress, operation, entityType, status *string,
 ) (*int64, error) {
-	collection := o.Dao.Mongo.MongoClient.Database(o.Dao.Mongo.DatabaseName).Collection(config.OperationLogCollectionName)
+	collection := o.core.Mongo.MongoClient.Database(o.core.Mongo.DatabaseName).Collection(config.OperationLogCollectionName)
 	doc := bson.M{}
 	if startTime != nil && endTime != nil {
 		doc["created_at"] = bson.M{"$gte": startTime, "$lte": endTime}
@@ -414,12 +330,12 @@ func (o *OperationLogDaoImpl) DeleteOperationLogList(
 	docJSON, _ := json.Marshal(doc)
 	result, err := collection.RemoveAll(ctx, doc)
 	if err != nil {
-		o.Dao.Logger.Error(
+		o.core.Logger.Error(
 			"OperationLogDaoImpl.DeleteOperationLogList: failed to delete operation logs",
 			zap.Error(err), zap.ByteString(config.OperationLogCollectionName, docJSON),
 		)
 	} else {
-		o.Dao.Logger.Info(
+		o.core.Logger.Info(
 			"OperationLogDaoImpl.DeleteOperationLogList: success",
 			zap.Int64("count", result.DeletedCount),
 			zap.ByteString(config.OperationLogCollectionName, docJSON),

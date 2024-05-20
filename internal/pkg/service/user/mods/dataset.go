@@ -13,7 +13,9 @@ import (
 )
 
 type DatasetService interface {
-	InsertInstructionData(ctx context.Context, Instruction, Input, Output, Theme, Source, Note *string) error
+	InsertInstructionData(
+		ctx context.Context, userID *primitive.ObjectID, Instruction, Input, Output, Theme, Source, Note *string,
+	) (string, error)
 	GetInstructionData(ctx context.Context, instructionDataID *primitive.ObjectID) (
 		*user.GetInstructionDataResponse, error,
 	)
@@ -28,41 +30,37 @@ type DatasetService interface {
 }
 
 type DatasetServiceImpl struct {
-	service            *service.Core
+	core               *service.Core
 	instructionDataDao dao.InstructionDataDao
 	userDao            dao.UserDao
 	operationLogDao    dao.OperationLogDao
 }
 
 func NewDatasetService(
-	s *service.Core, instructionDataDao dao.InstructionDataDao, operationLogDao dao.OperationLogDao,
+	core *service.Core, instructionDataDao dao.InstructionDataDao, operationLogDao dao.OperationLogDao,
 ) DatasetService {
 	return &DatasetServiceImpl{
-		service:            s,
+		core:               core,
 		instructionDataDao: instructionDataDao,
 		operationLogDao:    operationLogDao,
 	}
 }
 
 func (d DatasetServiceImpl) InsertInstructionData(
-	ctx context.Context, Instruction, Input, Output, Theme, Source, Note *string,
-) error {
-	userID, err := primitive.ObjectIDFromHex(ctx.Value(config.KeyUserID).(string))
+	ctx context.Context, userID *primitive.ObjectID, Instruction, Input, Output, Theme, Source, Note *string,
+) (string, error) {
+	usr, err := d.userDao.GetUserById(ctx, *userID)
 	if err != nil {
-		return errors.UserNotFound(err) // TODO: change error type
+		return "", errors.UserNotFound(err) // TODO: change error type
 	}
-	usr, err := d.userDao.GetUserById(ctx, userID)
-	if err != nil {
-		return errors.UserNotFound(err) // TODO: change error type
-	}
-	_, err = d.instructionDataDao.InsertInstructionData(
-		ctx, userID, usr.Username, *Instruction, *Input, *Output, *Theme, *Source, *Note,
+	instructionDataID, err := d.instructionDataDao.InsertInstructionData(
+		ctx, *userID, usr.Username, *Instruction, *Input, *Output, *Theme, *Source, *Note,
 		config.InstructionDataStatusPending, "",
 	)
 	if err != nil {
-		return errors.MongoError(errors.WriteError(err))
+		return "", errors.DBError(errors.WriteError(err))
 	}
-	return nil
+	return instructionDataID.Hex(), nil
 }
 
 func (d DatasetServiceImpl) GetInstructionData(ctx context.Context, instructionDataID *primitive.ObjectID) (
@@ -70,7 +68,7 @@ func (d DatasetServiceImpl) GetInstructionData(ctx context.Context, instructionD
 ) {
 	instructionData, err := d.instructionDataDao.GetInstructionDataById(ctx, instructionDataID)
 	if err != nil {
-		return nil, errors.MongoError(errors.ReadError(err))
+		return nil, errors.DBError(errors.ReadError(err))
 	}
 	return &user.GetInstructionDataResponse{
 		InstructionDataID: instructionData.InstructionDataID.Hex(),
@@ -102,7 +100,7 @@ func (d DatasetServiceImpl) GetInstructionDataList(
 	ctx context.Context, page, pageSize *int64, updateBefore, updateAfter *time.Time, theme, status *string,
 ) (*user.GetInstructionDataListResponse, error) {
 	offset := (*page - 1) * *pageSize
-	userID, err := primitive.ObjectIDFromHex(ctx.Value(config.KeyUserID).(string))
+	userID, err := primitive.ObjectIDFromHex(ctx.Value(config.UserIDKey).(string))
 	if err != nil {
 		return nil, errors.UserNotFound(err) // TODO: change error type
 	}
@@ -111,7 +109,7 @@ func (d DatasetServiceImpl) GetInstructionDataList(
 		nil, nil, updateBefore, updateAfter, nil,
 	)
 	if err != nil {
-		return nil, errors.MongoError(errors.ReadError(err))
+		return nil, errors.DBError(errors.ReadError(err))
 	}
 	resp := make([]*user.GetInstructionDataResponse, 0, len(instructionDataList))
 	for _, instructionData := range instructionDataList {
@@ -155,7 +153,7 @@ func (d DatasetServiceImpl) UpdateInstructionData(
 		ctx, *instructionDataID, nil, Instruction, Input, Output, Theme, Source, Note, nil, nil,
 	)
 	if err != nil {
-		return errors.MongoError(errors.WriteError(err))
+		return errors.DBError(errors.WriteError(err))
 	}
 	return nil
 }
@@ -163,7 +161,7 @@ func (d DatasetServiceImpl) UpdateInstructionData(
 func (d DatasetServiceImpl) DeleteInstructionData(ctx context.Context, instructionDataID *primitive.ObjectID) error {
 	err := d.instructionDataDao.SoftDeleteInstructionData(ctx, *instructionDataID)
 	if err != nil {
-		return errors.MongoError(errors.WriteError(err))
+		return errors.DBError(errors.WriteError(err))
 	}
 	return nil
 }

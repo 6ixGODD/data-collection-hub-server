@@ -37,7 +37,7 @@ func (s *StatisticApi) GetDataStatistic(c *fiber.Ctx) error {
 		}
 	}
 
-	resp, err := s.StatisticService.GetDataStatistic(c.Context(), startDate, endDate)
+	resp, err := s.StatisticService.GetDataStatistic(c.UserContext(), startDate, endDate)
 	if err != nil {
 		return err
 	}

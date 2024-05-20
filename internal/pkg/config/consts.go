@@ -1,11 +1,17 @@
 package config
 
-const ( // Context keys
-	KeyUserID    = "UserID"
-	KeyRole      = "Role"
-	KeyRequestID = "RequestID"
+import (
+	"data-collection-hub-server/pkg/zap"
 )
 
+// Context Key
+const (
+	UserIDKey    = zap.UserIDKey
+	KeyRole      = "Role"
+	KeyRequestID = zap.RequestIDKey
+)
+
+// Enum Values
 const (
 	InstructionDataStatusPending  = "PENDING"
 	InstructionDataStatusApproved = "APPROVED"
@@ -30,9 +36,9 @@ const (
 	UserRoleAdmin = "ADMIN"
 )
 
+// MongoDB Collection Name
 const (
 	DocumentationCollectionName   = "documentation"
-	ErrorLogCollectionName        = "error_log"
 	NoticeCollectionName          = "notice"
 	InstructionDataCollectionName = "instruction_data"
 	LoginLogCollectionName        = "login_log"
@@ -40,8 +46,12 @@ const (
 	UserCollectionName            = "user"
 )
 
+// Cache Prefix / Key
 const (
 	NoticeCachePrefix        = "dao:notice"
 	UserCachePrefix          = "dao:user"
 	DocumentationCachePrefix = "dao:documentation"
+
+	LoginLogCacheKey     = "log:login"
+	OperationLogCacheKey = "log:operation"
 )

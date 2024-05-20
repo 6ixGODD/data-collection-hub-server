@@ -38,7 +38,7 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		panic(err)
 	}
-	dao := dao.New(ctx, mg, rd, zp, *cfg)
+	dao := dao.NewCore(ctx, mg, rd, zp, *cfg)
 	userDao, err = mods.NewUserDao(dao)
 	if err != nil {
 		panic(err)

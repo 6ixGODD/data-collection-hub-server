@@ -50,11 +50,11 @@ type InstructionDataDao interface {
 }
 
 type InstructionDataDaoImpl struct {
-	Dao     *dao.Dao
+	Dao     *dao.Core
 	UserDao UserDao
 }
 
-func NewInstructionDataDao(ctx context.Context, dao *dao.Dao, userDao UserDao) (InstructionDataDao, error) {
+func NewInstructionDataDao(ctx context.Context, dao *dao.Core, userDao UserDao) (InstructionDataDao, error) {
 	var _ InstructionDataDao = (*InstructionDataDaoImpl)(nil) // Ensure that the interface is implemented
 	collection := dao.Mongo.MongoClient.Database(dao.Mongo.DatabaseName).Collection(config.InstructionDataCollectionName)
 	err := collection.CreateIndexes(

@@ -19,8 +19,15 @@ type NoticeService interface {
 }
 
 type NoticeServiceImpl struct {
-	service   *service.Core
+	core      *service.Core
 	noticeDao dao.NoticeDao
+}
+
+func NewNoticeService(core *service.Core, noticeDao dao.NoticeDao) NoticeService {
+	return &NoticeServiceImpl{
+		core:      core,
+		noticeDao: noticeDao,
+	}
 }
 
 func (n NoticeServiceImpl) GetNotice(ctx context.Context, noticeID *primitive.ObjectID) (
@@ -28,7 +35,7 @@ func (n NoticeServiceImpl) GetNotice(ctx context.Context, noticeID *primitive.Ob
 ) {
 	notice, err := n.noticeDao.GetNoticeById(ctx, *noticeID)
 	if err != nil {
-		return nil, errors.MongoError(errors.ReadError(err))
+		return nil, errors.DBError(errors.ReadError(err))
 	}
 	return &common.GetNoticeResponse{
 		NoticeID:   notice.NoticeID.Hex(),
@@ -48,7 +55,7 @@ func (n NoticeServiceImpl) GetNoticeList(
 		ctx, offset, *pageSize, false, nil, nil, updateBefore, updateAfter, noticeType,
 	)
 	if err != nil {
-		return nil, errors.MongoError(errors.ReadError(err))
+		return nil, errors.DBError(errors.ReadError(err))
 	}
 	resp := make([]*common.NoticeSummary, 0, len(notices))
 	for _, notice := range notices {
@@ -65,11 +72,4 @@ func (n NoticeServiceImpl) GetNoticeList(
 		Total:             *count,
 		NoticeSummaryList: resp,
 	}, nil
-}
-
-func NewNoticeService(s *service.Core, noticeDao dao.NoticeDao) NoticeService {
-	return &NoticeServiceImpl{
-		service:   s,
-		noticeDao: noticeDao,
-	}
 }

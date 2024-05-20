@@ -23,20 +23,24 @@ import (
 
 	"data-collection-hub-server/internal/pkg/config"
 	"data-collection-hub-server/internal/pkg/wire"
+	"data-collection-hub-server/pkg/jwt"
+	"data-collection-hub-server/pkg/mongo"
+	"data-collection-hub-server/pkg/redis"
 	"data-collection-hub-server/pkg/utils/check"
 	logging "data-collection-hub-server/pkg/zap"
+	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )
 
 var (
-	configFile  string // config file path (default is $HOME/.data-collection-hub-server.yaml)
+	configFile  string // config file path
 	port        string // port to listen on (default is 3000)
 	host        string // host to listen on (default is localhost)
 	logLevel    string // log level (default is info)
 	tls         bool   // enable tls
-	tlsCertFile string // tls cert file path (default is "")
+	tlsCertFile string // tls cert file path
 	tlsKeyFile  string // tls key file path (default is "")
 )
 
@@ -49,13 +53,14 @@ var rootCmd = &cobra.Command{
 		ctx := context.Background()
 		// Start the app
 		fiberApp, err := wire.InitializeApp(ctx)
+
 		if err != nil {
 			panic(err)
 		}
-		fiberApp.Logger.SetTagInContext(ctx, logging.SystemTag)
+
 		// Start the app
 		if fiberApp.Config.BaseConfig.EnableTls {
-			fiberApp.Logger.Logger.Info(
+			fiberApp.Logger.Info(
 				"Starting server with TLS enabled",
 				zap.String("host", fiberApp.Config.BaseConfig.AppHost),
 				zap.String("port", fiberApp.Config.BaseConfig.AppPort),
@@ -70,7 +75,7 @@ var rootCmd = &cobra.Command{
 				panic(err)
 			}
 		} else {
-			fiberApp.Logger.Logger.Info(
+			fiberApp.Logger.Info(
 				"Starting server",
 				zap.String("host", fiberApp.Config.BaseConfig.AppHost),
 				zap.String("port", fiberApp.Config.BaseConfig.AppPort),
@@ -199,5 +204,32 @@ func initConfig() {
 		}
 		cfg.BaseConfig.TlsKeyFile = tlsKeyFile
 	}
-	config.Update(cfg)
+	config.Set(cfg)
+	viper.WatchConfig()
+	viper.OnConfigChange(
+		// TODO: refactor this into a function
+		func(in fsnotify.Event) {
+			if err := viper.Unmarshal(cfg); err != nil {
+				fmt.Printf("error reading config: %s\n", err)
+			}
+			config.Set(cfg)
+			if err := redis.Set(cfg.RedisConfig.GetRedisOptions()); err != nil {
+				fmt.Printf("error setting redis: %s\n", err)
+			}
+			if err := logging.Set(cfg.ZapConfig.GetZapConfig()); err != nil {
+				fmt.Printf("error setting zap: %s\n", err)
+			}
+			if err := mongo.Set(
+				context.Background(), cfg.MongoConfig.GetQmgoConfig(), cfg.MongoConfig.PingTimeoutS,
+				cfg.MongoConfig.Database,
+			); err != nil {
+				fmt.Printf("error setting mongo: %s\n", err)
+			}
+			if err := jwt.Set(
+				nil, cfg.JWTConfig.TokenDuration, cfg.JWTConfig.RefreshDuration, cfg.JWTConfig.RefreshBuffer,
+			); err != nil {
+				fmt.Printf("error setting jwt: %s\n", err)
+			}
+		},
+	)
 }

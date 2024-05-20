@@ -63,19 +63,11 @@ func WriteError(err error) *AppError {
 }
 
 func DBError(err error) *AppError {
-	return NewAppErrorWithCause(CodeDBError, fiber.StatusInternalServerError, MessageDBError, err)
+	return NewAppErrorWithCause(CodeDBError, fiber.StatusInternalServerError, MessageMongoError, err)
 }
 
 func CacheError(err error) *AppError {
-	return NewAppErrorWithCause(CodeCacheError, fiber.StatusInternalServerError, MessageCacheError, err)
-}
-
-func MongoError(err error) *AppError {
-	return NewAppErrorWithCause(CodeMongoError, fiber.StatusInternalServerError, MessageMongoError, err)
-}
-
-func RedisError(err error) *AppError {
-	return NewAppErrorWithCause(CodeRedisError, fiber.StatusInternalServerError, MessageRedisError, err)
+	return NewAppErrorWithCause(CodeCacheError, fiber.StatusInternalServerError, MessageRedisError, err)
 }
 
 func ServerBusy(err error) *AppError {

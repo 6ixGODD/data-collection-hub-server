@@ -27,7 +27,7 @@ func (l *LogsApi) GetLoginLog(c *fiber.Ctx) error {
 		return errors.InvalidRequest(err)
 	}
 
-	resp, err := l.LogsService.GetLoginLog(c.Context(), &loginLogID)
+	resp, err := l.LogsService.GetLoginLog(c.UserContext(), &loginLogID)
 	if err != nil {
 		return err
 	}
@@ -67,7 +67,7 @@ func (l *LogsApi) GetLoginLogList(c *fiber.Ctx) error {
 	}
 
 	resp, err := l.LogsService.GetLoginLogList(
-		c.Context(), req.Page, req.PageSize, req.Desc, req.Query, createdBefore, createdAfter,
+		c.UserContext(), req.Page, req.PageSize, req.Desc, req.Query, createdBefore, createdAfter,
 	)
 	if err != nil {
 		return err
@@ -94,7 +94,7 @@ func (l *LogsApi) GetOperationLog(c *fiber.Ctx) error {
 		return errors.InvalidRequest(err)
 	}
 
-	resp, err := l.LogsService.GetOperationLog(c.Context(), &operationLogID)
+	resp, err := l.LogsService.GetOperationLog(c.UserContext(), &operationLogID)
 	if err != nil {
 		return err
 	}
@@ -134,7 +134,7 @@ func (l *LogsApi) GetOperationLogList(c *fiber.Ctx) error {
 	}
 
 	resp, err := l.LogsService.GetOperationLogList(
-		c.Context(), req.Page, req.PageSize, req.Desc, req.Query, req.Operation, createdBefore, createdAfter,
+		c.UserContext(), req.Page, req.PageSize, req.Desc, req.Query, req.Operation, createdBefore, createdAfter,
 	)
 	if err != nil {
 		return err

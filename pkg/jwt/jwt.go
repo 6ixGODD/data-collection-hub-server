@@ -2,6 +2,8 @@ package jwt
 
 import (
 	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
 	"fmt"
 	"sync"
 	"time"
@@ -44,8 +46,11 @@ func New(
 	return jwtInstance, err
 }
 
-func Update(privateKey *ecdsa.PrivateKey, tokenDuration, refreshDuration, refreshBuffer time.Duration) error {
+func Set(privateKey *ecdsa.PrivateKey, tokenDuration, refreshDuration, refreshBuffer time.Duration) error {
 	var err error
+	if privateKey == nil {
+		privateKey = jwtInstance.privateKey
+	}
 	jwtInstance = &Jwt{
 		privateKey:      privateKey,
 		publicKey:       &privateKey.PublicKey,
@@ -56,6 +61,17 @@ func Update(privateKey *ecdsa.PrivateKey, tokenDuration, refreshDuration, refres
 	if err = jwtInstance.checkJWT(); err != nil {
 		return err
 	}
+	return nil
+}
+
+func (j *Jwt) UpdateKey() error {
+	// XXX: can be chosen from elliptic.P224(), elliptic.P256(), elliptic.P384(), elliptic.P521()
+	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		return err
+	}
+	j.privateKey = privateKey
+	j.publicKey = &privateKey.PublicKey
 	return nil
 }
 

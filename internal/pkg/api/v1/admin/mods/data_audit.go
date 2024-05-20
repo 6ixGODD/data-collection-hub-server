@@ -1,11 +1,14 @@
 package mods
 
 import (
+	"fmt"
 	"time"
 
+	"data-collection-hub-server/internal/pkg/config"
 	"data-collection-hub-server/internal/pkg/schema"
 	"data-collection-hub-server/internal/pkg/schema/admin"
 	adminservice "data-collection-hub-server/internal/pkg/service/admin/mods"
+	sysservice "data-collection-hub-server/internal/pkg/service/sys/mods"
 	"data-collection-hub-server/pkg/errors"
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -13,6 +16,7 @@ import (
 
 type DataAuditApi struct {
 	adminservice.DataAuditService
+	sysservice.LogsService
 }
 
 func (d *DataAuditApi) GetInstructionData(c *fiber.Ctx) error {
@@ -25,7 +29,7 @@ func (d *DataAuditApi) GetInstructionData(c *fiber.Ctx) error {
 	if err != nil {
 		return errors.InvalidRequest(err)
 	}
-	resp, err := d.DataAuditService.GetInstructionData(c.Context(), &instructionDataID)
+	resp, err := d.DataAuditService.GetInstructionData(c.UserContext(), &instructionDataID)
 	if err != nil {
 		return err
 	}
@@ -83,7 +87,7 @@ func (d *DataAuditApi) GetInstructionDataList(c *fiber.Ctx) error {
 		}
 	}
 	resp, err := d.DataAuditService.GetInstructionDataList(
-		c.Context(),
+		c.UserContext(),
 		req.Page, req.PageSize, req.Desc, userID, nil, nil, updateStartTime, updateEndTime,
 		req.Theme, req.Status, req.Query,
 	)
@@ -109,7 +113,7 @@ func (d *DataAuditApi) ApproveInstructionData(c *fiber.Ctx) error {
 	if err != nil {
 		return errors.InvalidRequest(err)
 	}
-	err = d.DataAuditService.ApproveInstructionData(c.Context(), &instructionDataID)
+	err = d.DataAuditService.ApproveInstructionData(c.UserContext(), &instructionDataID)
 	if err != nil {
 		return err
 	}
@@ -132,7 +136,7 @@ func (d *DataAuditApi) RejectInstructionData(c *fiber.Ctx) error {
 	if err != nil {
 		return errors.InvalidRequest(err)
 	}
-	err = d.DataAuditService.RejectInstructionData(c.Context(), &instructionDataID, req.Message)
+	err = d.DataAuditService.RejectInstructionData(c.UserContext(), &instructionDataID, req.Message)
 	if err != nil {
 		return err
 	}
@@ -146,6 +150,7 @@ func (d *DataAuditApi) RejectInstructionData(c *fiber.Ctx) error {
 }
 
 func (d *DataAuditApi) UpdateInstructionData(c *fiber.Ctx) error {
+	ctx := c.UserContext()
 	req := new(admin.UpdateInstructionDataRequest)
 
 	if err := c.BodyParser(req); err != nil {
@@ -163,12 +168,34 @@ func (d *DataAuditApi) UpdateInstructionData(c *fiber.Ctx) error {
 		}
 	}
 	err = d.DataAuditService.UpdateInstructionData(
-		c.Context(), &instructionDataID, userID, req.Instruction, req.Input, req.Output, req.Theme, req.Source,
+		ctx, &instructionDataID, userID, req.Instruction, req.Input, req.Output, req.Theme, req.Source,
 		req.Note,
 	)
+	var (
+		_userID, _ = primitive.ObjectIDFromHex(ctx.Value(config.UserIDKey).(string))
+		ipAddr     = c.IP()
+		userAgent  = c.Get(fiber.HeaderUserAgent)
+		operation  = config.OperationTypeUpdate
+		entityType = config.EntityTypeInstruction
+	)
 	if err != nil {
+		var (
+			description = fmt.Sprintf("Update instruction data failed: %s", err.Error())
+			status      = config.OperationStatusFailure
+		)
+		_ = d.LogsService.CacheOperationLog(
+			ctx, &_userID, &instructionDataID, &ipAddr, &userAgent, &operation, &entityType, &description, &status,
+		)
 		return err
 	}
+
+	var (
+		description = fmt.Sprintf("Update instruction data: %s", *req.InstructionDataID)
+		status      = config.OperationStatusSuccess
+	)
+	_ = d.LogsService.CacheOperationLog(
+		ctx, &_userID, &instructionDataID, &ipAddr, &userAgent, &operation, &entityType, &description, &status,
+	)
 	return c.JSON(
 		schema.Response{
 			Code:    errors.CodeSuccess,
@@ -179,6 +206,7 @@ func (d *DataAuditApi) UpdateInstructionData(c *fiber.Ctx) error {
 }
 
 func (d *DataAuditApi) DeleteInstructionData(c *fiber.Ctx) error {
+	ctx := c.UserContext()
 	req := new(admin.DeleteInstructionDataRequest)
 
 	if err := c.QueryParser(req); err != nil {
@@ -188,10 +216,33 @@ func (d *DataAuditApi) DeleteInstructionData(c *fiber.Ctx) error {
 	if err != nil {
 		return errors.InvalidRequest(err)
 	}
-	err = d.DataAuditService.DeleteInstructionData(c.Context(), &instructionDataID)
+	err = d.DataAuditService.DeleteInstructionData(ctx, &instructionDataID)
+	var (
+		userID, _  = primitive.ObjectIDFromHex(ctx.Value(config.UserIDKey).(string))
+		ipAddr     = c.IP()
+		userAgent  = c.Get(fiber.HeaderUserAgent)
+		operation  = config.OperationTypeDelete
+		entityType = config.EntityTypeInstruction
+	)
+
 	if err != nil {
+		var (
+			description = fmt.Sprintf("Delete instruction data failed: %s", err.Error())
+			status      = config.OperationStatusFailure
+		)
+		_ = d.LogsService.CacheOperationLog(
+			ctx, &userID, &instructionDataID, &ipAddr, &userAgent, &operation, &entityType, &description, &status,
+		)
 		return err
 	}
+
+	var (
+		description = fmt.Sprintf("Delete instruction data: %s", *req.InstructionDataID)
+		status      = config.OperationStatusSuccess
+	)
+	_ = d.LogsService.CacheOperationLog(
+		ctx, &userID, &instructionDataID, &ipAddr, &userAgent, &operation, &entityType, &description, &status,
+	)
 	return c.JSON(
 		schema.Response{
 			Code:    errors.CodeSuccess,

@@ -10,7 +10,7 @@ import (
 type Redis struct {
 	RedisClient *redis.Client
 	redisConfig *Config
-	mutex       sync.Mutex
+	mu          sync.Mutex
 	ctx         context.Context
 }
 
@@ -56,8 +56,8 @@ func Set(options *redis.Options) error {
 }
 
 func (r *Redis) Init() error {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
+	r.mu.Lock()
+	defer r.mu.Unlock()
 
 	if r.RedisClient != nil {
 		return nil
@@ -71,8 +71,8 @@ func (r *Redis) Init() error {
 }
 
 func (r *Redis) GetClient() (client *redis.Client, err error) {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
+	r.mu.Lock()
+	defer r.mu.Unlock()
 
 	if r.RedisClient == nil {
 		if err = r.Init(); err != nil {
@@ -83,8 +83,8 @@ func (r *Redis) GetClient() (client *redis.Client, err error) {
 }
 
 func (r *Redis) Close() error {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
+	r.mu.Lock()
+	defer r.mu.Unlock()
 
 	if r.RedisClient == nil {
 		return nil

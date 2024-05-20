@@ -3,6 +3,7 @@ package mods
 import (
 	"fmt"
 
+	"data-collection-hub-server/internal/pkg/config"
 	"data-collection-hub-server/pkg/errors"
 	"data-collection-hub-server/pkg/jwt"
 	logging "data-collection-hub-server/pkg/zap"
@@ -20,7 +21,7 @@ func (a *AuthMiddleware) Register(app *fiber.App) {
 
 func (a *AuthMiddleware) authMiddleware() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		token := c.Get("Authorization")
+		token := c.Get(fiber.HeaderAuthorization)
 		if token == "" {
 			return errors.TokenMissed(fmt.Errorf("token missed"))
 		}
@@ -28,8 +29,7 @@ func (a *AuthMiddleware) authMiddleware() fiber.Handler {
 		if err != nil {
 			return errors.InvalidToken(err)
 		}
-		userCtx := a.Zap.SetUserIDWithContext(c.UserContext(), sub)
-		c.SetUserContext(userCtx)
+		c.Locals(config.UserIDKey, sub)
 		return c.Next()
 	}
 }

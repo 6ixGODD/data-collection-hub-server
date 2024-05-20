@@ -4,26 +4,34 @@ import (
 	"data-collection-hub-server/internal/pkg/schema"
 	"data-collection-hub-server/internal/pkg/schema/common"
 	commonservice "data-collection-hub-server/internal/pkg/service/common/mods"
+	sysservice "data-collection-hub-server/internal/pkg/service/sys/mods"
 	"data-collection-hub-server/pkg/errors"
 	"github.com/gofiber/fiber/v2"
 )
 
 type AuthApi struct {
 	commonservice.AuthService
+	sysservice.LogsService
 }
 
 func (api *AuthApi) Login(c *fiber.Ctx) error {
+	ctx := c.UserContext()
 	req := new(common.LoginRequest)
 
 	if err := c.BodyParser(req); err != nil {
 		return errors.InvalidRequest(err)
 	}
 
-	resp, err := api.AuthService.Login(c.Context(), req.Email, req.Password)
+	resp, err := api.AuthService.Login(ctx, req.Email, req.Password)
+
 	if err != nil {
 		return err
 	}
 
+	username := resp.Meta.Username
+	ipAddr := c.IP()
+	userAgent := c.Get(fiber.HeaderUserAgent)
+	_ = api.LogsService.CacheLoginLog(ctx, &username, &ipAddr, &userAgent)
 	return c.JSON(
 		schema.Response{
 			Code:    errors.CodeSuccess,
@@ -34,7 +42,7 @@ func (api *AuthApi) Login(c *fiber.Ctx) error {
 }
 
 func (api *AuthApi) Logout(c *fiber.Ctx) error {
-	err := api.AuthService.Logout(c.Context())
+	err := api.AuthService.Logout(c.UserContext())
 	if err != nil {
 		return err
 	}
@@ -55,7 +63,7 @@ func (api *AuthApi) RefreshToken(c *fiber.Ctx) error {
 		return errors.InvalidRequest(err)
 	}
 
-	resp, err := api.AuthService.RefreshToken(c.Context(), req.RefreshToken)
+	resp, err := api.AuthService.RefreshToken(c.UserContext(), req.RefreshToken)
 	if err != nil {
 		return err
 	}
@@ -76,7 +84,7 @@ func (api *AuthApi) ChangePassword(c *fiber.Ctx) error {
 		return errors.InvalidRequest(err)
 	}
 
-	err := api.AuthService.ChangePassword(c.Context(), req.OldPassword, req.NewPassword)
+	err := api.AuthService.ChangePassword(c.UserContext(), req.OldPassword, req.NewPassword)
 	if err != nil {
 		return err
 	}

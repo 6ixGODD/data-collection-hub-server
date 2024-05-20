@@ -19,13 +19,13 @@ type DocumentationService interface {
 }
 
 type DocumentationServiceImpl struct {
-	service          *service.Core
+	core             *service.Core
 	documentationDao dao.DocumentationDao
 }
 
-func NewDocumentationService(s *service.Core, documentationDao dao.DocumentationDao) DocumentationService {
+func NewDocumentationService(core *service.Core, documentationDao dao.DocumentationDao) DocumentationService {
 	return &DocumentationServiceImpl{
-		service:          s,
+		core:             core,
 		documentationDao: documentationDao,
 	}
 }
@@ -35,7 +35,7 @@ func (d DocumentationServiceImpl) GetDocumentation(
 ) (*common.GetDocumentationResponse, error) {
 	documentation, err := d.documentationDao.GetDocumentationById(ctx, *documentationID)
 	if err != nil {
-		return nil, errors.MongoError(errors.ReadError(err))
+		return nil, errors.DBError(errors.ReadError(err))
 	}
 	return &common.GetDocumentationResponse{
 		DocumentID: documentation.DocumentID.Hex(),
@@ -54,7 +54,7 @@ func (d DocumentationServiceImpl) GetDocumentationList(
 		ctx, offset, *pageSize, false, nil, nil, updateBefore, updateAfter,
 	)
 	if err != nil {
-		return nil, errors.MongoError(errors.ReadError(err))
+		return nil, errors.DBError(errors.ReadError(err))
 	}
 	resp := make([]*common.DocumentationSummary, 0, len(documentations))
 	for _, documentation := range documentations {

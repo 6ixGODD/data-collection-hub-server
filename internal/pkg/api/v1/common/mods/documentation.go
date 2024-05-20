@@ -26,7 +26,7 @@ func (d DocumentationApi) GetDocumentation(c *fiber.Ctx) error {
 	if err != nil {
 		return errors.InvalidRequest(err)
 	}
-	resp, err := d.DocumentationService.GetDocumentation(c.Context(), &documentationID)
+	resp, err := d.DocumentationService.GetDocumentation(c.UserContext(), &documentationID)
 	if err != nil {
 		return err
 	}
@@ -65,7 +65,7 @@ func (d DocumentationApi) GetDocumentationList(c *fiber.Ctx) error {
 	}
 
 	resp, err := d.DocumentationService.GetDocumentationList(
-		c.Context(), req.Page, req.PageSize, updateBefore, updateAfter,
+		c.UserContext(), req.Page, req.PageSize, updateBefore, updateAfter,
 	)
 	if err != nil {
 		return err
