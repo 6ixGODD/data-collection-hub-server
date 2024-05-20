@@ -31,7 +31,7 @@ import (
 	sysservices "data-collection-hub-server/internal/pkg/service/sys/mods"
 	userservice "data-collection-hub-server/internal/pkg/service/user"
 	userservices "data-collection-hub-server/internal/pkg/service/user/mods"
-	"data-collection-hub-server/pkg/cron"
+	"data-collection-hub-server/internal/pkg/tasks"
 	"github.com/google/wire"
 )
 
@@ -103,7 +103,7 @@ var (
 	)
 
 	SchedulerProviderSet = wire.NewSet(
-		cron.New,
+		tasks.New,
 	)
 )
 
