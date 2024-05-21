@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"data-collection-hub-server/internal/pkg/config"
-	"data-collection-hub-server/internal/pkg/schema"
-	"data-collection-hub-server/internal/pkg/schema/user"
+	"data-collection-hub-server/internal/pkg/domain/vo"
+	"data-collection-hub-server/internal/pkg/domain/vo/user"
 	sysservice "data-collection-hub-server/internal/pkg/service/sys/mods"
 	userservice "data-collection-hub-server/internal/pkg/service/user/mods"
 	"data-collection-hub-server/pkg/errors"
@@ -15,8 +15,8 @@ import (
 )
 
 type DatasetApi struct {
-	userservice.DatasetService
-	sysservice.LogsService
+	DatasetService userservice.DatasetService
+	LogsService    sysservice.LogsService
 }
 
 func (d *DatasetApi) InsertInstructionData(c *fiber.Ctx) error {
@@ -63,7 +63,7 @@ func (d *DatasetApi) InsertInstructionData(c *fiber.Ctx) error {
 	)
 
 	return c.JSON(
-		schema.Response{
+		vo.Response{
 			Code:    errors.CodeSuccess,
 			Message: errors.MessageSuccess,
 			Data:    nil,
@@ -89,7 +89,7 @@ func (d *DatasetApi) GetInstructionData(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(
-		schema.Response{
+		vo.Response{
 			Code:    errors.CodeSuccess,
 			Message: errors.MessageSuccess,
 			Data:    resp,
@@ -130,7 +130,7 @@ func (d *DatasetApi) GetInstructionDataList(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(
-		schema.Response{
+		vo.Response{
 			Code:    errors.CodeSuccess,
 			Message: errors.MessageSuccess,
 			Data:    resp,
@@ -182,7 +182,7 @@ func (d *DatasetApi) UpdateInstructionData(c *fiber.Ctx) error {
 		ctx, &userID, &entityID, &ipAddr, &userAgent, &operation, &entityType, &description, &status,
 	)
 	return c.JSON(
-		schema.Response{
+		vo.Response{
 			Code:    errors.CodeSuccess,
 			Message: errors.MessageSuccess,
 			Data:    nil,
@@ -233,7 +233,7 @@ func (d *DatasetApi) DeleteInstructionData(c *fiber.Ctx) error {
 	)
 
 	return c.JSON(
-		schema.Response{
+		vo.Response{
 			Code:    errors.CodeSuccess,
 			Message: errors.MessageSuccess,
 			Data:    nil,

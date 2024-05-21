@@ -5,7 +5,7 @@ import (
 	"time"
 
 	dao "data-collection-hub-server/internal/pkg/dao/mods"
-	"data-collection-hub-server/internal/pkg/schema/common"
+	"data-collection-hub-server/internal/pkg/domain/vo/common"
 	"data-collection-hub-server/internal/pkg/service"
 	"data-collection-hub-server/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -18,19 +18,19 @@ type DocumentationService interface {
 	) (*common.GetDocumentationListResponse, error)
 }
 
-type DocumentationServiceImpl struct {
+type DocumentationDOImpl struct {
 	core             *service.Core
 	documentationDao dao.DocumentationDao
 }
 
-func NewDocumentationService(core *service.Core, documentationDao dao.DocumentationDao) DocumentationService {
-	return &DocumentationServiceImpl{
+func NewDocumentationDO(core *service.Core, documentationDao dao.DocumentationDao) DocumentationService {
+	return &DocumentationDOImpl{
 		core:             core,
 		documentationDao: documentationDao,
 	}
 }
 
-func (d DocumentationServiceImpl) GetDocumentation(
+func (d DocumentationDOImpl) GetDocumentation(
 	ctx context.Context, documentationID *primitive.ObjectID,
 ) (*common.GetDocumentationResponse, error) {
 	documentation, err := d.documentationDao.GetDocumentationByID(ctx, *documentationID)
@@ -46,7 +46,7 @@ func (d DocumentationServiceImpl) GetDocumentation(
 	}, nil
 }
 
-func (d DocumentationServiceImpl) GetDocumentationList(
+func (d DocumentationDOImpl) GetDocumentationList(
 	ctx context.Context, page, pageSize *int64, updateBefore, updateAfter *time.Time,
 ) (*common.GetDocumentationListResponse, error) {
 	offset := (*page - 1) * *pageSize

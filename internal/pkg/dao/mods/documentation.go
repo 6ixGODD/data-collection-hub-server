@@ -7,7 +7,7 @@ import (
 
 	"data-collection-hub-server/internal/pkg/config"
 	"data-collection-hub-server/internal/pkg/dao"
-	"data-collection-hub-server/internal/pkg/models"
+	"data-collection-hub-server/internal/pkg/domain/entity"
 	"github.com/goccy/go-json"
 	"github.com/qiniu/qmgo/options"
 	"go.mongodb.org/mongo-driver/bson"
@@ -18,11 +18,11 @@ import (
 
 // DocumentationDao defines the crud methods that the infrastructure layer should implement
 type DocumentationDao interface {
-	GetDocumentationByID(ctx context.Context, documentationId primitive.ObjectID) (*models.DocumentationModel, error)
+	GetDocumentationByID(ctx context.Context, documentationId primitive.ObjectID) (*entity.DocumentationModel, error)
 	GetDocumentationList(
 		ctx context.Context,
 		offset, limit int64, desc bool, createStartTime, createEndTime, updateStartTime, updateEndTime *time.Time,
-	) ([]models.DocumentationModel, *int64, error)
+	) ([]entity.DocumentationModel, *int64, error)
 	InsertDocumentation(ctx context.Context, title, content string) (primitive.ObjectID, error)
 	UpdateDocumentation(ctx context.Context, documentationId primitive.ObjectID, title, content *string) error
 	DeleteDocumentation(ctx context.Context, documentationId primitive.ObjectID) error
@@ -62,8 +62,8 @@ func NewDocumentationDao(ctx context.Context, core *dao.Core, cache *dao.Cache) 
 
 func (d *DocumentationDaoImpl) GetDocumentationByID(
 	ctx context.Context, documentationId primitive.ObjectID,
-) (*models.DocumentationModel, error) {
-	var documentation models.DocumentationModel
+) (*entity.DocumentationModel, error) {
+	var documentation entity.DocumentationModel
 	key := fmt.Sprintf("%s:documentationID:%s", config.DocumentationCachePrefix, documentationId.Hex())
 	cache, err := d.Cache.Get(ctx, key)
 	if err != nil {
@@ -108,8 +108,8 @@ func (d *DocumentationDaoImpl) GetDocumentationByID(
 func (d *DocumentationDaoImpl) GetDocumentationList(
 	ctx context.Context,
 	offset, limit int64, desc bool, createStartTime, createEndTime, updateStartTime, updateEndTime *time.Time,
-) ([]models.DocumentationModel, *int64, error) {
-	var documentationList []models.DocumentationModel
+) ([]entity.DocumentationModel, *int64, error) {
+	var documentationList []entity.DocumentationModel
 	var err error
 	doc := bson.M{}
 	key := fmt.Sprintf("%s:offset:%d:limit:%d", config.DocumentationCachePrefix, offset, limit)
@@ -132,7 +132,7 @@ func (d *DocumentationDaoImpl) GetDocumentationList(
 			"DocumentationDaoImpl.GetDocumentationList: failed to get cache", zap.Error(err), zap.String("key", key),
 		)
 	} else if cache != nil {
-		if documentationList, ok := cache.List.([]models.DocumentationModel); ok {
+		if documentationList, ok := cache.List.([]entity.DocumentationModel); ok {
 			d.Dao.Logger.Info("DocumentationDaoImpl.GetDocumentationList: cache hit", zap.String("key", key))
 			return documentationList, &cache.Total, nil
 		} else {

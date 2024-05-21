@@ -8,7 +8,7 @@ import (
 
 	"data-collection-hub-server/internal/pkg/config"
 	"data-collection-hub-server/internal/pkg/dao"
-	"data-collection-hub-server/internal/pkg/models"
+	entity2 "data-collection-hub-server/internal/pkg/domain/entity"
 	"github.com/goccy/go-json"
 	"github.com/qiniu/qmgo/options"
 	"go.mongodb.org/mongo-driver/bson"
@@ -17,12 +17,12 @@ import (
 )
 
 type OperationLogDao interface {
-	GetOperationLogByID(ctx context.Context, operationLogID primitive.ObjectID) (*models.OperationLogModel, error)
+	GetOperationLogByID(ctx context.Context, operationLogID primitive.ObjectID) (*entity2.OperationLogModel, error)
 	GetOperationLogList(
 		ctx context.Context,
 		offset, limit int64, desc bool, startTime, endTime *time.Time, userID, entityID *primitive.ObjectID,
 		ipAddress, operation, entityType, status, query *string,
-	) ([]models.OperationLogModel, *int64, error)
+	) ([]entity2.OperationLogModel, *int64, error)
 	InsertOperationLog(
 		ctx context.Context,
 		userID, entityID primitive.ObjectID,
@@ -73,9 +73,9 @@ func NewOperationLogDao(ctx context.Context, core *dao.Core, cache *dao.Cache, u
 
 func (o *OperationLogDaoImpl) GetOperationLogByID(
 	ctx context.Context, operationLogID primitive.ObjectID,
-) (*models.OperationLogModel, error) {
+) (*entity2.OperationLogModel, error) {
 	collection := o.core.Mongo.MongoClient.Database(o.core.Mongo.DatabaseName).Collection(config.OperationLogCollectionName)
-	var operationLog models.OperationLogModel
+	var operationLog entity2.OperationLogModel
 	err := collection.Find(ctx, bson.M{"_id": operationLogID}).One(&operationLog)
 	if err != nil {
 		o.core.Logger.Error(
@@ -95,8 +95,8 @@ func (o *OperationLogDaoImpl) GetOperationLogList(
 	ctx context.Context,
 	offset, limit int64, desc bool, startTime, endTime *time.Time, userID, entityID *primitive.ObjectID,
 	ipAddress, operation, entityType, status, query *string,
-) ([]models.OperationLogModel, *int64, error) {
-	var operationLogList []models.OperationLogModel
+) ([]entity2.OperationLogModel, *int64, error) {
+	var operationLogList []entity2.OperationLogModel
 	var err error
 	collection := o.core.Mongo.MongoClient.Database(o.core.Mongo.DatabaseName).Collection(config.OperationLogCollectionName)
 	doc := bson.M{}
@@ -208,7 +208,7 @@ func (o *OperationLogDaoImpl) CacheOperationLog(
 		)
 		return err
 	}
-	operationLog := models.OperationLogCache{
+	operationLog := entity2.OperationLogCache{
 		UserIDHex:   user.UserID.Hex(),
 		Username:    user.Username,
 		Email:       user.Email,
@@ -244,7 +244,7 @@ func (o *OperationLogDaoImpl) SyncOperationLog(ctx context.Context) {
 				zap.Error(err),
 			)
 		}
-		var operationLog models.OperationLogCache
+		var operationLog entity2.OperationLogCache
 		err = json.Unmarshal([]byte(*operationLogJSON), &operationLog)
 		if err != nil {
 			o.core.Logger.Error(

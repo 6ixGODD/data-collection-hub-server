@@ -5,10 +5,10 @@ import (
 )
 
 type Admin struct {
-	*mods.DataAuditApi
-	*mods.StatisticApi
-	*mods.UserApi
-	*mods.NoticeApi
-	*mods.DocumentationApi
-	*mods.LogsApi
+	DataAuditApi     *mods.DataAuditApi
+	StatisticApi     *mods.StatisticApi
+	UserApi          *mods.UserApi
+	NoticeApi        *mods.NoticeApi
+	DocumentationApi *mods.DocumentationApi
+	LogsApi          *mods.LogsApi
 }

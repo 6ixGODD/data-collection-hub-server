@@ -5,8 +5,8 @@ import (
 )
 
 type Common struct {
-	*mods.AuthApi
-	*mods.ProfileApi
-	*mods.DocumentationApi
-	*mods.NoticeApi
+	AuthApi          *mods.AuthApi
+	ProfileApi       *mods.ProfileApi
+	DocumentationApi *mods.DocumentationApi
+	NoticeApi        *mods.NoticeApi
 }

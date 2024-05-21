@@ -12,8 +12,8 @@ func TestHash(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, hash)
 
-	assert.True(t, crypt.VerifyHash("foo", hash))
-	assert.False(t, crypt.VerifyHash("bar", hash))
+	assert.True(t, crypt.Compare("foo", hash))
+	assert.False(t, crypt.Compare("bar", hash))
 
 	pwd, err := crypt.Hash("Admin@123")
 	assert.NoError(t, err)

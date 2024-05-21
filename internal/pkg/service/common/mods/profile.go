@@ -6,7 +6,7 @@ import (
 
 	"data-collection-hub-server/internal/pkg/config"
 	dao "data-collection-hub-server/internal/pkg/dao/mods"
-	"data-collection-hub-server/internal/pkg/schema/common"
+	"data-collection-hub-server/internal/pkg/domain/vo/common"
 	"data-collection-hub-server/internal/pkg/service"
 	"data-collection-hub-server/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -16,19 +16,19 @@ type ProfileService interface {
 	GetProfile(ctx context.Context) (*common.GetProfileResponse, error)
 }
 
-type ProfileServiceImpl struct {
+type ProfileDOImpl struct {
 	core    *service.Core
 	userDao dao.UserDao
 }
 
-func NewProfileService(core *service.Core, userDao dao.UserDao) ProfileService {
-	return &ProfileServiceImpl{
+func NewProfileDO(core *service.Core, userDao dao.UserDao) ProfileService {
+	return &ProfileDOImpl{
 		core:    core,
 		userDao: userDao,
 	}
 }
 
-func (p ProfileServiceImpl) GetProfile(ctx context.Context) (*common.GetProfileResponse, error) {
+func (p ProfileDOImpl) GetProfile(ctx context.Context) (*common.GetProfileResponse, error) {
 	userID, err := primitive.ObjectIDFromHex(ctx.Value(config.UserIDKey).(string))
 	if err != nil {
 		return nil, errors.UserNotFound(err) // TODO: change error type

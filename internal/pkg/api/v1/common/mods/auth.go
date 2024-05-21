@@ -1,8 +1,8 @@
 package mods
 
 import (
-	"data-collection-hub-server/internal/pkg/schema"
-	"data-collection-hub-server/internal/pkg/schema/common"
+	"data-collection-hub-server/internal/pkg/domain/vo"
+	"data-collection-hub-server/internal/pkg/domain/vo/common"
 	commonservice "data-collection-hub-server/internal/pkg/service/common/mods"
 	sysservice "data-collection-hub-server/internal/pkg/service/sys/mods"
 	"data-collection-hub-server/pkg/errors"
@@ -33,7 +33,7 @@ func (api *AuthApi) Login(c *fiber.Ctx) error {
 	userAgent := c.Get(fiber.HeaderUserAgent)
 	_ = api.LogsService.CacheLoginLog(ctx, &username, &ipAddr, &userAgent)
 	return c.JSON(
-		schema.Response{
+		vo.Response{
 			Code:    errors.CodeSuccess,
 			Message: errors.MessageSuccess,
 			Data:    resp,
@@ -48,7 +48,7 @@ func (api *AuthApi) Logout(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(
-		schema.Response{
+		vo.Response{
 			Code:    errors.CodeSuccess,
 			Message: errors.MessageSuccess,
 			Data:    nil,
@@ -69,7 +69,7 @@ func (api *AuthApi) RefreshToken(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(
-		schema.Response{
+		vo.Response{
 			Code:    errors.CodeSuccess,
 			Message: errors.MessageSuccess,
 			Data:    resp,
@@ -90,7 +90,7 @@ func (api *AuthApi) ChangePassword(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(
-		schema.Response{
+		vo.Response{
 			Code:    errors.CodeSuccess,
 			Message: errors.MessageSuccess,
 			Data:    nil,

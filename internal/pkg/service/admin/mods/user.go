@@ -5,7 +5,7 @@ import (
 	"time"
 
 	dao "data-collection-hub-server/internal/pkg/dao/mods"
-	"data-collection-hub-server/internal/pkg/schema/admin"
+	"data-collection-hub-server/internal/pkg/domain/vo/admin"
 	"data-collection-hub-server/internal/pkg/service"
 	"data-collection-hub-server/pkg/errors"
 	"data-collection-hub-server/pkg/utils/crypt"

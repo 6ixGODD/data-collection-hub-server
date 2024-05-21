@@ -3,8 +3,8 @@ package mods
 import (
 	"time"
 
-	"data-collection-hub-server/internal/pkg/schema"
-	"data-collection-hub-server/internal/pkg/schema/common"
+	"data-collection-hub-server/internal/pkg/domain/vo"
+	"data-collection-hub-server/internal/pkg/domain/vo/common"
 	commonservice "data-collection-hub-server/internal/pkg/service/common/mods"
 	"data-collection-hub-server/pkg/errors"
 	"github.com/gofiber/fiber/v2"
@@ -12,7 +12,7 @@ import (
 )
 
 type NoticeApi struct {
-	commonservice.NoticeService
+	NoticeService commonservice.NoticeService
 }
 
 func (n *NoticeApi) GetNotice(c *fiber.Ctx) error {
@@ -31,7 +31,7 @@ func (n *NoticeApi) GetNotice(c *fiber.Ctx) error {
 		return err
 	}
 	return c.JSON(
-		schema.Response{
+		vo.Response{
 			Code:    errors.CodeSuccess,
 			Message: errors.MessageSuccess,
 			Data:    resp,

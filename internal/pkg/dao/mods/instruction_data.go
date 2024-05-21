@@ -7,7 +7,7 @@ import (
 
 	"data-collection-hub-server/internal/pkg/config"
 	"data-collection-hub-server/internal/pkg/dao"
-	"data-collection-hub-server/internal/pkg/models"
+	"data-collection-hub-server/internal/pkg/domain/entity"
 	"github.com/goccy/go-json"
 	"github.com/qiniu/qmgo/options"
 	"go.mongodb.org/mongo-driver/bson"
@@ -18,11 +18,11 @@ import (
 type InstructionDataDao interface {
 	GetInstructionDataByID(
 		ctx context.Context, instructionDataID *primitive.ObjectID,
-	) (*models.InstructionDataModel, error)
+	) (*entity.InstructionDataModel, error)
 	GetInstructionDataList(
 		ctx context.Context, offset, limit int64, desc bool, userID *primitive.ObjectID, theme, statusCode *string,
 		createTimeStart, createTimeEnd, updateTimeStart, updateTimeEnd *time.Time, query *string,
-	) ([]models.InstructionDataModel, *int64, error)
+	) ([]entity.InstructionDataModel, *int64, error)
 	CountInstructionData(
 		ctx context.Context, userID *primitive.ObjectID, theme, statusCode *string,
 		createTimeStart, createTimeEnd, updateTimeStart, updateTimeEnd *time.Time,
@@ -75,8 +75,8 @@ func NewInstructionDataDao(ctx context.Context, core *dao.Core, userDao UserDao)
 
 func (i *InstructionDataDaoImpl) GetInstructionDataByID(
 	ctx context.Context, instructionDataID *primitive.ObjectID,
-) (*models.InstructionDataModel, error) {
-	var instructionData models.InstructionDataModel
+) (*entity.InstructionDataModel, error) {
+	var instructionData entity.InstructionDataModel
 	collection := i.Dao.Mongo.MongoClient.Database(i.Dao.Mongo.DatabaseName).Collection(config.InstructionDataCollectionName)
 	err := collection.Find(ctx, bson.M{"_id": instructionDataID, "deleted": false}).One(&instructionData)
 	if err != nil {
@@ -98,8 +98,8 @@ func (i *InstructionDataDaoImpl) GetInstructionDataList(
 	ctx context.Context, offset, limit int64, desc bool, userID *primitive.ObjectID,
 	theme, statusCode *string,
 	createTimeStart, createTimeEnd, updateTimeStart, updateTimeEnd *time.Time, query *string,
-) ([]models.InstructionDataModel, *int64, error) {
-	var instructionDataList []models.InstructionDataModel
+) ([]entity.InstructionDataModel, *int64, error) {
+	var instructionDataList []entity.InstructionDataModel
 	var err error
 
 	collection := i.Dao.Mongo.MongoClient.Database(i.Dao.Mongo.DatabaseName).Collection(config.InstructionDataCollectionName)

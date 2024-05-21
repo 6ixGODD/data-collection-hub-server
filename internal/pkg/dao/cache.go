@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	"data-collection-hub-server/internal/pkg/config"
-	"data-collection-hub-server/internal/pkg/models"
+	"data-collection-hub-server/internal/pkg/domain/entity"
 	rds "data-collection-hub-server/pkg/redis"
 	"github.com/goccy/go-json"
 	"github.com/redis/go-redis/v9"
@@ -47,12 +47,12 @@ func (c *Cache) Set(ctx context.Context, key string, value string) error {
 	return nil
 }
 
-func (c *Cache) GetList(ctx context.Context, key string) (*models.CacheList, error) {
+func (c *Cache) GetList(ctx context.Context, key string) (*entity.CacheList, error) {
 	result, err := c.Redis.RedisClient.Get(ctx, key).Result()
 	if err != nil {
 		return nil, err
 	}
-	var cacheList models.CacheList
+	var cacheList entity.CacheList
 	err = json.Unmarshal([]byte(result), &cacheList)
 	if err != nil {
 		return nil, err
@@ -60,7 +60,7 @@ func (c *Cache) GetList(ctx context.Context, key string) (*models.CacheList, err
 	return &cacheList, nil
 }
 
-func (c *Cache) SetList(ctx context.Context, key string, cacheList *models.CacheList) error {
+func (c *Cache) SetList(ctx context.Context, key string, cacheList *entity.CacheList) error {
 	cacheListJSON, err := json.Marshal(cacheList)
 	if err != nil {
 		return err

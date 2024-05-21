@@ -5,7 +5,7 @@ import (
 	"time"
 
 	dao "data-collection-hub-server/internal/pkg/dao/mods"
-	"data-collection-hub-server/internal/pkg/schema/common"
+	"data-collection-hub-server/internal/pkg/domain/vo/common"
 	"data-collection-hub-server/internal/pkg/service"
 	"data-collection-hub-server/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -18,19 +18,19 @@ type NoticeService interface {
 	) (*common.GetNoticeListResponse, error)
 }
 
-type NoticeServiceImpl struct {
+type NoticeDOImpl struct {
 	core      *service.Core
 	noticeDao dao.NoticeDao
 }
 
-func NewNoticeService(core *service.Core, noticeDao dao.NoticeDao) NoticeService {
-	return &NoticeServiceImpl{
+func NewNoticeDO(core *service.Core, noticeDao dao.NoticeDao) NoticeService {
+	return &NoticeDOImpl{
 		core:      core,
 		noticeDao: noticeDao,
 	}
 }
 
-func (n NoticeServiceImpl) GetNotice(ctx context.Context, noticeID *primitive.ObjectID) (
+func (n NoticeDOImpl) GetNotice(ctx context.Context, noticeID *primitive.ObjectID) (
 	*common.GetNoticeResponse, error,
 ) {
 	notice, err := n.noticeDao.GetNoticeByID(ctx, *noticeID)
@@ -47,7 +47,7 @@ func (n NoticeServiceImpl) GetNotice(ctx context.Context, noticeID *primitive.Ob
 	}, nil
 }
 
-func (n NoticeServiceImpl) GetNoticeList(
+func (n NoticeDOImpl) GetNoticeList(
 	ctx context.Context, page, pageSize *int64, noticeType *string, updateBefore, updateAfter *time.Time,
 ) (*common.GetNoticeListResponse, error) {
 	offset := (*page - 1) * *pageSize

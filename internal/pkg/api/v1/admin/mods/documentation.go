@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"data-collection-hub-server/internal/pkg/config"
-	"data-collection-hub-server/internal/pkg/schema"
-	"data-collection-hub-server/internal/pkg/schema/admin"
+	"data-collection-hub-server/internal/pkg/domain/vo"
+	"data-collection-hub-server/internal/pkg/domain/vo/admin"
 	adminservice "data-collection-hub-server/internal/pkg/service/admin/mods"
 	sysservice "data-collection-hub-server/internal/pkg/service/sys/mods"
 	"data-collection-hub-server/pkg/errors"
@@ -14,8 +14,8 @@ import (
 )
 
 type DocumentationApi struct {
-	adminservice.DocumentationService
-	sysservice.LogsService
+	DocumentationService adminservice.DocumentationService
+	LogsService          sysservice.LogsService
 }
 
 func (d DocumentationApi) InsertDocumentation(c *fiber.Ctx) error {
@@ -56,7 +56,7 @@ func (d DocumentationApi) InsertDocumentation(c *fiber.Ctx) error {
 	)
 
 	return c.JSON(
-		schema.Response{
+		vo.Response{
 			Code:    errors.CodeSuccess,
 			Message: errors.MessageSuccess,
 			Data:    nil,
@@ -104,7 +104,7 @@ func (d DocumentationApi) UpdateDocumentation(c *fiber.Ctx) error {
 		ctx, &userID, &documentationID, &ipAddr, &userAgent, &operation, &entityType, &description, &status,
 	)
 	return c.JSON(
-		schema.Response{
+		vo.Response{
 			Code:    errors.CodeSuccess,
 			Message: errors.MessageSuccess,
 			Data:    nil,
@@ -151,7 +151,7 @@ func (d DocumentationApi) DeleteDocumentation(c *fiber.Ctx) error {
 		ctx, &userID, &documentationID, &ipAddr, &userAgent, &operation, &entityType, &description, &status,
 	)
 	return c.JSON(
-		schema.Response{
+		vo.Response{
 			Code:    errors.CodeSuccess,
 			Message: errors.MessageSuccess,
 			Data:    nil,

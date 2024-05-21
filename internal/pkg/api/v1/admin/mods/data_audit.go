@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"data-collection-hub-server/internal/pkg/config"
-	"data-collection-hub-server/internal/pkg/schema"
-	"data-collection-hub-server/internal/pkg/schema/admin"
+	"data-collection-hub-server/internal/pkg/domain/vo"
+	"data-collection-hub-server/internal/pkg/domain/vo/admin"
 	adminservice "data-collection-hub-server/internal/pkg/service/admin/mods"
 	sysservice "data-collection-hub-server/internal/pkg/service/sys/mods"
 	"data-collection-hub-server/pkg/errors"
@@ -15,8 +15,8 @@ import (
 )
 
 type DataAuditApi struct {
-	adminservice.DataAuditService
-	sysservice.LogsService
+	DataAuditService adminservice.DataAuditService
+	LogsService      sysservice.LogsService
 }
 
 func (d *DataAuditApi) GetInstructionData(c *fiber.Ctx) error {
@@ -34,7 +34,7 @@ func (d *DataAuditApi) GetInstructionData(c *fiber.Ctx) error {
 		return err
 	}
 	return c.JSON(
-		schema.Response{
+		vo.Response{
 			Code:    errors.CodeSuccess,
 			Message: errors.MessageSuccess,
 			Data:    resp,
@@ -95,7 +95,7 @@ func (d *DataAuditApi) GetInstructionDataList(c *fiber.Ctx) error {
 		return err
 	}
 	return c.JSON(
-		schema.Response{
+		vo.Response{
 			Code:    errors.CodeSuccess,
 			Message: errors.MessageSuccess,
 			Data:    resp,
@@ -118,7 +118,7 @@ func (d *DataAuditApi) ApproveInstructionData(c *fiber.Ctx) error {
 		return err
 	}
 	return c.JSON(
-		schema.Response{
+		vo.Response{
 			Code:    errors.CodeSuccess,
 			Message: errors.MessageSuccess,
 			Data:    nil,
@@ -141,7 +141,7 @@ func (d *DataAuditApi) RejectInstructionData(c *fiber.Ctx) error {
 		return err
 	}
 	return c.JSON(
-		schema.Response{
+		vo.Response{
 			Code:    errors.CodeSuccess,
 			Message: errors.MessageSuccess,
 			Data:    nil,
@@ -197,7 +197,7 @@ func (d *DataAuditApi) UpdateInstructionData(c *fiber.Ctx) error {
 		ctx, &_userID, &instructionDataID, &ipAddr, &userAgent, &operation, &entityType, &description, &status,
 	)
 	return c.JSON(
-		schema.Response{
+		vo.Response{
 			Code:    errors.CodeSuccess,
 			Message: errors.MessageSuccess,
 			Data:    nil,
@@ -244,7 +244,7 @@ func (d *DataAuditApi) DeleteInstructionData(c *fiber.Ctx) error {
 		ctx, &userID, &instructionDataID, &ipAddr, &userAgent, &operation, &entityType, &description, &status,
 	)
 	return c.JSON(
-		schema.Response{
+		vo.Response{
 			Code:    errors.CodeSuccess,
 			Message: errors.MessageSuccess,
 			Data:    nil,

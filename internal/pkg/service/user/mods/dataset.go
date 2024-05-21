@@ -6,7 +6,7 @@ import (
 
 	"data-collection-hub-server/internal/pkg/config"
 	dao "data-collection-hub-server/internal/pkg/dao/mods"
-	"data-collection-hub-server/internal/pkg/schema/user"
+	"data-collection-hub-server/internal/pkg/domain/vo/user"
 	"data-collection-hub-server/internal/pkg/service"
 	"data-collection-hub-server/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -29,7 +29,7 @@ type DatasetService interface {
 	DeleteInstructionData(ctx context.Context, instructionDataID *primitive.ObjectID) error
 }
 
-type DatasetServiceImpl struct {
+type datasetDOImpl struct {
 	core               *service.Core
 	instructionDataDao dao.InstructionDataDao
 	userDao            dao.UserDao
@@ -39,14 +39,14 @@ type DatasetServiceImpl struct {
 func NewDatasetService(
 	core *service.Core, instructionDataDao dao.InstructionDataDao, operationLogDao dao.OperationLogDao,
 ) DatasetService {
-	return &DatasetServiceImpl{
+	return &datasetDOImpl{
 		core:               core,
 		instructionDataDao: instructionDataDao,
 		operationLogDao:    operationLogDao,
 	}
 }
 
-func (d DatasetServiceImpl) InsertInstructionData(
+func (d datasetDOImpl) InsertInstructionData(
 	ctx context.Context, userID *primitive.ObjectID, Instruction, Input, Output, Theme, Source, Note *string,
 ) (string, error) {
 	usr, err := d.userDao.GetUserByID(ctx, *userID)
@@ -63,7 +63,7 @@ func (d DatasetServiceImpl) InsertInstructionData(
 	return instructionDataID.Hex(), nil
 }
 
-func (d DatasetServiceImpl) GetInstructionData(ctx context.Context, instructionDataID *primitive.ObjectID) (
+func (d datasetDOImpl) GetInstructionData(ctx context.Context, instructionDataID *primitive.ObjectID) (
 	*user.GetInstructionDataResponse, error,
 ) {
 	instructionData, err := d.instructionDataDao.GetInstructionDataByID(ctx, instructionDataID)
@@ -96,7 +96,7 @@ func (d DatasetServiceImpl) GetInstructionData(ctx context.Context, instructionD
 	}, nil
 }
 
-func (d DatasetServiceImpl) GetInstructionDataList(
+func (d datasetDOImpl) GetInstructionDataList(
 	ctx context.Context, page, pageSize *int64, updateBefore, updateAfter *time.Time, theme, status *string,
 ) (*user.GetInstructionDataListResponse, error) {
 	offset := (*page - 1) * *pageSize
@@ -146,7 +146,7 @@ func (d DatasetServiceImpl) GetInstructionDataList(
 	}, nil
 }
 
-func (d DatasetServiceImpl) UpdateInstructionData(
+func (d datasetDOImpl) UpdateInstructionData(
 	ctx context.Context, instructionDataID *primitive.ObjectID, Instruction, Input, Output, Theme, Source, Note *string,
 ) error {
 	err := d.instructionDataDao.UpdateInstructionData(
@@ -158,7 +158,7 @@ func (d DatasetServiceImpl) UpdateInstructionData(
 	return nil
 }
 
-func (d DatasetServiceImpl) DeleteInstructionData(ctx context.Context, instructionDataID *primitive.ObjectID) error {
+func (d datasetDOImpl) DeleteInstructionData(ctx context.Context, instructionDataID *primitive.ObjectID) error {
 	err := d.instructionDataDao.SoftDeleteInstructionData(ctx, *instructionDataID)
 	if err != nil {
 		return errors.DBError(errors.WriteError(err))

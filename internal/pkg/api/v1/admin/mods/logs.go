@@ -3,8 +3,8 @@ package mods
 import (
 	"time"
 
-	"data-collection-hub-server/internal/pkg/schema"
-	"data-collection-hub-server/internal/pkg/schema/admin"
+	"data-collection-hub-server/internal/pkg/domain/vo"
+	"data-collection-hub-server/internal/pkg/domain/vo/admin"
 	adminservice "data-collection-hub-server/internal/pkg/service/admin/mods"
 	"data-collection-hub-server/pkg/errors"
 	"github.com/gofiber/fiber/v2"
@@ -12,7 +12,7 @@ import (
 )
 
 type LogsApi struct {
-	adminservice.LogsService
+	LogsService adminservice.LogsService
 }
 
 func (l *LogsApi) GetLoginLog(c *fiber.Ctx) error {
@@ -33,7 +33,7 @@ func (l *LogsApi) GetLoginLog(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(
-		schema.Response{
+		vo.Response{
 			Code:    errors.CodeSuccess,
 			Message: errors.MessageSuccess,
 			Data:    resp,
@@ -74,7 +74,7 @@ func (l *LogsApi) GetLoginLogList(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(
-		schema.Response{
+		vo.Response{
 			Code:    errors.CodeSuccess,
 			Message: errors.MessageSuccess,
 			Data:    resp,
@@ -100,7 +100,7 @@ func (l *LogsApi) GetOperationLog(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(
-		schema.Response{
+		vo.Response{
 			Code:    errors.CodeSuccess,
 			Message: errors.MessageSuccess,
 			Data:    resp,
@@ -141,7 +141,7 @@ func (l *LogsApi) GetOperationLogList(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(
-		schema.Response{
+		vo.Response{
 			Code:    errors.CodeSuccess,
 			Message: errors.MessageSuccess,
 			Data:    resp,

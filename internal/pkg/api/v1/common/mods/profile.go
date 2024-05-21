@@ -1,14 +1,14 @@
 package mods
 
 import (
-	"data-collection-hub-server/internal/pkg/schema"
+	"data-collection-hub-server/internal/pkg/domain/vo"
 	commonservice "data-collection-hub-server/internal/pkg/service/common/mods"
 	"data-collection-hub-server/pkg/errors"
 	"github.com/gofiber/fiber/v2"
 )
 
 type ProfileApi struct {
-	commonservice.ProfileService
+	ProfileService commonservice.ProfileService
 }
 
 func (api *ProfileApi) GetProfile(c *fiber.Ctx) error {
@@ -18,7 +18,7 @@ func (api *ProfileApi) GetProfile(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(
-		schema.Response{
+		vo.Response{
 			Code:    errors.CodeSuccess,
 			Message: errors.MessageSuccess,
 			Data:    resp,

@@ -6,7 +6,7 @@ import (
 
 	"data-collection-hub-server/internal/pkg/config"
 	dao "data-collection-hub-server/internal/pkg/dao/mods"
-	"data-collection-hub-server/internal/pkg/schema/user"
+	"data-collection-hub-server/internal/pkg/domain/vo/user"
 	"data-collection-hub-server/internal/pkg/service"
 	"data-collection-hub-server/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -16,19 +16,19 @@ type StatisticService interface {
 	GetDataStatistic(ctx context.Context, startDate, endDate *time.Time) (*user.GetDataStatisticResponse, error)
 }
 
-type StatisticServiceImpl struct {
+type statisticDOImpl struct {
 	core               *service.Core
 	instructionDataDao dao.InstructionDataDao
 }
 
 func NewStatisticService(core *service.Core, instructionDataDao dao.InstructionDataDao) StatisticService {
-	return &StatisticServiceImpl{
+	return &statisticDOImpl{
 		core:               core,
 		instructionDataDao: instructionDataDao,
 	}
 }
 
-func (s StatisticServiceImpl) GetDataStatistic(
+func (s statisticDOImpl) GetDataStatistic(
 	ctx context.Context, startDate, endDate *time.Time,
 ) (*user.GetDataStatisticResponse, error) {
 	pendingStatus := config.InstructionDataStatusPending

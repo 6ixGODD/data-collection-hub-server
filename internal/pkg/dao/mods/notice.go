@@ -7,7 +7,7 @@ import (
 
 	"data-collection-hub-server/internal/pkg/config"
 	"data-collection-hub-server/internal/pkg/dao"
-	"data-collection-hub-server/internal/pkg/models"
+	entity2 "data-collection-hub-server/internal/pkg/domain/entity"
 	"github.com/goccy/go-json"
 	"github.com/qiniu/qmgo/options"
 	"go.mongodb.org/mongo-driver/bson"
@@ -17,12 +17,12 @@ import (
 )
 
 type NoticeDao interface {
-	GetNoticeByID(ctx context.Context, noticeID primitive.ObjectID) (*models.NoticeModel, error)
+	GetNoticeByID(ctx context.Context, noticeID primitive.ObjectID) (*entity2.NoticeModel, error)
 	GetNoticeList(
 		ctx context.Context,
 		offset, limit int64, desc bool, createStartTime, createEndTime, updateStartTime, updateEndTime *time.Time,
 		noticeType *string,
-	) ([]models.NoticeModel, *int64, error)
+	) ([]entity2.NoticeModel, *int64, error)
 	InsertNotice(ctx context.Context, title, content, noticeType string) (primitive.ObjectID, error)
 	UpdateNotice(ctx context.Context, noticeID primitive.ObjectID, title, content, noticeType *string) error
 	DeleteNotice(ctx context.Context, noticeID primitive.ObjectID) error
@@ -57,9 +57,9 @@ func NewNoticeDao(ctx context.Context, core *dao.Core, cache *dao.Cache) (Notice
 	return &NoticeDaoImpl{core, cache}, nil
 }
 
-func (n *NoticeDaoImpl) GetNoticeByID(ctx context.Context, noticeID primitive.ObjectID) (*models.NoticeModel, error) {
+func (n *NoticeDaoImpl) GetNoticeByID(ctx context.Context, noticeID primitive.ObjectID) (*entity2.NoticeModel, error) {
 	collection := n.Core.Mongo.MongoClient.Database(n.Core.Mongo.DatabaseName).Collection(config.NoticeCollectionName)
-	var notice models.NoticeModel
+	var notice entity2.NoticeModel
 	err := collection.Find(ctx, bson.M{"_id": noticeID}).One(&notice)
 	if err != nil {
 		n.Core.Logger.Error(
@@ -77,8 +77,8 @@ func (n *NoticeDaoImpl) GetNoticeList(
 	ctx context.Context,
 	offset, limit int64, desc bool, createStartTime, createEndTime, updateStartTime, updateEndTime *time.Time,
 	noticeType *string,
-) ([]models.NoticeModel, *int64, error) {
-	var noticeList []models.NoticeModel
+) ([]entity2.NoticeModel, *int64, error) {
+	var noticeList []entity2.NoticeModel
 	var err error
 	doc := bson.M{}
 	key := fmt.Sprintf("%s:offset:%d:limit:%d", config.NoticeCachePrefix, offset, limit)
@@ -107,7 +107,7 @@ func (n *NoticeDaoImpl) GetNoticeList(
 	if err != nil {
 		n.Core.Logger.Error("NoticeDaoImpl.GetNoticeList: failed to get cache", zap.Error(err), zap.String("key", key))
 	} else if cache != nil {
-		if noticeList, ok := cache.List.([]models.NoticeModel); ok {
+		if noticeList, ok := cache.List.([]entity2.NoticeModel); ok {
 			n.Core.Logger.Info("NoticeDaoImpl.GetNoticeList: cache hit", zap.String("key", key))
 			return noticeList, &cache.Total, nil
 		} else {
@@ -145,7 +145,7 @@ func (n *NoticeDaoImpl) GetNoticeList(
 		zap.Int64("count", count), zap.ByteString(config.NoticeCollectionName, docJSON),
 	)
 
-	cacheList := models.CacheList{Total: count, List: noticeList}
+	cacheList := entity2.CacheList{Total: count, List: noticeList}
 	err = n.Cache.SetList(ctx, key, &cacheList)
 	if err != nil {
 		n.Core.Logger.Error(

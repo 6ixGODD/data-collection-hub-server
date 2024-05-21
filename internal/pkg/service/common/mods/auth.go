@@ -5,7 +5,7 @@ import (
 
 	"data-collection-hub-server/internal/pkg/config"
 	dao "data-collection-hub-server/internal/pkg/dao/mods"
-	"data-collection-hub-server/internal/pkg/schema/common"
+	"data-collection-hub-server/internal/pkg/domain/vo/common"
 	"data-collection-hub-server/internal/pkg/service"
 	"data-collection-hub-server/pkg/errors"
 	"data-collection-hub-server/pkg/jwt"
@@ -20,15 +20,15 @@ type AuthService interface {
 	ChangePassword(ctx context.Context, oldPassword, newPassword *string) error
 }
 
-type AuthServiceImpl struct {
+type AuthDOImpl struct {
 	core        *service.Core
 	userDao     dao.UserDao
 	loginLogDao dao.LoginLogDao
 	Jwt         *jwt.Jwt
 }
 
-func NewAuthService(core *service.Core, userDao dao.UserDao, loginLogDao dao.LoginLogDao, jwt *jwt.Jwt) AuthService {
-	return &AuthServiceImpl{
+func NewAuthDO(core *service.Core, userDao dao.UserDao, loginLogDao dao.LoginLogDao, jwt *jwt.Jwt) AuthService {
+	return &AuthDOImpl{
 		core:        core,
 		userDao:     userDao,
 		loginLogDao: loginLogDao,
@@ -36,12 +36,12 @@ func NewAuthService(core *service.Core, userDao dao.UserDao, loginLogDao dao.Log
 	}
 }
 
-func (a AuthServiceImpl) Login(ctx context.Context, email, password *string) (*common.LoginResponse, error) {
+func (a AuthDOImpl) Login(ctx context.Context, email, password *string) (*common.LoginResponse, error) {
 	user, err := a.userDao.GetUserByEmail(ctx, *email)
 	if err != nil {
 		return nil, errors.DBError(errors.ReadError(err))
 	}
-	if !crypt.VerifyHash(*password, user.Password) {
+	if !crypt.Compare(*password, user.Password) {
 		return nil, errors.PasswordWrong(err)
 	}
 	accessToken, err := a.Jwt.GenerateAccessToken(user.UserID.Hex())
@@ -75,7 +75,7 @@ func (a AuthServiceImpl) Login(ctx context.Context, email, password *string) (*c
 	}, nil
 }
 
-func (a AuthServiceImpl) RefreshToken(ctx context.Context, refreshToken *string) (*common.RefreshTokenResponse, error) {
+func (a AuthDOImpl) RefreshToken(ctx context.Context, refreshToken *string) (*common.RefreshTokenResponse, error) {
 	userIDStr, err := a.Jwt.VerifyToken(*refreshToken)
 	if err != nil {
 		return nil, errors.InvalidToken(err) // TODO: Change error type
@@ -119,7 +119,7 @@ func (a AuthServiceImpl) RefreshToken(ctx context.Context, refreshToken *string)
 	}, nil
 }
 
-func (a AuthServiceImpl) Logout(ctx context.Context) error {
+func (a AuthDOImpl) Logout(ctx context.Context) error {
 	_, err := primitive.ObjectIDFromHex(ctx.Value(config.UserIDKey).(string))
 	if err != nil {
 		return errors.InvalidToken(err)
@@ -128,7 +128,7 @@ func (a AuthServiceImpl) Logout(ctx context.Context) error {
 	return nil
 }
 
-func (a AuthServiceImpl) ChangePassword(ctx context.Context, oldPassword, newPassword *string) error {
+func (a AuthDOImpl) ChangePassword(ctx context.Context, oldPassword, newPassword *string) error {
 	userID, err := primitive.ObjectIDFromHex(ctx.Value(config.UserIDKey).(string))
 	if err != nil {
 		return errors.InvalidToken(err) // TODO: Change error type
@@ -137,7 +137,7 @@ func (a AuthServiceImpl) ChangePassword(ctx context.Context, oldPassword, newPas
 	if err != nil {
 		return errors.UserNotFound(err)
 	}
-	if !crypt.VerifyHash(*oldPassword, user.Password) {
+	if !crypt.Compare(*oldPassword, user.Password) {
 		return errors.PasswordWrong(err)
 	}
 	hashedPassword, err := crypt.Hash(*newPassword)

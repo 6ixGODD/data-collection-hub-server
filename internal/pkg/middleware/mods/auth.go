@@ -6,13 +6,11 @@ import (
 	"data-collection-hub-server/internal/pkg/config"
 	"data-collection-hub-server/pkg/errors"
 	"data-collection-hub-server/pkg/jwt"
-	logging "data-collection-hub-server/pkg/zap"
 	"github.com/gofiber/fiber/v2"
 )
 
 type AuthMiddleware struct {
 	Jwt    *jwt.Jwt
-	Zap    *logging.Zap
 	Config *config.Config
 }
 

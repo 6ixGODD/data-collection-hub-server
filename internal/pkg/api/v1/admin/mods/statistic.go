@@ -3,8 +3,8 @@ package mods
 import (
 	"time"
 
-	"data-collection-hub-server/internal/pkg/schema"
-	"data-collection-hub-server/internal/pkg/schema/admin"
+	"data-collection-hub-server/internal/pkg/domain/vo"
+	"data-collection-hub-server/internal/pkg/domain/vo/admin"
 	adminservice "data-collection-hub-server/internal/pkg/service/admin/mods"
 	"data-collection-hub-server/pkg/errors"
 	"github.com/gofiber/fiber/v2"
@@ -12,7 +12,7 @@ import (
 )
 
 type StatisticApi struct {
-	adminservice.StatisticService
+	StatisticService adminservice.StatisticService
 }
 
 func (s *StatisticApi) GetDataStatistic(c *fiber.Ctx) error {
@@ -42,7 +42,7 @@ func (s *StatisticApi) GetDataStatistic(c *fiber.Ctx) error {
 		return err
 	}
 	return c.JSON(
-		schema.Response{
+		vo.Response{
 			Code:    errors.CodeSuccess,
 			Message: errors.MessageSuccess,
 			Data:    resp,
@@ -66,7 +66,7 @@ func (s *StatisticApi) GetUserStatistic(c *fiber.Ctx) error {
 		return err
 	}
 	return c.JSON(
-		schema.Response{
+		vo.Response{
 			Code:    errors.CodeSuccess,
 			Message: errors.MessageSuccess,
 			Data:    resp,
@@ -118,7 +118,7 @@ func (s *StatisticApi) GetUserStatisticList(c *fiber.Ctx) error {
 		return err
 	}
 	return c.JSON(
-		schema.Response{
+		vo.Response{
 			Code:    errors.CodeSuccess,
 			Message: errors.MessageSuccess,
 			Data:    resp,

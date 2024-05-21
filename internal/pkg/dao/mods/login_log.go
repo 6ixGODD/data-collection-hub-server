@@ -8,7 +8,7 @@ import (
 
 	"data-collection-hub-server/internal/pkg/config"
 	"data-collection-hub-server/internal/pkg/dao"
-	"data-collection-hub-server/internal/pkg/models"
+	entity2 "data-collection-hub-server/internal/pkg/domain/entity"
 	"github.com/goccy/go-json"
 	"github.com/qiniu/qmgo/options"
 	"go.mongodb.org/mongo-driver/bson"
@@ -17,12 +17,12 @@ import (
 )
 
 type LoginLogDao interface {
-	GetLoginLogByID(ctx context.Context, loginLogID primitive.ObjectID) (*models.LoginLogModel, error)
+	GetLoginLogByID(ctx context.Context, loginLogID primitive.ObjectID) (*entity2.LoginLogModel, error)
 	GetLoginLogList(
 		ctx context.Context,
 		offset, limit int64, desc bool, startTime, endTime *time.Time, userID *primitive.ObjectID,
 		ipAddress, userAgent, query *string,
-	) ([]models.LoginLogModel, *int64, error)
+	) ([]entity2.LoginLogModel, *int64, error)
 	InsertLoginLog(
 		ctx context.Context,
 		UserID primitive.ObjectID, Username, Email, IPAddress, UserAgent string,
@@ -66,9 +66,9 @@ func NewLoginLogDao(ctx context.Context, core *dao.Core, cache *dao.Cache, userD
 
 func (l *LoginLogDaoImpl) GetLoginLogByID(
 	ctx context.Context, loginLogID primitive.ObjectID,
-) (*models.LoginLogModel, error) {
+) (*entity2.LoginLogModel, error) {
 	coll := l.core.Mongo.MongoClient.Database(l.core.Mongo.DatabaseName).Collection(config.LoginLogCollectionName)
-	var loginLog models.LoginLogModel
+	var loginLog entity2.LoginLogModel
 	err := coll.Find(ctx, bson.M{"_id": loginLogID}).One(&loginLog)
 	if err != nil {
 		l.core.Logger.Error(
@@ -86,9 +86,9 @@ func (l *LoginLogDaoImpl) GetLoginLogList(
 	ctx context.Context,
 	offset, limit int64, desc bool, startTime, endTime *time.Time, userID *primitive.ObjectID,
 	ipAddress, userAgent, query *string,
-) ([]models.LoginLogModel, *int64, error) {
+) ([]entity2.LoginLogModel, *int64, error) {
 	coll := l.core.Mongo.MongoClient.Database(l.core.Mongo.DatabaseName).Collection(config.LoginLogCollectionName)
-	var loginLogList []models.LoginLogModel
+	var loginLogList []entity2.LoginLogModel
 	var err error
 	doc := bson.M{}
 	if startTime != nil && endTime != nil {
@@ -180,7 +180,7 @@ func (l *LoginLogDaoImpl) CacheLoginLog(
 		)
 		return err
 	}
-	loginLog := models.LoginLogCache{
+	loginLog := entity2.LoginLogCache{
 		UserIDHex: user.UserID.Hex(),
 		Username:  user.Username,
 		Email:     user.Email,
@@ -212,7 +212,7 @@ func (l *LoginLogDaoImpl) SyncLoginLog(ctx context.Context) {
 			)
 			return
 		}
-		var loginLog models.LoginLogCache
+		var loginLog entity2.LoginLogCache
 		if err := json.Unmarshal([]byte(*loginLogJSON), &loginLog); err != nil {
 			l.core.Logger.Error(
 				"LoginLogDaoImpl.SyncLoginLog: failed to unmarshal login log",

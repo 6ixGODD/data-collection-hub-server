@@ -5,6 +5,6 @@ import (
 )
 
 type User struct {
-	*mods.DatasetApi
-	*mods.StatisticApi
+	DatasetApi   *mods.DatasetApi
+	StatisticApi *mods.StatisticApi
 }

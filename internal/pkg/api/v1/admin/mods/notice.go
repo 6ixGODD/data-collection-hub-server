@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"data-collection-hub-server/internal/pkg/config"
-	"data-collection-hub-server/internal/pkg/schema"
-	"data-collection-hub-server/internal/pkg/schema/admin"
+	"data-collection-hub-server/internal/pkg/domain/vo"
+	"data-collection-hub-server/internal/pkg/domain/vo/admin"
 	adminservice "data-collection-hub-server/internal/pkg/service/admin/mods"
 	sysservice "data-collection-hub-server/internal/pkg/service/sys/mods"
 	"data-collection-hub-server/pkg/errors"
@@ -14,8 +14,8 @@ import (
 )
 
 type NoticeApi struct {
-	adminservice.NoticeService
-	sysservice.LogsService
+	NoticeService adminservice.NoticeService
+	LogsService   sysservice.LogsService
 }
 
 func (api *NoticeApi) InsertNotice(c *fiber.Ctx) error {
@@ -54,7 +54,7 @@ func (api *NoticeApi) InsertNotice(c *fiber.Ctx) error {
 		ctx, &userID, &noticeID, &ipAddr, &userAgent, &operation, &entityType, &description, &status,
 	)
 	return c.JSON(
-		schema.Response{
+		vo.Response{
 			Code:    errors.CodeSuccess,
 			Message: errors.MessageSuccess,
 			Data:    nil,
@@ -102,7 +102,7 @@ func (api *NoticeApi) UpdateNotice(c *fiber.Ctx) error {
 	)
 
 	return c.JSON(
-		schema.Response{
+		vo.Response{
 			Code:    errors.CodeSuccess,
 			Message: errors.MessageSuccess,
 			Data:    nil,
@@ -151,7 +151,7 @@ func (api *NoticeApi) DeleteNotice(c *fiber.Ctx) error {
 	)
 
 	return c.JSON(
-		schema.Response{
+		vo.Response{
 			Code:    errors.CodeSuccess,
 			Message: errors.MessageSuccess,
 			Data:    nil,

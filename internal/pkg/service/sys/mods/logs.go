@@ -24,7 +24,7 @@ type LogsService interface {
 	) error
 }
 
-type logsServiceImpl struct {
+type logsDOImpl struct {
 	core            *service.Core
 	loginLogDao     mods.LoginLogDao
 	operationLogDao mods.OperationLogDao
@@ -34,14 +34,14 @@ type logsServiceImpl struct {
 func NewLogsService(
 	core *service.Core, loginLogDao mods.LoginLogDao, operationLogDao mods.OperationLogDao,
 ) LogsService {
-	return &logsServiceImpl{
+	return &logsDOImpl{
 		core:            core,
 		loginLogDao:     loginLogDao,
 		operationLogDao: operationLogDao,
 	}
 }
 
-func (l logsServiceImpl) InsertLoginLog(
+func (l logsDOImpl) InsertLoginLog(
 	ctx context.Context, userID *primitive.ObjectID, username, email, ipAddress, userAgent *string,
 ) error {
 	_, err := l.loginLogDao.InsertLoginLog(ctx, *userID, *username, *email, *ipAddress, *userAgent)
@@ -51,7 +51,7 @@ func (l logsServiceImpl) InsertLoginLog(
 	return nil
 }
 
-func (l logsServiceImpl) CacheLoginLog(
+func (l logsDOImpl) CacheLoginLog(
 	ctx context.Context, username, ipAddress, userAgent *string,
 ) error {
 	err := l.loginLogDao.CacheLoginLog(ctx, *username, *ipAddress, *userAgent)
@@ -61,7 +61,7 @@ func (l logsServiceImpl) CacheLoginLog(
 	return nil
 }
 
-func (l logsServiceImpl) InsertOperationLog(
+func (l logsDOImpl) InsertOperationLog(
 	ctx context.Context, userID, entityID *primitive.ObjectID,
 	username, email, ipAddress, userAgent, operation, entityType, description, status *string,
 ) error {
@@ -75,7 +75,7 @@ func (l logsServiceImpl) InsertOperationLog(
 	return nil
 }
 
-func (l logsServiceImpl) CacheOperationLog(
+func (l logsDOImpl) CacheOperationLog(
 	ctx context.Context, userID, entityID *primitive.ObjectID, ipAddress, userAgent *string,
 	operation, entityType, description, status *string,
 ) error {

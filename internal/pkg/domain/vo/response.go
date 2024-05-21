@@ -1,4 +1,4 @@
-package schema
+package vo
 
 type Response struct {
 	Code    int         `json:"code"`
