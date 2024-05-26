@@ -11,12 +11,12 @@ import (
 
 type LogsService interface {
 	InsertLoginLog(
-		ctx context.Context, userID *primitive.ObjectID, username, email, ipAddress, userAgent *string,
+		ctx context.Context, userID *primitive.ObjectID, ipAddress, userAgent *string,
 	) error
-	CacheLoginLog(ctx context.Context, username, ipAddress, userAgent *string) error
+	CacheLoginLog(ctx context.Context, userID *primitive.ObjectID, ipAddress, userAgent *string) error
 	InsertOperationLog(
 		ctx context.Context, userID, entityID *primitive.ObjectID,
-		username, email, ipAddress, userAgent, operation, entityType, description, status *string,
+		ipAddress, userAgent, operation, entityType, description, status *string,
 	) error
 	CacheOperationLog(
 		ctx context.Context, userID, entityID *primitive.ObjectID, ipAddress, userAgent *string,
@@ -24,7 +24,7 @@ type LogsService interface {
 	) error
 }
 
-type logsDOImpl struct {
+type logsServiceImpl struct {
 	core            *service.Core
 	loginLogDao     mods.LoginLogDao
 	operationLogDao mods.OperationLogDao
@@ -34,39 +34,39 @@ type logsDOImpl struct {
 func NewLogsService(
 	core *service.Core, loginLogDao mods.LoginLogDao, operationLogDao mods.OperationLogDao,
 ) LogsService {
-	return &logsDOImpl{
+	return &logsServiceImpl{
 		core:            core,
 		loginLogDao:     loginLogDao,
 		operationLogDao: operationLogDao,
 	}
 }
 
-func (l logsDOImpl) InsertLoginLog(
-	ctx context.Context, userID *primitive.ObjectID, username, email, ipAddress, userAgent *string,
+func (l logsServiceImpl) InsertLoginLog(
+	ctx context.Context, userID *primitive.ObjectID, ipAddress, userAgent *string,
 ) error {
-	_, err := l.loginLogDao.InsertLoginLog(ctx, *userID, *username, *email, *ipAddress, *userAgent)
+	_, err := l.loginLogDao.InsertLoginLog(ctx, *userID, *ipAddress, *userAgent)
 	if err != nil {
 		return errors.DBError(errors.WriteError(err))
 	}
 	return nil
 }
 
-func (l logsDOImpl) CacheLoginLog(
-	ctx context.Context, username, ipAddress, userAgent *string,
+func (l logsServiceImpl) CacheLoginLog(
+	ctx context.Context, userID *primitive.ObjectID, ipAddress, userAgent *string,
 ) error {
-	err := l.loginLogDao.CacheLoginLog(ctx, *username, *ipAddress, *userAgent)
+	err := l.loginLogDao.CacheLoginLog(ctx, *userID, *ipAddress, *userAgent)
 	if err != nil {
 		return errors.CacheError(errors.WriteError(err))
 	}
 	return nil
 }
 
-func (l logsDOImpl) InsertOperationLog(
+func (l logsServiceImpl) InsertOperationLog(
 	ctx context.Context, userID, entityID *primitive.ObjectID,
-	username, email, ipAddress, userAgent, operation, entityType, description, status *string,
+	ipAddress, userAgent, operation, entityType, description, status *string,
 ) error {
 	_, err := l.operationLogDao.InsertOperationLog(
-		ctx, *userID, *entityID, *username, *email, *ipAddress, *userAgent, *operation, *entityType, *description,
+		ctx, *userID, *entityID, *ipAddress, *userAgent, *operation, *entityType, *description,
 		*status,
 	)
 	if err != nil {
@@ -75,7 +75,7 @@ func (l logsDOImpl) InsertOperationLog(
 	return nil
 }
 
-func (l logsDOImpl) CacheOperationLog(
+func (l logsServiceImpl) CacheOperationLog(
 	ctx context.Context, userID, entityID *primitive.ObjectID, ipAddress, userAgent *string,
 	operation, entityType, description, status *string,
 ) error {

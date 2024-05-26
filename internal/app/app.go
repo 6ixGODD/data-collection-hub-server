@@ -100,7 +100,6 @@ func (a *App) Init(ctx context.Context) error {
 	)
 
 	// Ping
-	app.Get("/ping", func(c *fiber.Ctx) error { return c.SendString("pong") })
 
 	// Set Casbin
 	adapter, err := mongodbadapter.NewAdapter(a.Config.CasbinConfig.PolicyAdapterUrl)
@@ -117,8 +116,10 @@ func (a *App) Init(ctx context.Context) error {
 		},
 	)
 
+	idempotencyMiddleware := a.Middleware.IdempotencyMiddleware.IdempotencyMiddleware()
+
 	// Register routers
-	a.Router.RegisterRouter(app, rbac)
+	a.Router.RegisterRouter(app, rbac, idempotencyMiddleware)
 
 	// Set app
 	a.App = app

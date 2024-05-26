@@ -2,9 +2,11 @@ package mods
 
 import (
 	"context"
+	"fmt"
 
 	"data-collection-hub-server/internal/pkg/config"
-	dao "data-collection-hub-server/internal/pkg/dao/mods"
+	"data-collection-hub-server/internal/pkg/dao"
+	daos "data-collection-hub-server/internal/pkg/dao/mods"
 	"data-collection-hub-server/internal/pkg/domain/vo/common"
 	"data-collection-hub-server/internal/pkg/service"
 	"data-collection-hub-server/pkg/errors"
@@ -16,27 +18,27 @@ import (
 type AuthService interface {
 	Login(ctx context.Context, email, password *string) (*common.LoginResponse, error)
 	RefreshToken(ctx context.Context, refreshToken *string) (*common.RefreshTokenResponse, error)
-	Logout(ctx context.Context) error
+	Logout(ctx context.Context, accessToken *string) error
 	ChangePassword(ctx context.Context, oldPassword, newPassword *string) error
 }
 
-type AuthDOImpl struct {
-	core        *service.Core
-	userDao     dao.UserDao
-	loginLogDao dao.LoginLogDao
-	Jwt         *jwt.Jwt
+type authServiceImpl struct {
+	core    *service.Core
+	cache   *dao.Cache
+	userDao daos.UserDao
+	jwt     *jwt.Jwt
 }
 
-func NewAuthDO(core *service.Core, userDao dao.UserDao, loginLogDao dao.LoginLogDao, jwt *jwt.Jwt) AuthService {
-	return &AuthDOImpl{
-		core:        core,
-		userDao:     userDao,
-		loginLogDao: loginLogDao,
-		Jwt:         jwt,
+func NewAuthService(core *service.Core, userDao daos.UserDao, cache *dao.Cache, jwt *jwt.Jwt) AuthService {
+	return &authServiceImpl{
+		core:    core,
+		cache:   cache,
+		userDao: userDao,
+		jwt:     jwt,
 	}
 }
 
-func (a AuthDOImpl) Login(ctx context.Context, email, password *string) (*common.LoginResponse, error) {
+func (a authServiceImpl) Login(ctx context.Context, email, password *string) (*common.LoginResponse, error) {
 	user, err := a.userDao.GetUserByEmail(ctx, *email)
 	if err != nil {
 		return nil, errors.DBError(errors.ReadError(err))
@@ -44,13 +46,17 @@ func (a AuthDOImpl) Login(ctx context.Context, email, password *string) (*common
 	if !crypt.Compare(*password, user.Password) {
 		return nil, errors.PasswordWrong(err)
 	}
-	accessToken, err := a.Jwt.GenerateAccessToken(user.UserID.Hex())
+	accessToken, err := a.jwt.GenerateAccessToken(user.UserID.Hex())
 	if err != nil {
 		return nil, errors.TokenGenerateFailed(err)
 	}
-	refreshToken, err := a.Jwt.GenerateRefreshToken(user.UserID.Hex())
+	refreshToken, err := a.jwt.GenerateRefreshToken(user.UserID.Hex())
 	if err != nil {
 		return nil, errors.TokenGenerateFailed(err)
+	}
+	err = a.userDao.UpdateUserLastLogin(ctx, user.UserID)
+	if err != nil {
+		return nil, errors.DBError(errors.WriteError(err))
 	}
 	return &common.LoginResponse{
 		AccessToken:  accessToken,
@@ -75,12 +81,12 @@ func (a AuthDOImpl) Login(ctx context.Context, email, password *string) (*common
 	}, nil
 }
 
-func (a AuthDOImpl) RefreshToken(ctx context.Context, refreshToken *string) (*common.RefreshTokenResponse, error) {
-	userIDStr, err := a.Jwt.VerifyToken(*refreshToken)
+func (a authServiceImpl) RefreshToken(ctx context.Context, refreshToken *string) (*common.RefreshTokenResponse, error) {
+	userIDHex, err := a.jwt.VerifyToken(*refreshToken)
 	if err != nil {
 		return nil, errors.InvalidToken(err) // TODO: Change error type
 	}
-	userID, err := primitive.ObjectIDFromHex(userIDStr)
+	userID, err := primitive.ObjectIDFromHex(userIDHex)
 	if err != nil {
 		return nil, errors.InvalidToken(err) // TODO: Change error type
 	}
@@ -88,11 +94,11 @@ func (a AuthDOImpl) RefreshToken(ctx context.Context, refreshToken *string) (*co
 	if err != nil {
 		return nil, errors.UserNotFound(err)
 	}
-	accessToken, err := a.Jwt.GenerateAccessToken(userID.Hex())
+	accessToken, err := a.jwt.GenerateAccessToken(userID.Hex())
 	if err != nil {
 		return nil, errors.TokenGenerateFailed(err)
 	}
-	newRefreshToken, err := a.Jwt.GenerateRefreshToken(userID.Hex())
+	newRefreshToken, err := a.jwt.GenerateRefreshToken(userID.Hex())
 	if err != nil {
 		return nil, errors.TokenGenerateFailed(err)
 	}
@@ -119,16 +125,17 @@ func (a AuthDOImpl) RefreshToken(ctx context.Context, refreshToken *string) (*co
 	}, nil
 }
 
-func (a AuthDOImpl) Logout(ctx context.Context) error {
-	_, err := primitive.ObjectIDFromHex(ctx.Value(config.UserIDKey).(string))
-	if err != nil {
-		return errors.InvalidToken(err)
+func (a authServiceImpl) Logout(ctx context.Context, accessToken *string) error {
+	if err := a.cache.Set(
+		ctx, fmt.Sprintf("%s:%s", config.TokenBlacklistCachePrefix, *accessToken), config.CacheTrue,
+		&a.core.Config.CacheConfig.TokenBlacklistTTL,
+	); err != nil {
+		return errors.CacheError(err)
 	}
-	// TODO: Implement logout, use redis to store token
 	return nil
 }
 
-func (a AuthDOImpl) ChangePassword(ctx context.Context, oldPassword, newPassword *string) error {
+func (a authServiceImpl) ChangePassword(ctx context.Context, oldPassword, newPassword *string) error {
 	userID, err := primitive.ObjectIDFromHex(ctx.Value(config.UserIDKey).(string))
 	if err != nil {
 		return errors.InvalidToken(err) // TODO: Change error type
@@ -144,8 +151,7 @@ func (a AuthDOImpl) ChangePassword(ctx context.Context, oldPassword, newPassword
 	if err != nil {
 		return errors.ServiceError(err)
 	}
-	err = a.userDao.UpdateUser(ctx, userID, nil, nil, nil, &hashedPassword, nil)
-	if err != nil {
+	if err = a.userDao.UpdateUser(ctx, userID, nil, nil, nil, &hashedPassword, nil); err != nil {
 		return errors.DBError(errors.WriteError(err))
 	}
 	return nil

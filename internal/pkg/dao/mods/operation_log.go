@@ -8,7 +8,7 @@ import (
 
 	"data-collection-hub-server/internal/pkg/config"
 	"data-collection-hub-server/internal/pkg/dao"
-	entity2 "data-collection-hub-server/internal/pkg/domain/entity"
+	"data-collection-hub-server/internal/pkg/domain/entity"
 	"github.com/goccy/go-json"
 	"github.com/qiniu/qmgo/options"
 	"go.mongodb.org/mongo-driver/bson"
@@ -17,16 +17,15 @@ import (
 )
 
 type OperationLogDao interface {
-	GetOperationLogByID(ctx context.Context, operationLogID primitive.ObjectID) (*entity2.OperationLogModel, error)
+	GetOperationLogByID(ctx context.Context, operationLogID primitive.ObjectID) (*entity.OperationLogModel, error)
 	GetOperationLogList(
 		ctx context.Context,
 		offset, limit int64, desc bool, startTime, endTime *time.Time, userID, entityID *primitive.ObjectID,
 		ipAddress, operation, entityType, status, query *string,
-	) ([]entity2.OperationLogModel, *int64, error)
+	) ([]entity.OperationLogModel, *int64, error)
 	InsertOperationLog(
-		ctx context.Context,
-		userID, entityID primitive.ObjectID,
-		username, email, ipAddress, userAgent, operation, entityType, description, status string,
+		ctx context.Context, userID, entityID primitive.ObjectID,
+		ipAddress, userAgent, operation, entityType, description, status string,
 	) (primitive.ObjectID, error)
 	CacheOperationLog(
 		ctx context.Context, userID, entityID primitive.ObjectID,
@@ -73,9 +72,9 @@ func NewOperationLogDao(ctx context.Context, core *dao.Core, cache *dao.Cache, u
 
 func (o *OperationLogDaoImpl) GetOperationLogByID(
 	ctx context.Context, operationLogID primitive.ObjectID,
-) (*entity2.OperationLogModel, error) {
+) (*entity.OperationLogModel, error) {
 	collection := o.core.Mongo.MongoClient.Database(o.core.Mongo.DatabaseName).Collection(config.OperationLogCollectionName)
-	var operationLog entity2.OperationLogModel
+	var operationLog entity.OperationLogModel
 	err := collection.Find(ctx, bson.M{"_id": operationLogID}).One(&operationLog)
 	if err != nil {
 		o.core.Logger.Error(
@@ -95,8 +94,8 @@ func (o *OperationLogDaoImpl) GetOperationLogList(
 	ctx context.Context,
 	offset, limit int64, desc bool, startTime, endTime *time.Time, userID, entityID *primitive.ObjectID,
 	ipAddress, operation, entityType, status, query *string,
-) ([]entity2.OperationLogModel, *int64, error) {
-	var operationLogList []entity2.OperationLogModel
+) ([]entity.OperationLogModel, *int64, error) {
+	var operationLogList []entity.OperationLogModel
 	var err error
 	collection := o.core.Mongo.MongoClient.Database(o.core.Mongo.DatabaseName).Collection(config.OperationLogCollectionName)
 	doc := bson.M{}
@@ -125,11 +124,6 @@ func (o *OperationLogDaoImpl) GetOperationLogList(
 		doc["$or"] = []bson.M{
 			{"username": bson.M{"$regex": *query, "$options": "i"}},
 			{"email": bson.M{"$regex": *query, "$options": "i"}},
-			{"ip_address": bson.M{"$regex": *query, "$options": "i"}},
-			{"operation": bson.M{"$regex": *query, "$options": "i"}},
-			{"entity_type": bson.M{"$regex": *query, "$options": "i"}},
-			{"description": bson.M{"$regex": *query, "$options": "i"}},
-			{"status": bson.M{"$regex": *query, "$options": "i"}},
 		}
 	}
 	docJSON, _ := json.Marshal(doc)
@@ -164,14 +158,22 @@ func (o *OperationLogDaoImpl) GetOperationLogList(
 func (o *OperationLogDaoImpl) InsertOperationLog(
 	ctx context.Context,
 	userID, entityID primitive.ObjectID,
-	username, email, ipAddress, userAgent, operation, entityType, description, status string,
+	ipAddress, userAgent, operation, entityType, description, status string,
 ) (primitive.ObjectID, error) {
 	collection := o.core.Mongo.MongoClient.Database(o.core.Mongo.DatabaseName).Collection(config.OperationLogCollectionName)
+	user, err := o.userDao.GetUserByID(ctx, userID)
+	if err != nil {
+		o.core.Logger.Error(
+			"OperationLogDaoImpl.InsertOperationLog: failed to get user",
+			zap.Error(err), zap.String("userID", userID.Hex()),
+		)
+		return primitive.NilObjectID, err
+	}
 	doc := bson.M{
 		"user_id":     userID,
 		"entity_id":   entityID,
-		"username":    username,
-		"email":       email,
+		"username":    user.Username,
+		"email":       user.Email,
 		"ip_address":  ipAddress,
 		"user_agent":  userAgent,
 		"operation":   operation,
@@ -200,18 +202,8 @@ func (o *OperationLogDaoImpl) CacheOperationLog(
 	ctx context.Context, userID, entityID primitive.ObjectID,
 	ipAddress, userAgent, operation, entityType, description, status string,
 ) error {
-	user, err := o.userDao.GetUserByID(ctx, userID)
-	if err != nil {
-		o.core.Logger.Error(
-			"OperationLogDaoImpl.CacheOperationLog: failed to get user",
-			zap.Error(err), zap.String("userID", userID.Hex()),
-		)
-		return err
-	}
-	operationLog := entity2.OperationLogCache{
-		UserIDHex:   user.UserID.Hex(),
-		Username:    user.Username,
-		Email:       user.Email,
+	operationLog := entity.OperationLogCache{
+		UserIDHex:   userID.Hex(),
 		IPAddress:   ipAddress,
 		UserAgent:   userAgent,
 		Operation:   operation,
@@ -244,7 +236,7 @@ func (o *OperationLogDaoImpl) SyncOperationLog(ctx context.Context) {
 				zap.Error(err),
 			)
 		}
-		var operationLog entity2.OperationLogCache
+		var operationLog entity.OperationLogCache
 		err = json.Unmarshal([]byte(*operationLogJSON), &operationLog)
 		if err != nil {
 			o.core.Logger.Error(
@@ -271,7 +263,7 @@ func (o *OperationLogDaoImpl) SyncOperationLog(ctx context.Context) {
 		}
 		_, err = o.InsertOperationLog(
 			ctx, userID, entityID,
-			operationLog.Username, operationLog.Email, operationLog.IPAddress, operationLog.UserAgent,
+			operationLog.IPAddress, operationLog.UserAgent,
 			operationLog.Operation, operationLog.EntityType, operationLog.Description, operationLog.Status,
 		)
 		if err != nil {

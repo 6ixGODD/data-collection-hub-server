@@ -11,8 +11,6 @@ type CacheList struct {
 
 type LoginLogCache struct {
 	UserIDHex string    `json:"user_id_hex"` // User ID in Hex
-	Username  string    `json:"username"`    // Username (for space-time trade-off)
-	Email     string    `json:"email"`       // Email (for space-time trade-off)
 	IPAddress string    `json:"ip_address"`  // IP Address
 	UserAgent string    `json:"user_agent"`  // User Agent
 	CreatedAt time.Time `json:"created_at"`  // Created Time in ISO 8601
@@ -20,8 +18,6 @@ type LoginLogCache struct {
 
 type OperationLogCache struct {
 	UserIDHex   string    `json:"user_id_hex"`   // User ID in Hex
-	Username    string    `json:"username"`      // Username (for space-time trade-off)
-	Email       string    `json:"email"`         // Email (for space-time trade-off)
 	IPAddress   string    `json:"ip_address"`    // IP Address
 	UserAgent   string    `json:"user_agent"`    // User Agent
 	Operation   string    `json:"operation"`     // Operation, 'CREATE' | 'UPDATE' | 'DELETE'

@@ -1,8 +1,10 @@
 package mock
 
 import (
+	"context"
 	"math/rand"
 
+	"data-collection-hub-server/internal/pkg/dao/mods"
 	"data-collection-hub-server/internal/pkg/domain/entity"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -10,29 +12,32 @@ import (
 // UserDaoMock is a mock for UserDao
 type UserDaoMock struct {
 	UserMap map[primitive.ObjectID]*entity.UserModel
+	UserIDs []primitive.ObjectID
+	UserDao mods.UserDao
 }
 
 // NewUserDaoMock returns a new UserDaoMock
-func NewUserDaoMock() *UserDaoMock {
+func NewUserDaoMock(userDao mods.UserDao) *UserDaoMock {
 	return &UserDaoMock{
 		UserMap: make(map[primitive.ObjectID]*entity.UserModel),
+		UserDao: userDao,
 	}
 }
 
 // NewUserDaoMockWithRandomData returns a new UserDaoMock with n random users
-func NewUserDaoMockWithRandomData(n int) *UserDaoMock {
-	userDaoMock := NewUserDaoMock()
+func NewUserDaoMockWithRandomData(n int, userDao mods.UserDao) *UserDaoMock {
+	userDaoMock := NewUserDaoMock(userDao)
 	for i := 0; i < n; i++ {
-		user := GenerateUserModel()
+		user := userDaoMock.GenerateUserModel()
 		userDaoMock.UserMap[user.UserID] = user
+		userDaoMock.UserIDs = append(userDaoMock.UserIDs, user.UserID)
 	}
 	return userDaoMock
 }
 
 // Create mocks the Create method
-func (m *UserDaoMock) Create(user *entity.UserModel) error {
+func (m *UserDaoMock) Create(user *entity.UserModel) {
 	m.UserMap[user.UserID] = user
-	return nil
 }
 
 // Get mocks the Get method
@@ -44,14 +49,30 @@ func (m *UserDaoMock) Get(userID primitive.ObjectID) (*entity.UserModel, error) 
 	return user, nil
 }
 
+func (m *UserDaoMock) RandomUserID() primitive.ObjectID {
+	return m.UserIDs[rand.Intn(len(m.UserIDs))]
+}
+
 // GenerateUserModel generates a new UserModel
-func GenerateUserModel() *entity.UserModel {
-	return &entity.UserModel{
-		UserID:       primitive.NewObjectID(),
-		Email:        randomString(10) + "@test.com",
-		Password:     randomString(10),
-		Role:         randomEnum([]string{"ADMIN", "USER"}),
-		Organization: randomEnum([]string{"FOO", "BAR", "BAZ", "QUX"}),
+func (m *UserDaoMock) GenerateUserModel() *entity.UserModel {
+	username, email, password, role, organization := GenerateUser()
+	userID, err := m.UserDao.InsertUser(context.Background(), username, email, password, role, organization)
+	if err != nil {
+		panic(err)
+	}
+	if err = m.UserDao.UpdateUserLastLogin(context.Background(), userID); err != nil {
+		panic(err)
+	}
+	user, err := m.UserDao.GetUserByID(context.Background(), userID)
+	if err != nil {
+		panic(err)
+	}
+	return user
+}
+
+func (m *UserDaoMock) Delete() {
+	for _, userID := range m.UserIDs {
+		_ = m.UserDao.DeleteUser(context.Background(), userID)
 	}
 }
 
@@ -62,17 +83,4 @@ func GenerateUser() (string, string, string, string, string) {
 		randomString(10),
 		randomEnum([]string{"ADMIN", "USER"}),
 		randomEnum([]string{"FOO", "BAR", "BAZ", "QUX"})
-}
-
-func randomString(length int) string {
-	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	b := make([]byte, length)
-	for i := range b {
-		b[i] = charset[rand.Intn(len(charset))]
-	}
-	return string(b)
-}
-
-func randomEnum(enum []string) string {
-	return enum[rand.Intn(len(enum))]
 }

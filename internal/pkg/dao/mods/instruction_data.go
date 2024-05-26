@@ -17,7 +17,7 @@ import (
 
 type InstructionDataDao interface {
 	GetInstructionDataByID(
-		ctx context.Context, instructionDataID *primitive.ObjectID,
+		ctx context.Context, instructionDataID primitive.ObjectID,
 	) (*entity.InstructionDataModel, error)
 	GetInstructionDataList(
 		ctx context.Context, offset, limit int64, desc bool, userID *primitive.ObjectID, theme, statusCode *string,
@@ -74,7 +74,7 @@ func NewInstructionDataDao(ctx context.Context, core *dao.Core, userDao UserDao)
 }
 
 func (i *InstructionDataDaoImpl) GetInstructionDataByID(
-	ctx context.Context, instructionDataID *primitive.ObjectID,
+	ctx context.Context, instructionDataID primitive.ObjectID,
 ) (*entity.InstructionDataModel, error) {
 	var instructionData entity.InstructionDataModel
 	collection := i.Dao.Mongo.MongoClient.Database(i.Dao.Mongo.DatabaseName).Collection(config.InstructionDataCollectionName)
@@ -120,14 +120,25 @@ func (i *InstructionDataDaoImpl) GetInstructionDataList(
 		doc["updated_time"] = bson.M{"$gte": *updateTimeStart, "$lte": *updateTimeEnd}
 	}
 	if query != nil {
-		doc["$text"] = bson.M{"$search": *query}
+		pattern := fmt.Sprintf(".*%s.*", *query)
+		doc["$or"] = []bson.M{
+			{"username": bson.M{"$regex": primitive.Regex{Pattern: pattern, Options: "i"}}},
+		}
 	}
 	docJSON, _ := json.Marshal(doc)
-
+	cursor := collection.Find(ctx, doc)
+	count, err := cursor.Count()
+	if err != nil {
+		i.Dao.Logger.Error(
+			"InstructionDataDaoImpl.GetInstructionDataList: failed to count instruction data list",
+			zap.ByteString(config.InstructionDataCollectionName, docJSON), zap.Error(err),
+		)
+		return nil, nil, err
+	}
 	if desc {
-		err = collection.Find(ctx, doc).Sort("-created_time").Skip(offset).Limit(limit).All(&instructionDataList)
+		err = cursor.Sort("-created_time").Skip(offset).Limit(limit).All(&instructionDataList)
 	} else {
-		err = collection.Find(ctx, doc).Skip(offset).Limit(limit).All(&instructionDataList)
+		err = cursor.Skip(offset).Limit(limit).All(&instructionDataList)
 	}
 
 	if err != nil {
@@ -137,14 +148,7 @@ func (i *InstructionDataDaoImpl) GetInstructionDataList(
 		)
 		return nil, nil, err
 	}
-	count, err := collection.Find(ctx, doc).Count()
-	if err != nil {
-		i.Dao.Logger.Error(
-			"InstructionDataDaoImpl.GetInstructionDataList: failed to count instruction data list",
-			zap.ByteString(config.InstructionDataCollectionName, docJSON), zap.Error(err),
-		)
-		return nil, nil, err
-	}
+
 	i.Dao.Logger.Info(
 		"InstructionDataDaoImpl.GetInstructionDataList",
 		zap.Int64("count", count), zap.ByteString(config.InstructionDataCollectionName, docJSON),
@@ -275,8 +279,7 @@ func (i *InstructionDataDaoImpl) UpdateInstructionData(
 		if err != nil {
 			i.Dao.Logger.Error(
 				"InstructionDataDaoImpl.UpdateInstructionData: failed to GetUserByID",
-				zap.String("userID", userID.Hex()),
-				zap.String("instructionDataID", instructionDataID.Hex()),
+				zap.String("userID", userID.Hex()), zap.String("instructionDataID", instructionDataID.Hex()),
 				zap.Error(err),
 			)
 			return err
@@ -438,8 +441,7 @@ func (i *InstructionDataDaoImpl) DeleteInstructionDataList(
 	} else {
 		i.Dao.Logger.Info(
 			"InstructionDataDaoImpl.DeleteInstructionDataList: success",
-			zap.Int64("count", result.DeletedCount),
-			zap.ByteString(config.InstructionDataCollectionName, docJSON),
+			zap.Int64("count", result.DeletedCount), zap.ByteString(config.InstructionDataCollectionName, docJSON),
 		)
 	}
 	return &result.DeletedCount, err

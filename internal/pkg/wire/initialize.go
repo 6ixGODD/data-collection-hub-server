@@ -12,7 +12,6 @@ import (
 	"data-collection-hub-server/pkg/prometheus"
 	"data-collection-hub-server/pkg/redis"
 	logging "data-collection-hub-server/pkg/zap"
-	"go.uber.org/zap"
 )
 
 // InitializeMongo initializes mongo injection with context and config.
@@ -37,7 +36,7 @@ func InitializeRedis(ctx context.Context, config *config.Config) (*redis.Redis, 
 
 // InitializeZap initializes zap logger injection with config.
 func InitializeZap(config *config.Config) (*logging.Zap, error) {
-	z, err := logging.New(config.ZapConfig.GetZapConfig(), zap.AddCallerSkip(1))
+	z, err := logging.New(config.ZapConfig.GetZapConfig())
 	if err != nil {
 		return nil, err
 	}

@@ -3,6 +3,7 @@ package dao
 import (
 	"context"
 	"errors"
+	"time"
 
 	"data-collection-hub-server/internal/pkg/config"
 	"data-collection-hub-server/internal/pkg/domain/entity"
@@ -33,23 +34,26 @@ func NewCache(redis *rds.Redis, config *config.Config) *Cache {
 
 func (c *Cache) Get(ctx context.Context, key string) (*string, error) {
 	result, err := c.Redis.RedisClient.Get(ctx, key).Result()
-	if err != nil {
+	if errors.Is(err, redis.Nil) {
+		return nil, c.Nil
+	} else if err != nil {
 		return nil, err
 	}
 	return &result, nil
 }
 
-func (c *Cache) Set(ctx context.Context, key string, value string) error {
-	err := c.Redis.RedisClient.Set(ctx, key, value, c.Config.BaseConfig.CacheTTL).Err()
-	if err != nil {
-		return err
+func (c *Cache) Set(ctx context.Context, key string, value string, ttl *time.Duration) error {
+	if ttl == nil {
+		return c.Redis.RedisClient.Set(ctx, key, value, c.Config.CacheConfig.DefaultTTL).Err()
 	}
-	return nil
+	return c.Redis.RedisClient.Set(ctx, key, value, *ttl).Err()
 }
 
 func (c *Cache) GetList(ctx context.Context, key string) (*entity.CacheList, error) {
 	result, err := c.Redis.RedisClient.Get(ctx, key).Result()
-	if err != nil {
+	if errors.Is(err, redis.Nil) {
+		return nil, c.Nil
+	} else if err != nil {
 		return nil, err
 	}
 	var cacheList entity.CacheList
@@ -60,12 +64,15 @@ func (c *Cache) GetList(ctx context.Context, key string) (*entity.CacheList, err
 	return &cacheList, nil
 }
 
-func (c *Cache) SetList(ctx context.Context, key string, cacheList *entity.CacheList) error {
+func (c *Cache) SetList(ctx context.Context, key string, cacheList *entity.CacheList, ttl *time.Duration) error {
+	if ttl == nil {
+		ttl = &c.Config.CacheConfig.DefaultTTL
+	}
 	cacheListJSON, err := json.Marshal(cacheList)
 	if err != nil {
 		return err
 	}
-	return c.Redis.RedisClient.Set(ctx, key, cacheListJSON, c.Config.BaseConfig.CacheTTL).Err()
+	return c.Redis.RedisClient.Set(ctx, key, cacheListJSON, *ttl).Err()
 }
 
 func (c *Cache) RightPush(ctx context.Context, key string, value string) error {
@@ -76,8 +83,7 @@ func (c *Cache) LeftPop(ctx context.Context, key string) (*string, error) {
 	result, err := c.Redis.RedisClient.LPop(ctx, key).Result()
 	if errors.Is(err, redis.Nil) {
 		return nil, c.Nil
-	}
-	if err != nil {
+	} else if err != nil {
 		return nil, err
 	}
 	return &result, nil

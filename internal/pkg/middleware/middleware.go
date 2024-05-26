@@ -10,11 +10,12 @@ import (
 )
 
 type Middleware struct {
-	AuthMiddleware       *ware.AuthMiddleware
-	LoggingMiddleware    *ware.LoggingMiddleware
-	PrometheusMiddleware *ware.PrometheusMiddleware
-	ContextMiddleware    *ware.ContextMiddleware
-	Config               *config.Config
+	AuthMiddleware        *ware.AuthMiddleware
+	LoggingMiddleware     *ware.LoggingMiddleware
+	PrometheusMiddleware  *ware.PrometheusMiddleware
+	ContextMiddleware     *ware.ContextMiddleware
+	IdempotencyMiddleware *ware.IdempotencyMiddleware
+	Config                *config.Config
 }
 
 func (m *Middleware) Register(app *fiber.App) error {

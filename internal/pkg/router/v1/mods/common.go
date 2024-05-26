@@ -15,21 +15,54 @@ type CommonRouter struct {
 func (c *CommonRouter) RegisterCommonRouter(
 	app fiber.Router, api *common.Common, rbac *casbin.Middleware,
 ) {
-	app.Get("/profile", rbac.RequiresRoles([]string{config.UserRoleAdmin, config.UserRoleUser}), api.GetProfile)
+	app.Get(
+		"/ping",
+		func(c *fiber.Ctx) error {
+			return c.SendString("pong")
+		},
+	)
+	app.Get(
+		"/profile",
+		rbac.RequiresRoles([]string{config.UserRoleAdmin, config.UserRoleUser}),
+		api.ProfileApi.GetProfile,
+	)
 	app.Put(
-		"/change-password", rbac.RequiresRoles([]string{config.UserRoleAdmin, config.UserRoleUser}), api.ChangePassword,
+		"/change-password",
+		rbac.RequiresRoles([]string{config.UserRoleAdmin, config.UserRoleUser}),
+		api.AuthApi.ChangePassword,
 	)
 
 	authGroup := app.Group("/auth")
-	authGroup.Post("/login", api.Login)
-	authGroup.Post("/logout", api.Logout)
-	authGroup.Get("/refresh", api.RefreshToken)
+	authGroup.Post(
+		"/login",
+		api.AuthApi.Login,
+	)
+	authGroup.Post(
+		"/logout",
+		api.AuthApi.Logout,
+	)
+	authGroup.Get(
+		"/refresh",
+		api.AuthApi.RefreshToken,
+	)
 
 	noticeGroup := app.Group("/notice")
-	noticeGroup.Get("/", api.GetNotice)
-	noticeGroup.Get("/list", api.GetNoticeList)
+	noticeGroup.Get(
+		"/",
+		api.NoticeApi.GetNotice,
+	)
+	noticeGroup.Get(
+		"/list",
+		api.NoticeApi.GetNoticeList,
+	)
 
 	documentationGroup := app.Group("/documentation")
-	documentationGroup.Get("/documentation", api.GetDocumentation)
-	documentationGroup.Get("/documentation/list", api.GetDocumentationList)
+	documentationGroup.Get(
+		"/documentation",
+		api.DocumentationApi.GetDocumentation,
+	)
+	documentationGroup.Get(
+		"/documentation/list",
+		api.DocumentationApi.GetDocumentationList,
+	)
 }

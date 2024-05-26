@@ -83,7 +83,7 @@ func (d *DatasetApi) GetInstructionData(c *fiber.Ctx) error {
 		return errors.InvalidRequest(err)
 	}
 
-	resp, err := d.DatasetService.GetInstructionData(c.UserContext(), &instructionDataID)
+	resp, err := d.DatasetService.GetInstructionData(c.UserContext(), instructionDataID)
 	if err != nil {
 		return err
 	}

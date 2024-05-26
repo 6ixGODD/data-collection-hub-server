@@ -16,13 +16,13 @@ type Router struct {
 	UserRouter   *mods.UserRouter
 }
 
-func (a *Router) RegisterRouter(router *fiber.Router, rbac *casbin.Middleware) {
-	a.registerV1Router(router, rbac)
+func (a *Router) RegisterRouter(router *fiber.Router, rbac *casbin.Middleware, idempotencyMiddleware fiber.Handler) {
+	a.registerV1Router(router, rbac, idempotencyMiddleware)
 }
 
-func (a *Router) registerV1Router(router *fiber.Router, rbac *casbin.Middleware) {
+func (a *Router) registerV1Router(router *fiber.Router, rbac *casbin.Middleware, idempotencyMiddleware fiber.Handler) {
 	v1Router := (*router).Group(v1Prefix)
-	a.AdminRouter.RegisterAdminRouter(v1Router, a.ApiV1.AdminApi, rbac)
+	a.AdminRouter.RegisterAdminRouter(v1Router, a.ApiV1.AdminApi, rbac, idempotencyMiddleware)
 	a.CommonRouter.RegisterCommonRouter(v1Router, a.ApiV1.CommonApi, rbac)
-	a.UserRouter.RegisterUserRouter(v1Router, a.ApiV1.UserApi, rbac)
+	a.UserRouter.RegisterUserRouter(v1Router, a.ApiV1.UserApi, rbac, idempotencyMiddleware)
 }

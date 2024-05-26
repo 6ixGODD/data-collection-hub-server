@@ -8,7 +8,7 @@ import (
 
 	"data-collection-hub-server/internal/pkg/config"
 	"data-collection-hub-server/internal/pkg/dao"
-	entity2 "data-collection-hub-server/internal/pkg/domain/entity"
+	"data-collection-hub-server/internal/pkg/domain/entity"
 	"github.com/goccy/go-json"
 	"github.com/qiniu/qmgo/options"
 	"go.mongodb.org/mongo-driver/bson"
@@ -17,21 +17,21 @@ import (
 )
 
 type LoginLogDao interface {
-	GetLoginLogByID(ctx context.Context, loginLogID primitive.ObjectID) (*entity2.LoginLogModel, error)
+	GetLoginLogByID(ctx context.Context, loginLogID primitive.ObjectID) (*entity.LoginLogModel, error)
 	GetLoginLogList(
 		ctx context.Context,
 		offset, limit int64, desc bool, startTime, endTime *time.Time, userID *primitive.ObjectID,
 		ipAddress, userAgent, query *string,
-	) ([]entity2.LoginLogModel, *int64, error)
+	) ([]entity.LoginLogModel, *int64, error)
 	InsertLoginLog(
 		ctx context.Context,
-		UserID primitive.ObjectID, Username, Email, IPAddress, UserAgent string,
+		UserID primitive.ObjectID, IPAddress, UserAgent string,
 	) (primitive.ObjectID, error)
 	CacheLoginLog(
-		ctx context.Context, username, IPAddress, UserAgent string,
+		ctx context.Context, userID primitive.ObjectID, IPAddress, UserAgent string,
 	) error
 	SyncLoginLog(ctx context.Context)
-	DeleteLoginLog(LoginLogID primitive.ObjectID, ctx context.Context) error
+	DeleteLoginLog(ctx context.Context, LoginLogID primitive.ObjectID) error
 	DeleteLoginLogList(
 		ctx context.Context, startTime, endTime *time.Time, userID *primitive.ObjectID,
 		ipAddress, userAgent *string,
@@ -66,9 +66,9 @@ func NewLoginLogDao(ctx context.Context, core *dao.Core, cache *dao.Cache, userD
 
 func (l *LoginLogDaoImpl) GetLoginLogByID(
 	ctx context.Context, loginLogID primitive.ObjectID,
-) (*entity2.LoginLogModel, error) {
+) (*entity.LoginLogModel, error) {
 	coll := l.core.Mongo.MongoClient.Database(l.core.Mongo.DatabaseName).Collection(config.LoginLogCollectionName)
-	var loginLog entity2.LoginLogModel
+	var loginLog entity.LoginLogModel
 	err := coll.Find(ctx, bson.M{"_id": loginLogID}).One(&loginLog)
 	if err != nil {
 		l.core.Logger.Error(
@@ -86,9 +86,9 @@ func (l *LoginLogDaoImpl) GetLoginLogList(
 	ctx context.Context,
 	offset, limit int64, desc bool, startTime, endTime *time.Time, userID *primitive.ObjectID,
 	ipAddress, userAgent, query *string,
-) ([]entity2.LoginLogModel, *int64, error) {
+) ([]entity.LoginLogModel, *int64, error) {
 	coll := l.core.Mongo.MongoClient.Database(l.core.Mongo.DatabaseName).Collection(config.LoginLogCollectionName)
-	var loginLogList []entity2.LoginLogModel
+	var loginLogList []entity.LoginLogModel
 	var err error
 	doc := bson.M{}
 	if startTime != nil && endTime != nil {
@@ -140,15 +140,23 @@ func (l *LoginLogDaoImpl) GetLoginLogList(
 }
 
 func (l *LoginLogDaoImpl) InsertLoginLog(
-	ctx context.Context, UserID primitive.ObjectID, Username, Email, IPAddress, UserAgent string,
+	ctx context.Context, userID primitive.ObjectID, ipAddress, userAgent string,
 ) (primitive.ObjectID, error) {
 	coll := l.core.Mongo.MongoClient.Database(l.core.Mongo.DatabaseName).Collection(config.LoginLogCollectionName)
+	user, err := l.userDao.GetUserByID(ctx, userID)
+	if err != nil {
+		l.core.Logger.Error(
+			"LoginLogDaoImpl.InsertLoginLog: failed to get user",
+			zap.Error(err), zap.String("userID", userID.Hex()),
+		)
+		return primitive.NilObjectID, err
+	}
 	doc := bson.M{
-		"user_id":    UserID,
-		"username":   Username,
-		"email":      Email,
-		"ip_address": IPAddress,
-		"user_agent": UserAgent,
+		"user_id":    userID,
+		"username":   user.Username,
+		"email":      user.Email,
+		"ip_address": ipAddress,
+		"user_agent": userAgent,
 		"created_at": time.Now(),
 	}
 	docJSON, _ := json.Marshal(doc)
@@ -170,30 +178,17 @@ func (l *LoginLogDaoImpl) InsertLoginLog(
 
 // CacheLoginLog caches login logs in cache
 func (l *LoginLogDaoImpl) CacheLoginLog(
-	ctx context.Context, username, IPAddress, UserAgent string,
+	ctx context.Context, userID primitive.ObjectID, IPAddress, UserAgent string,
 ) error {
-	user, err := l.userDao.GetUserByUsername(ctx, username)
-	if err != nil {
-		l.core.Logger.Error(
-			"LoginLogDaoImpl.CacheLoginLog: failed to get user",
-			zap.Error(err), zap.String("username", username),
-		)
-		return err
-	}
-	loginLog := entity2.LoginLogCache{
-		UserIDHex: user.UserID.Hex(),
-		Username:  user.Username,
-		Email:     user.Email,
+	loginLog := entity.LoginLogCache{
+		UserIDHex: userID.Hex(),
 		IPAddress: IPAddress,
 		UserAgent: UserAgent,
 		CreatedAt: time.Now(),
 	}
 	loginLogJSON, err := json.Marshal(loginLog)
 	if err != nil {
-		l.core.Logger.Error(
-			"LoginLogDaoImpl.CacheLoginLog: failed to marshal login log",
-			zap.Error(err), zap.String("username", username),
-		)
+		l.core.Logger.Error("LoginLogDaoImpl.CacheLoginLog: failed to marshal login log", zap.Error(err))
 		return err
 	}
 	return l.cache.RightPush(ctx, config.LoginLogCacheKey, string(loginLogJSON))
@@ -212,7 +207,7 @@ func (l *LoginLogDaoImpl) SyncLoginLog(ctx context.Context) {
 			)
 			return
 		}
-		var loginLog entity2.LoginLogCache
+		var loginLog entity.LoginLogCache
 		if err := json.Unmarshal([]byte(*loginLogJSON), &loginLog); err != nil {
 			l.core.Logger.Error(
 				"LoginLogDaoImpl.SyncLoginLog: failed to unmarshal login log",
@@ -229,7 +224,7 @@ func (l *LoginLogDaoImpl) SyncLoginLog(ctx context.Context) {
 			continue
 		}
 		if _, err := l.InsertLoginLog(
-			ctx, userID, loginLog.Username, loginLog.Email, loginLog.IPAddress, loginLog.UserAgent,
+			ctx, userID, loginLog.IPAddress, loginLog.UserAgent,
 		); err != nil {
 			l.core.Logger.Error(
 				"LoginLogDaoImpl.SyncLoginLog: failed to insert login log",
@@ -239,7 +234,7 @@ func (l *LoginLogDaoImpl) SyncLoginLog(ctx context.Context) {
 	}
 }
 
-func (l *LoginLogDaoImpl) DeleteLoginLog(loginLogID primitive.ObjectID, ctx context.Context) error {
+func (l *LoginLogDaoImpl) DeleteLoginLog(ctx context.Context, loginLogID primitive.ObjectID) error {
 	coll := l.core.Mongo.MongoClient.Database(l.core.Mongo.DatabaseName).Collection(config.LoginLogCollectionName)
 	err := coll.RemoveId(ctx, loginLogID)
 	if err != nil {

@@ -2,6 +2,7 @@ package mods
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -28,7 +29,6 @@ type DocumentationDao interface {
 	DeleteDocumentation(ctx context.Context, documentationId primitive.ObjectID) error
 	DeleteDocumentationList(
 		ctx context.Context, createStartTime, createEndTime, updateStartTime, updateEndTime *time.Time,
-		title, content *string,
 	) (*int64, error)
 }
 
@@ -42,7 +42,7 @@ type DocumentationDaoImpl struct {
 func NewDocumentationDao(ctx context.Context, core *dao.Core, cache *dao.Cache) (DocumentationDao, error) {
 	var _ DocumentationDao = (*DocumentationDaoImpl)(nil) // Ensure that the interface is implemented
 	coll := core.Mongo.MongoClient.Database(core.Mongo.DatabaseName).Collection(config.DocumentationCollectionName)
-	err := coll.CreateIndexes(
+	if err := coll.CreateIndexes(
 		ctx, []options.IndexModel{
 			{
 				Key:          []string{"title"},
@@ -50,8 +50,7 @@ func NewDocumentationDao(ctx context.Context, core *dao.Core, cache *dao.Cache) 
 			},
 			{Key: []string{"created_at"}}, {Key: []string{"updated_at"}},
 		},
-	)
-	if err != nil {
+	); err != nil {
 		core.Logger.Error(
 			fmt.Sprintf("Failed to create indexes for %s", config.DocumentationCollectionName), zap.Error(err),
 		)
@@ -66,12 +65,14 @@ func (d *DocumentationDaoImpl) GetDocumentationByID(
 	var documentation entity.DocumentationModel
 	key := fmt.Sprintf("%s:documentationID:%s", config.DocumentationCachePrefix, documentationId.Hex())
 	cache, err := d.Cache.Get(ctx, key)
-	if err != nil {
+	if errors.Is(err, dao.CacheNil{}) {
+		d.Dao.Logger.Info("DocumentationDaoImpl.GetDocumentationByID: cache miss", zap.String("key", key))
+	} else if err != nil {
 		d.Dao.Logger.Error(
 			"DocumentationDaoImpl.GetDocumentationByID: failed to get cache",
 			zap.Error(err), zap.String("key", key),
 		)
-	} else if cache != nil {
+	} else {
 		err = json.Unmarshal([]byte(*cache), &documentation)
 		if err != nil {
 			d.Dao.Logger.Error(
@@ -85,18 +86,27 @@ func (d *DocumentationDaoImpl) GetDocumentationByID(
 			)
 			return &documentation, nil
 		}
-	} else {
-		d.Dao.Logger.Info("DocumentationDaoImpl.GetDocumentationByID: cache miss", zap.String("key", key))
 	}
 	coll := d.Dao.Mongo.MongoClient.Database(d.Dao.Mongo.DatabaseName).Collection(config.DocumentationCollectionName)
-	err = coll.Find(ctx, bson.M{"_id": documentationId}).One(&documentation)
-	if err != nil {
+	if err = coll.Find(ctx, bson.M{"_id": documentationId}).One(&documentation); err != nil {
 		d.Dao.Logger.Error(
 			"DocumentationDaoImpl.GetDocumentationByID: failed to find documentation",
 			zap.Error(err), zap.String("documentationId", documentationId.Hex()),
 		)
 		return nil, err
 	} else {
+		docJSON, _ := json.Marshal(documentation)
+		if err = d.Cache.Set(ctx, key, string(docJSON), &d.Dao.Config.CacheConfig.DocumentationCacheTTL); err != nil {
+			d.Dao.Logger.Error(
+				"DocumentationDaoImpl.GetDocumentationByID: failed to set cache",
+				zap.Error(err), zap.String("key", key),
+			)
+		} else {
+			d.Dao.Logger.Info(
+				"DocumentationDaoImpl.GetDocumentationByID: cache set",
+				zap.String("key", key), zap.ByteString(config.DocumentationCollectionName, docJSON),
+			)
+		}
 		d.Dao.Logger.Info(
 			"DocumentationDaoImpl.GetDocumentationByID: success",
 			zap.String("documentationId", documentationId.Hex()),
@@ -127,11 +137,13 @@ func (d *DocumentationDaoImpl) GetDocumentationList(
 		key += ":desc"
 	}
 	cache, err := d.Cache.GetList(ctx, key)
-	if err != nil {
+	if errors.Is(err, dao.CacheNil{}) {
+		d.Dao.Logger.Info("DocumentationDaoImpl.GetDocumentationList: cache miss", zap.String("key", key))
+	} else if err != nil {
 		d.Dao.Logger.Error(
 			"DocumentationDaoImpl.GetDocumentationList: failed to get cache", zap.Error(err), zap.String("key", key),
 		)
-	} else if cache != nil {
+	} else {
 		if documentationList, ok := cache.List.([]entity.DocumentationModel); ok {
 			d.Dao.Logger.Info("DocumentationDaoImpl.GetDocumentationList: cache hit", zap.String("key", key))
 			return documentationList, &cache.Total, nil
@@ -140,8 +152,6 @@ func (d *DocumentationDaoImpl) GetDocumentationList(
 				"DocumentationDaoImpl.GetDocumentationList: failed to type assert cache", zap.String("key", key),
 			)
 		}
-	} else {
-		d.Dao.Logger.Info("DocumentationDaoImpl.GetDocumentationList: cache miss", zap.String("key", key))
 	}
 	coll := d.Dao.Mongo.MongoClient.Database(d.Dao.Mongo.DatabaseName).Collection(config.DocumentationCollectionName)
 	if desc {
@@ -165,6 +175,16 @@ func (d *DocumentationDaoImpl) GetDocumentationList(
 		return nil, nil, err
 	}
 
+	if err := d.Cache.SetList(
+		ctx, key, &entity.CacheList{List: documentationList, Total: count},
+		&d.Dao.Config.CacheConfig.DocumentationCacheTTL,
+	); err != nil {
+		d.Dao.Logger.Error(
+			"DocumentationDaoImpl.GetDocumentationList: failed to set cache", zap.Error(err), zap.String("key", key),
+		)
+	} else {
+		d.Dao.Logger.Info("DocumentationDaoImpl.GetDocumentationList: cache set", zap.String("key", key))
+	}
 	d.Dao.Logger.Info(
 		"DocumentationDaoImpl.GetDocumentationList: success", zap.Int64("count", count),
 		zap.ByteString(config.DocumentationCollectionName, docJSON),
@@ -186,21 +206,21 @@ func (d *DocumentationDaoImpl) InsertDocumentation(
 			"DocumentationDaoImpl.InsertDocumentation: failed to insert documentation",
 			zap.Error(err), zap.ByteString(config.DocumentationCollectionName, docJSON),
 		)
-	} else {
-		d.Dao.Logger.Info(
-			"DocumentationDaoImpl.InsertDocumentation: success",
-			zap.String("documentation_id", result.InsertedID.(primitive.ObjectID).Hex()),
-			zap.ByteString(config.DocumentationCollectionName, docJSON),
-		)
-		prefix := config.DocumentationCachePrefix
-		err = d.Cache.Flush(ctx, &prefix)
-		if err != nil {
-			d.Dao.Logger.Error("DocumentationDaoImpl.InsertDocumentation: failed to flush cache", zap.Error(err))
-		} else {
-			d.Dao.Logger.Info("DocumentationDaoImpl.InsertDocumentation: cache flushed")
-		}
+		return primitive.NilObjectID, err
 	}
-	return result.InsertedID.(primitive.ObjectID), err
+	d.Dao.Logger.Info(
+		"DocumentationDaoImpl.InsertDocumentation: success",
+		zap.String("documentation_id", result.InsertedID.(primitive.ObjectID).Hex()),
+		zap.ByteString(config.DocumentationCollectionName, docJSON),
+	)
+	prefix := config.DocumentationCachePrefix
+	err = d.Cache.Flush(ctx, &prefix)
+	if err != nil {
+		d.Dao.Logger.Error("DocumentationDaoImpl.InsertDocumentation: failed to flush cache", zap.Error(err))
+	} else {
+		d.Dao.Logger.Info("DocumentationDaoImpl.InsertDocumentation: cache flushed")
+	}
+	return result.InsertedID.(primitive.ObjectID), nil
 }
 
 func (d *DocumentationDaoImpl) UpdateDocumentation(
@@ -222,66 +242,52 @@ func (d *DocumentationDaoImpl) UpdateDocumentation(
 			zap.Error(err), zap.String("documentationId", documentationId.Hex()),
 			zap.ByteString(config.DocumentationCollectionName, docJSON),
 		)
-	} else {
-		d.Dao.Logger.Info(
-			"DocumentationDaoImpl.UpdateDocumentation: success",
-			zap.String("documentationId", documentationId.Hex()),
-			zap.ByteString(config.DocumentationCollectionName, docJSON),
-		)
-		prefix := config.DocumentationCachePrefix
-		err = d.Cache.Flush(ctx, &prefix)
-		if err != nil {
-			d.Dao.Logger.Error("DocumentationDaoImpl.UpdateDocumentation: failed to flush cache", zap.Error(err))
-		} else {
-			d.Dao.Logger.Info("DocumentationDaoImpl.UpdateDocumentation: cache flushed")
-		}
+		return err
 	}
-	return err
+	d.Dao.Logger.Info(
+		"DocumentationDaoImpl.UpdateDocumentation: success",
+		zap.String("documentationId", documentationId.Hex()),
+		zap.ByteString(config.DocumentationCollectionName, docJSON),
+	)
+	prefix := config.DocumentationCachePrefix
+	err = d.Cache.Flush(ctx, &prefix)
+	if err != nil {
+		d.Dao.Logger.Error("DocumentationDaoImpl.UpdateDocumentation: failed to flush cache", zap.Error(err))
+	} else {
+		d.Dao.Logger.Info("DocumentationDaoImpl.UpdateDocumentation: cache flushed")
+	}
+	return nil
 }
 
 func (d *DocumentationDaoImpl) DeleteDocumentation(
 	ctx context.Context, documentationId primitive.ObjectID,
 ) error {
 	coll := d.Dao.Mongo.MongoClient.Database(d.Dao.Mongo.DatabaseName).Collection(config.DocumentationCollectionName)
-	err := coll.RemoveId(ctx, documentationId)
-	if err != nil {
+	if err := coll.RemoveId(ctx, documentationId); err != nil {
 		d.Dao.Logger.Error(
 			"DocumentationDaoImpl.DeleteDocumentation: failed to delete documentation",
 			zap.Error(err), zap.String("documentationId", documentationId.Hex()),
 		)
-	} else {
-		d.Dao.Logger.Info(
-			"DocumentationDaoImpl.DeleteDocumentation: success",
-			zap.String("documentationId", documentationId.Hex()),
-		)
-		prefix := config.DocumentationCachePrefix
-		err = d.Cache.Flush(ctx, &prefix)
-		if err != nil {
-			d.Dao.Logger.Error(
-				"DocumentationDaoImpl.DeleteDocumentation: failed to flush cache",
-				zap.Error(err),
-			)
-		} else {
-			d.Dao.Logger.Info(
-				"DocumentationDaoImpl.DeleteDocumentation: cache flushed",
-			)
-		}
+		return err
 	}
-	return err
+	d.Dao.Logger.Info(
+		"DocumentationDaoImpl.DeleteDocumentation: success",
+		zap.String("documentationId", documentationId.Hex()),
+	)
+	prefix := config.DocumentationCachePrefix
+	if err := d.Cache.Flush(ctx, &prefix); err != nil {
+		d.Dao.Logger.Error("DocumentationDaoImpl.DeleteDocumentation: failed to flush cache", zap.Error(err))
+	} else {
+		d.Dao.Logger.Info("DocumentationDaoImpl.DeleteDocumentation: cache flushed")
+	}
+	return nil
 }
 
 func (d *DocumentationDaoImpl) DeleteDocumentationList(
 	ctx context.Context, createStartTime, createEndTime, updateStartTime, updateEndTime *time.Time,
-	title, content *string,
 ) (*int64, error) {
 	coll := d.Dao.Mongo.MongoClient.Database(d.Dao.Mongo.DatabaseName).Collection(config.DocumentationCollectionName)
 	doc := bson.M{}
-	if title != nil {
-		doc["title"] = *title
-	}
-	if content != nil {
-		doc["content"] = *content
-	}
 	if createStartTime != nil && createEndTime != nil {
 		doc["created_at"] = bson.M{"$gte": createStartTime, "$lte": createEndTime}
 	}
@@ -302,8 +308,7 @@ func (d *DocumentationDaoImpl) DeleteDocumentationList(
 		zap.Int64("count", result.DeletedCount), zap.ByteString(config.DocumentationCollectionName, docJSON),
 	)
 	prefix := config.DocumentationCachePrefix
-	err = d.Cache.Flush(ctx, &prefix)
-	if err != nil {
+	if err = d.Cache.Flush(ctx, &prefix); err != nil {
 		d.Dao.Logger.Error("DocumentationDaoImpl.DeleteDocumentationList: failed to flush cache", zap.Error(err))
 	} else {
 		d.Dao.Logger.Info("DocumentationDaoImpl.DeleteDocumentationList: cache flushed")

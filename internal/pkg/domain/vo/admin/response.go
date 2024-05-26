@@ -61,6 +61,40 @@ type (
 		InstructionDataList []*GetInstructionDataResponse `json:"instruction_data_list"`
 	}
 
+	InstructionDataList struct {
+		InstructionDataList []*InstructionData
+	}
+
+	InstructionData struct {
+		InstructionDataID string `json:"instruction_data_id"`
+		UserID            string `json:"user_id"`
+		Username          string `json:"username"`
+		Row               struct {
+			Instruction string `json:"instruction"`
+			Input       string `json:"input"`
+			Output      string `json:"output"`
+		} `json:"row"`
+		Theme  string `json:"theme"`
+		Source string `json:"source"`
+		Note   string `json:"note"`
+		Status struct {
+			Code    string `json:"code"`
+			Message string `json:"message"`
+		} `json:"status"`
+		CreatedAt string `json:"created_at"`
+		UpdatedAt string `json:"updated_at"`
+	}
+
+	InstructionDataAlpacaList struct {
+		InstructionDataList []*InstructionDataAlpaca
+	}
+
+	InstructionDataAlpaca struct {
+		Institution string `json:"institution"`
+		Input       string `json:"input"`
+		Output      string `json:"output"`
+	}
+
 	GetUserResponse struct {
 		UserID       string `json:"_id"`
 		Username     string `json:"username"`

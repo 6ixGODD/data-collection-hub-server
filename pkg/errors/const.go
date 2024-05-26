@@ -13,9 +13,10 @@ const ( // Business error code
 	CodeTokenMissed         = 2004
 	CodeTokenGenerateFailed = 2005
 
-	CodeInvalidRequest = 3001
-	CodeInvalidParams  = 3002
-	CodeMissingParams  = 3003
+	CodeInvalidRequest         = 3001
+	CodeInvalidParams          = 3002
+	CodeMissingParams          = 3003
+	CodeIdempotencyCheckFailed = 3004
 
 	CodeConnError    = 4001
 	CodeDBReadError  = 4002
@@ -44,9 +45,10 @@ const ( // Default Message
 	MessageTokenMissed         = "Token missed"
 	MessageTokenGenerateFailed = "Token generate failed"
 
-	MessageInvalidRequest = "Invalid request"
-	MessageInvalidParams  = "Invalid params"
-	MessageMissingParams  = "Missing params"
+	MessageInvalidRequest         = "Invalid request"
+	MessageInvalidParams          = "Invalid params"
+	MessageMissingParams          = "Missing params"
+	MessageIdempotencyCheckFailed = "Idempotency check failed"
 
 	MessageConnError  = "Connection error"
 	MessageReadError  = "Read error"

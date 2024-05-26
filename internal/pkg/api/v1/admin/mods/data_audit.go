@@ -10,6 +10,7 @@ import (
 	adminservice "data-collection-hub-server/internal/pkg/service/admin/mods"
 	sysservice "data-collection-hub-server/internal/pkg/service/sys/mods"
 	"data-collection-hub-server/pkg/errors"
+	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -29,7 +30,7 @@ func (d *DataAuditApi) GetInstructionData(c *fiber.Ctx) error {
 	if err != nil {
 		return errors.InvalidRequest(err)
 	}
-	resp, err := d.DataAuditService.GetInstructionData(c.UserContext(), &instructionDataID)
+	resp, err := d.DataAuditService.GetInstructionData(c.UserContext(), instructionDataID)
 	if err != nil {
 		return err
 	}
@@ -203,6 +204,136 @@ func (d *DataAuditApi) UpdateInstructionData(c *fiber.Ctx) error {
 			Data:    nil,
 		},
 	)
+}
+
+func (d *DataAuditApi) ExportInstructionData(c *fiber.Ctx) error {
+	req := new(admin.ExportInstructionDataRequest)
+
+	if err := c.QueryParser(req); err != nil {
+		return errors.InvalidRequest(err)
+	}
+	var (
+		userID                         *primitive.ObjectID
+		createBefore, createAfter      *time.Time
+		updateStartTime, updateEndTime *time.Time
+		err                            error
+	)
+
+	if req.UserID != nil {
+		*userID, err = primitive.ObjectIDFromHex(*req.UserID)
+		if err != nil {
+			return errors.InvalidRequest(err)
+		}
+	}
+	if req.CreateStartTime != nil {
+		*createBefore, err = time.Parse(time.RFC3339, *req.CreateStartTime)
+		if err != nil {
+			return errors.InvalidRequest(err)
+		}
+	}
+	if req.CreateEndTime != nil {
+		*createAfter, err = time.Parse(time.RFC3339, *req.CreateEndTime)
+		if err != nil {
+			return errors.InvalidRequest(err)
+		}
+	}
+	if req.UpdateStartTime != nil {
+		*updateStartTime, err = time.Parse(time.RFC3339, *req.UpdateStartTime)
+		if err != nil {
+			return errors.InvalidRequest(err)
+		}
+	}
+	if req.UpdateEndTime != nil {
+		*updateEndTime, err = time.Parse(time.RFC3339, *req.UpdateEndTime)
+		if err != nil {
+			return errors.InvalidRequest(err)
+		}
+	}
+	data, err := d.DataAuditService.ExportInstructionData(
+		c.UserContext(), req.Desc,
+		userID, nil, nil, updateStartTime, updateEndTime,
+		req.Theme, req.Status,
+	)
+	if err != nil {
+		return err
+	}
+	dataJSON, err := json.Marshal(data)
+	if err != nil {
+		return errors.ServiceError(err) // XXX: Change error type
+	}
+	c.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+	c.Set(
+		fiber.HeaderContentDisposition, fmt.Sprintf(
+			"attachment; filename=%s",
+			fmt.Sprintf("instruction_%s.json", time.Now().Format(time.RFC3339)),
+		),
+	)
+	return c.Send(dataJSON)
+}
+
+func (d *DataAuditApi) ExportInstructionDataAsAlpaca(c *fiber.Ctx) error {
+	req := new(admin.ExportInstructionDataRequest)
+
+	if err := c.QueryParser(req); err != nil {
+		return errors.InvalidRequest(err)
+	}
+	var (
+		userID                         *primitive.ObjectID
+		createStartTime, createEndTime *time.Time
+		updateStartTime, updateEndTime *time.Time
+		err                            error
+	)
+
+	if req.UserID != nil {
+		*userID, err = primitive.ObjectIDFromHex(*req.UserID)
+		if err != nil {
+			return errors.InvalidRequest(err)
+		}
+	}
+	if req.CreateStartTime != nil {
+		*createStartTime, err = time.Parse(time.RFC3339, *req.CreateStartTime)
+		if err != nil {
+			return errors.InvalidRequest(err)
+		}
+	}
+	if req.CreateEndTime != nil {
+		*createEndTime, err = time.Parse(time.RFC3339, *req.CreateEndTime)
+		if err != nil {
+			return errors.InvalidRequest(err)
+		}
+	}
+	if req.UpdateStartTime != nil {
+		*updateStartTime, err = time.Parse(time.RFC3339, *req.UpdateStartTime)
+		if err != nil {
+			return errors.InvalidRequest(err)
+		}
+	}
+	if req.UpdateEndTime != nil {
+		*updateEndTime, err = time.Parse(time.RFC3339, *req.UpdateEndTime)
+		if err != nil {
+			return errors.InvalidRequest(err)
+		}
+	}
+	data, err := d.DataAuditService.ExportInstructionDataAsAlpaca(
+		c.UserContext(), req.Desc,
+		userID, createStartTime, createEndTime, updateStartTime, updateEndTime,
+		req.Theme, req.Status,
+	)
+	if err != nil {
+		return err
+	}
+	dataJSON, err := json.Marshal(data)
+	if err != nil {
+		return errors.ServiceError(err) // XXX: Change error type
+	}
+	c.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+	c.Set(
+		fiber.HeaderContentDisposition, fmt.Sprintf(
+			"attachment; filename=%s",
+			fmt.Sprintf("instruction_alpaca_%s.json", time.Now().Format(time.RFC3339)),
+		),
+	)
+	return c.Send(dataJSON)
 }
 
 func (d *DataAuditApi) DeleteInstructionData(c *fiber.Ctx) error {

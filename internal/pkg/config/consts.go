@@ -46,12 +46,16 @@ const (
 	UserCollectionName            = "user"
 )
 
-// Cache Prefix / Key
+// cache Prefix / Key
 const (
-	NoticeCachePrefix        = "dao:notice"
-	UserCachePrefix          = "dao:user"
-	DocumentationCachePrefix = "dao:documentation"
+	NoticeCachePrefix         = "dao:notice"
+	UserCachePrefix           = "dao:user"
+	DocumentationCachePrefix  = "dao:documentation"
+	TokenBlacklistCachePrefix = "token:blacklist"
 
 	LoginLogCacheKey     = "log:login"
 	OperationLogCacheKey = "log:operation"
+
+	CacheTrue  = "1"
+	CacheFalse = "0"
 )

@@ -16,19 +16,19 @@ type ProfileService interface {
 	GetProfile(ctx context.Context) (*common.GetProfileResponse, error)
 }
 
-type ProfileDOImpl struct {
+type profileServiceImpl struct {
 	core    *service.Core
 	userDao dao.UserDao
 }
 
-func NewProfileDO(core *service.Core, userDao dao.UserDao) ProfileService {
-	return &ProfileDOImpl{
+func NewProfileService(core *service.Core, userDao dao.UserDao) ProfileService {
+	return &profileServiceImpl{
 		core:    core,
 		userDao: userDao,
 	}
 }
 
-func (p ProfileDOImpl) GetProfile(ctx context.Context) (*common.GetProfileResponse, error) {
+func (p profileServiceImpl) GetProfile(ctx context.Context) (*common.GetProfileResponse, error) {
 	userID, err := primitive.ObjectIDFromHex(ctx.Value(config.UserIDKey).(string))
 	if err != nil {
 		return nil, errors.UserNotFound(err) // TODO: change error type

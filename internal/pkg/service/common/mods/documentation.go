@@ -18,19 +18,19 @@ type DocumentationService interface {
 	) (*common.GetDocumentationListResponse, error)
 }
 
-type DocumentationDOImpl struct {
+type documentationServiceImpl struct {
 	core             *service.Core
 	documentationDao dao.DocumentationDao
 }
 
-func NewDocumentationDO(core *service.Core, documentationDao dao.DocumentationDao) DocumentationService {
-	return &DocumentationDOImpl{
+func NewDocumentationService(core *service.Core, documentationDao dao.DocumentationDao) DocumentationService {
+	return &documentationServiceImpl{
 		core:             core,
 		documentationDao: documentationDao,
 	}
 }
 
-func (d DocumentationDOImpl) GetDocumentation(
+func (d documentationServiceImpl) GetDocumentation(
 	ctx context.Context, documentationID *primitive.ObjectID,
 ) (*common.GetDocumentationResponse, error) {
 	documentation, err := d.documentationDao.GetDocumentationByID(ctx, *documentationID)
@@ -46,7 +46,7 @@ func (d DocumentationDOImpl) GetDocumentation(
 	}, nil
 }
 
-func (d DocumentationDOImpl) GetDocumentationList(
+func (d documentationServiceImpl) GetDocumentationList(
 	ctx context.Context, page, pageSize *int64, updateBefore, updateAfter *time.Time,
 ) (*common.GetDocumentationListResponse, error) {
 	offset := (*page - 1) * *pageSize

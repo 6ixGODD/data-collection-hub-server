@@ -57,6 +57,17 @@ type (
 		Note              *string `json:"note" validate:""`
 	}
 
+	ExportInstructionDataRequest struct {
+		Desc            *bool   `query:"desc" validate:""`
+		UserID          *string `query:"user_id" validate:"mongodb"`
+		CreateStartTime *string `query:"create_start_time" validate:"datetime"`
+		CreateEndTime   *string `query:"create_end_time" validate:"datetime"`
+		UpdateStartTime *string `query:"update_start_time" validate:"datetime"`
+		UpdateEndTime   *string `query:"update_end_time" validate:"datetime"`
+		Theme           *string `query:"theme" validate:""`
+		Status          *string `query:"status" validate:""`
+	}
+
 	DeleteInstructionDataRequest struct {
 		InstructionDataID *string `query:"instruction_data_id" validate:"required"`
 	}

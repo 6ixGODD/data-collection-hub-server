@@ -14,7 +14,7 @@ import (
 
 type DataAuditService interface {
 	GetInstructionData(
-		ctx context.Context, instructionDataID *primitive.ObjectID,
+		ctx context.Context, instructionDataID primitive.ObjectID,
 	) (*admin.GetInstructionDataResponse, error)
 	GetInstructionDataList(
 		ctx context.Context, page, pageSize *int64, desc *bool, userID *primitive.ObjectID,
@@ -27,6 +27,16 @@ type DataAuditService interface {
 		ctx context.Context, instructionDataID, userID *primitive.ObjectID,
 		instruction, input, output, theme, source, note *string,
 	) error
+	ExportInstructionData(
+		ctx context.Context, desc *bool, userID *primitive.ObjectID,
+		createTimeStart, createTimeEnd, updateTimeStart, updateTimeEnd *time.Time,
+		theme, status *string,
+	) (*admin.InstructionDataList, error)
+	ExportInstructionDataAsAlpaca(
+		ctx context.Context, desc *bool, userID *primitive.ObjectID,
+		createTimeStart, createTimeEnd, updateTimeStart, updateTimeEnd *time.Time,
+		theme, status *string,
+	) (*admin.InstructionDataAlpacaList, error)
 	DeleteInstructionData(ctx context.Context, instructionDataID *primitive.ObjectID) error
 }
 
@@ -43,7 +53,7 @@ func NewDataAuditService(core *service.Core, instructionDataDao dao.InstructionD
 }
 
 func (d DataAuditServiceImpl) GetInstructionData(
-	ctx context.Context, instructionDataID *primitive.ObjectID,
+	ctx context.Context, instructionDataID primitive.ObjectID,
 ) (*admin.GetInstructionDataResponse, error) {
 	instructionData, err := d.instructionDataDao.GetInstructionDataByID(ctx, instructionDataID)
 	if err != nil {
@@ -188,6 +198,88 @@ func (d DataAuditServiceImpl) UpdateInstructionData(
 		return errors.DBError(errors.WriteError(err))
 	}
 	return nil
+}
+
+func (d DataAuditServiceImpl) ExportInstructionData(
+	ctx context.Context, desc *bool, userID *primitive.ObjectID,
+	createTimeStart, createTimeEnd, updateTimeStart, updateTimeEnd *time.Time,
+	theme, status *string,
+) (*admin.InstructionDataList, error) {
+	var instructionDataList []*admin.InstructionData
+	_instructionDataList, _, err := d.instructionDataDao.GetInstructionDataList(
+		ctx, 0, 0, *desc, userID, theme, status, createTimeStart, createTimeEnd, updateTimeStart, updateTimeEnd, nil,
+	)
+	if err != nil {
+		return nil, errors.ReadError(err)
+	}
+
+	for _, instructionData := range _instructionDataList {
+		instructionDataList = append(
+			instructionDataList, &admin.InstructionData{
+				InstructionDataID: instructionData.InstructionDataID.Hex(),
+				UserID:            instructionData.UserID.Hex(),
+				Username:          instructionData.Username,
+				Row: struct {
+					Instruction string `json:"instruction"`
+					Input       string `json:"input"`
+					Output      string `json:"output"`
+				}(struct {
+					Instruction string
+					Input       string
+					Output      string
+				}{
+					Instruction: instructionData.Row.Instruction,
+					Input:       instructionData.Row.Input,
+					Output:      instructionData.Row.Output,
+				}),
+				Theme:  instructionData.Theme,
+				Source: instructionData.Source,
+				Note:   instructionData.Note,
+				Status: struct {
+					Code    string `json:"code"`
+					Message string `json:"message"`
+				}(struct {
+					Code    string
+					Message string
+				}{
+					Code:    instructionData.Status.Code,
+					Message: instructionData.Status.Message,
+				}),
+				CreatedAt: instructionData.CreatedAt.Format(time.RFC3339),
+				UpdatedAt: instructionData.UpdatedAt.Format(time.RFC3339),
+			},
+		)
+	}
+	return &admin.InstructionDataList{
+		InstructionDataList: instructionDataList,
+	}, nil
+}
+
+func (d DataAuditServiceImpl) ExportInstructionDataAsAlpaca(
+	ctx context.Context, desc *bool, userID *primitive.ObjectID,
+	createTimeStart, createTimeEnd, updateTimeStart, updateTimeEnd *time.Time,
+	theme, status *string,
+) (*admin.InstructionDataAlpacaList, error) {
+	var instructionDataList []*admin.InstructionDataAlpaca
+	_instructionDataList, _, err := d.instructionDataDao.GetInstructionDataList(
+		ctx, 0, 0, *desc, userID, theme, status, createTimeStart, createTimeEnd, updateTimeStart, updateTimeEnd, nil,
+	)
+	if err != nil {
+		return nil, errors.ReadError(err)
+	}
+
+	for _, instructionData := range _instructionDataList {
+		instructionDataList = append(
+			instructionDataList, &admin.InstructionDataAlpaca{
+				Institution: instructionData.Row.Instruction,
+				Input:       instructionData.Row.Input,
+				Output:      instructionData.Row.Output,
+			},
+		)
+	}
+	return &admin.InstructionDataAlpacaList{
+		InstructionDataList: instructionDataList,
+	}, nil
 }
 
 func (d DataAuditServiceImpl) DeleteInstructionData(ctx context.Context, instructionDataID *primitive.ObjectID) error {

@@ -1,12 +1,15 @@
 package mods
 
 import (
+	"fmt"
+
 	"data-collection-hub-server/internal/pkg/domain/vo"
 	"data-collection-hub-server/internal/pkg/domain/vo/common"
 	commonservice "data-collection-hub-server/internal/pkg/service/common/mods"
 	sysservice "data-collection-hub-server/internal/pkg/service/sys/mods"
 	"data-collection-hub-server/pkg/errors"
 	"github.com/gofiber/fiber/v2"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type AuthApi struct {
@@ -28,10 +31,10 @@ func (api *AuthApi) Login(c *fiber.Ctx) error {
 		return err
 	}
 
-	username := resp.Meta.Username
+	userID, _ := primitive.ObjectIDFromHex(resp.Meta.UserID)
 	ipAddr := c.IP()
 	userAgent := c.Get(fiber.HeaderUserAgent)
-	_ = api.LogsService.CacheLoginLog(ctx, &username, &ipAddr, &userAgent)
+	_ = api.LogsService.CacheLoginLog(ctx, &userID, &ipAddr, &userAgent)
 	return c.JSON(
 		vo.Response{
 			Code:    errors.CodeSuccess,
@@ -42,7 +45,11 @@ func (api *AuthApi) Login(c *fiber.Ctx) error {
 }
 
 func (api *AuthApi) Logout(c *fiber.Ctx) error {
-	err := api.AuthService.Logout(c.UserContext())
+	token := c.Get(fiber.HeaderAuthorization)
+	if token == "" {
+		return errors.InvalidRequest(errors.TokenMissed(fmt.Errorf("token is missed")))
+	}
+	err := api.AuthService.Logout(c.UserContext(), &token)
 	if err != nil {
 		return err
 	}

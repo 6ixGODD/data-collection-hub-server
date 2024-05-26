@@ -18,19 +18,19 @@ type NoticeService interface {
 	) (*common.GetNoticeListResponse, error)
 }
 
-type NoticeDOImpl struct {
+type noticeServiceImpl struct {
 	core      *service.Core
 	noticeDao dao.NoticeDao
 }
 
-func NewNoticeDO(core *service.Core, noticeDao dao.NoticeDao) NoticeService {
-	return &NoticeDOImpl{
+func NewNoticeService(core *service.Core, noticeDao dao.NoticeDao) NoticeService {
+	return &noticeServiceImpl{
 		core:      core,
 		noticeDao: noticeDao,
 	}
 }
 
-func (n NoticeDOImpl) GetNotice(ctx context.Context, noticeID *primitive.ObjectID) (
+func (n noticeServiceImpl) GetNotice(ctx context.Context, noticeID *primitive.ObjectID) (
 	*common.GetNoticeResponse, error,
 ) {
 	notice, err := n.noticeDao.GetNoticeByID(ctx, *noticeID)
@@ -47,7 +47,7 @@ func (n NoticeDOImpl) GetNotice(ctx context.Context, noticeID *primitive.ObjectI
 	}, nil
 }
 
-func (n NoticeDOImpl) GetNoticeList(
+func (n noticeServiceImpl) GetNoticeList(
 	ctx context.Context, page, pageSize *int64, noticeType *string, updateBefore, updateAfter *time.Time,
 ) (*common.GetNoticeListResponse, error) {
 	offset := (*page - 1) * *pageSize

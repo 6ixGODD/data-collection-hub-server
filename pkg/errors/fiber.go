@@ -50,6 +50,12 @@ func MissingParams(err error) *AppError {
 	return NewAppErrorWithCause(CodeMissingParams, fiber.StatusBadRequest, MessageMissingParams, err)
 }
 
+func IdempotencyCheckFailed(err error) *AppError {
+	return NewAppErrorWithCause(
+		CodeIdempotencyCheckFailed, fiber.StatusConflict, MessageIdempotencyCheckFailed, err,
+	)
+}
+
 func ConnError(err error) *AppError {
 	return NewAppErrorWithCause(CodeConnError, fiber.StatusInternalServerError, MessageConnError, err)
 }

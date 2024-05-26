@@ -59,7 +59,7 @@ func InitializeApp(ctx context.Context) (*app.App, error) {
 	if err != nil {
 		return nil, err
 	}
-	daoCore, err := dao.NewCore(ctx, mongo, zap)
+	daoCore, err := dao.NewCore(ctx, mongo, zap, configConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -128,20 +128,20 @@ func InitializeApp(ctx context.Context) (*app.App, error) {
 	if err != nil {
 		return nil, err
 	}
-	authService := mods5.NewAuthDO(core, userDao, loginLogDao, jwt)
+	authService := mods5.NewAuthService(core, userDao, cache, jwt)
 	authApi := &mods6.AuthApi{
 		AuthService: authService,
 		LogsService: logsService,
 	}
-	profileService := mods5.NewProfileDO(core, userDao)
+	profileService := mods5.NewProfileService(core, userDao)
 	profileApi := &mods6.ProfileApi{
 		ProfileService: profileService,
 	}
-	modsDocumentationService := mods5.NewDocumentationDO(core, documentationDao)
+	modsDocumentationService := mods5.NewDocumentationService(core, documentationDao)
 	modsDocumentationApi := &mods6.DocumentationApi{
 		DocumentationService: modsDocumentationService,
 	}
-	modsNoticeService := mods5.NewNoticeDO(core, noticeDao)
+	modsNoticeService := mods5.NewNoticeService(core, noticeDao)
 	modsNoticeApi := &mods6.NoticeApi{
 		NoticeService: modsNoticeService,
 	}
@@ -185,6 +185,7 @@ func InitializeApp(ctx context.Context) (*app.App, error) {
 	}
 	authMiddleware := &mods10.AuthMiddleware{
 		Jwt:    jwt,
+		Cache:  cache,
 		Config: configConfig,
 	}
 	loggingMiddleware := &mods10.LoggingMiddleware{
@@ -198,12 +199,18 @@ func InitializeApp(ctx context.Context) (*app.App, error) {
 	contextMiddleware := &mods10.ContextMiddleware{
 		Zap: zap,
 	}
+	idempotencyService := mods5.NewIdempotencyService(core, cache)
+	idempotencyMiddleware := &mods10.IdempotencyMiddleware{
+		IdempotencyService: idempotencyService,
+		Config:             configConfig,
+	}
 	middlewareMiddleware := &middleware.Middleware{
-		AuthMiddleware:       authMiddleware,
-		LoggingMiddleware:    loggingMiddleware,
-		PrometheusMiddleware: prometheusMiddleware,
-		ContextMiddleware:    contextMiddleware,
-		Config:               configConfig,
+		AuthMiddleware:        authMiddleware,
+		LoggingMiddleware:     loggingMiddleware,
+		PrometheusMiddleware:  prometheusMiddleware,
+		ContextMiddleware:     contextMiddleware,
+		IdempotencyMiddleware: idempotencyMiddleware,
+		Config:                configConfig,
 	}
 	tasksTasks, err := tasks.New(ctx, configConfig, loginLogDao, operationLogDao, jwt, zap)
 	if err != nil {
@@ -221,13 +228,13 @@ func InitializeApp(ctx context.Context) (*app.App, error) {
 var (
 	RouterProviderSet = wire.NewSet(wire.Struct(new(mods9.AdminRouter), "*"), wire.Struct(new(mods9.UserRouter), "*"), wire.Struct(new(mods9.CommonRouter), "*"), wire.Struct(new(router.Router), "*"), wire.Struct(new(router2.Router), "*"))
 
-	ApiProviderSet = wire.NewSet(wire.Struct(new(mods6.AuthApi), "*"), wire.Struct(new(mods6.ProfileApi), "*"), wire.Struct(new(mods6.DocumentationApi), "*"), wire.Struct(new(mods6.NoticeApi), "*"), wire.Struct(new(mods8.DatasetApi), "*"), wire.Struct(new(mods8.StatisticApi), "*"), wire.Struct(new(mods4.UserApi), "*"), wire.Struct(new(mods4.DocumentationApi), "*"), wire.Struct(new(mods4.NoticeApi), "*"), wire.Struct(new(mods4.StatisticApi), "*"), wire.Struct(new(mods4.LogsApi), "*"), wire.Struct(new(mods4.DataAuditApi), "*"), wire.Struct(new(common.Common), "*"), wire.Struct(new(user.User), "*"), wire.Struct(new(admin.Admin), "*"), wire.Struct(new(api.Api), "*"))
+	ApiProviderSet = wire.NewSet(wire.Struct(new(mods6.AuthApi), "*"), wire.Struct(new(mods6.ProfileApi), "*"), wire.Struct(new(mods6.DocumentationApi), "*"), wire.Struct(new(mods6.NoticeApi), "*"), wire.Struct(new(mods6.IdempotencyApi), "*"), wire.Struct(new(mods8.DatasetApi), "*"), wire.Struct(new(mods8.StatisticApi), "*"), wire.Struct(new(mods4.UserApi), "*"), wire.Struct(new(mods4.DocumentationApi), "*"), wire.Struct(new(mods4.NoticeApi), "*"), wire.Struct(new(mods4.StatisticApi), "*"), wire.Struct(new(mods4.LogsApi), "*"), wire.Struct(new(mods4.DataAuditApi), "*"), wire.Struct(new(common.Common), "*"), wire.Struct(new(user.User), "*"), wire.Struct(new(admin.Admin), "*"), wire.Struct(new(api.Api), "*"))
 
-	ServiceProviderSet = wire.NewSet(wire.Struct(new(service.Core), "*"), wire.Struct(new(admin2.Admin), "*"), wire.Struct(new(user2.User), "*"), wire.Struct(new(common2.Common), "*"), wire.Struct(new(sys.Sys), "*"), mods2.NewDataAuditService, mods2.NewStatisticService, mods2.NewUserService, mods2.NewNoticeService, mods2.NewDocumentationService, mods2.NewLogsService, mods5.NewAuthDO, mods5.NewProfileDO, mods5.NewDocumentationDO, mods5.NewNoticeDO, mods7.NewDatasetService, mods7.NewStatisticService, mods3.NewLogsService)
+	ServiceProviderSet = wire.NewSet(wire.Struct(new(service.Core), "*"), wire.Struct(new(admin2.Admin), "*"), wire.Struct(new(user2.User), "*"), wire.Struct(new(common2.Common), "*"), wire.Struct(new(sys.Sys), "*"), mods2.NewDataAuditService, mods2.NewStatisticService, mods2.NewUserService, mods2.NewNoticeService, mods2.NewDocumentationService, mods2.NewLogsService, mods5.NewAuthService, mods5.NewProfileService, mods5.NewDocumentationService, mods5.NewNoticeService, mods5.NewIdempotencyService, mods7.NewDatasetService, mods7.NewStatisticService, mods3.NewLogsService)
 
 	DaoProviderSet = wire.NewSet(dao.NewCore, dao.NewCache, mods.NewUserDao, mods.NewInstructionDataDao, mods.NewNoticeDao, mods.NewLoginLogDao, mods.NewOperationLogDao, mods.NewDocumentationDao)
 
-	MiddlewareProviderSet = wire.NewSet(wire.Struct(new(mods10.LoggingMiddleware), "*"), wire.Struct(new(mods10.PrometheusMiddleware), "*"), wire.Struct(new(mods10.AuthMiddleware), "*"), wire.Struct(new(mods10.ContextMiddleware), "*"), wire.Struct(new(middleware.Middleware), "*"))
+	MiddlewareProviderSet = wire.NewSet(wire.Struct(new(mods10.LoggingMiddleware), "*"), wire.Struct(new(mods10.PrometheusMiddleware), "*"), wire.Struct(new(mods10.AuthMiddleware), "*"), wire.Struct(new(mods10.ContextMiddleware), "*"), wire.Struct(new(mods10.IdempotencyMiddleware), "*"), wire.Struct(new(middleware.Middleware), "*"))
 
 	SchedulerProviderSet = wire.NewSet(tasks.New)
 )

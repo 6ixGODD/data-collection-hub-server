@@ -12,7 +12,7 @@ type Router struct {
 	RouterV1 *router.Router
 }
 
-func (r *Router) RegisterRouter(app *fiber.App, rbac *casbin.Middleware) {
+func (r *Router) RegisterRouter(app *fiber.App, rbac *casbin.Middleware, idempotencyMiddleware fiber.Handler) {
 	group := app.Group(prefix)
-	r.RouterV1.RegisterRouter(&group, rbac)
+	r.RouterV1.RegisterRouter(&group, rbac, idempotencyMiddleware)
 }

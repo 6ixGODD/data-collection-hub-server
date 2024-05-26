@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"data-collection-hub-server/internal/pkg/config"
+	"data-collection-hub-server/internal/pkg/dao"
 	"data-collection-hub-server/pkg/errors"
 	"data-collection-hub-server/pkg/jwt"
 	"github.com/gofiber/fiber/v2"
@@ -11,6 +12,7 @@ import (
 
 type AuthMiddleware struct {
 	Jwt    *jwt.Jwt
+	Cache  *dao.Cache
 	Config *config.Config
 }
 
@@ -28,6 +30,9 @@ func (a *AuthMiddleware) authMiddleware() fiber.Handler {
 		token := c.Get(fiber.HeaderAuthorization)
 		if token == "" {
 			return errors.TokenMissed(fmt.Errorf("token missed"))
+		}
+		if ok, err := a.Cache.Get(c.Context(), token); err == nil && *ok == config.CacheTrue {
+			return errors.InvalidToken(fmt.Errorf("token invalid"))
 		}
 		sub, err := a.Jwt.VerifyToken(token)
 		if err != nil {

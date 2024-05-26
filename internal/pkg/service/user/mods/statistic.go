@@ -16,19 +16,19 @@ type StatisticService interface {
 	GetDataStatistic(ctx context.Context, startDate, endDate *time.Time) (*user.GetDataStatisticResponse, error)
 }
 
-type statisticDOImpl struct {
+type statisticServiceImpl struct {
 	core               *service.Core
 	instructionDataDao dao.InstructionDataDao
 }
 
 func NewStatisticService(core *service.Core, instructionDataDao dao.InstructionDataDao) StatisticService {
-	return &statisticDOImpl{
+	return &statisticServiceImpl{
 		core:               core,
 		instructionDataDao: instructionDataDao,
 	}
 }
 
-func (s statisticDOImpl) GetDataStatistic(
+func (s statisticServiceImpl) GetDataStatistic(
 	ctx context.Context, startDate, endDate *time.Time,
 ) (*user.GetDataStatisticResponse, error) {
 	pendingStatus := config.InstructionDataStatusPending

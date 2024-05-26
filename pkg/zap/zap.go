@@ -63,7 +63,7 @@ func (z *Zap) Init() error {
 		return err
 	}
 
-	z.config.zapOptions = append(z.config.zapOptions, zap.WithCaller(true), zap.AddStacktrace(zap.ErrorLevel))
+	z.config.zapOptions = append(z.config.zapOptions)
 	z.Logger = logger.WithOptions(z.config.zapOptions...)
 
 	return nil
