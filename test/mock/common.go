@@ -3,7 +3,6 @@ package mock
 import (
 	"fmt"
 	"math/rand"
-	"time"
 )
 
 func randomString(length int) string {
@@ -17,10 +16,6 @@ func randomString(length int) string {
 
 func randomEnum(enum []string) string {
 	return enum[rand.Intn(len(enum))]
-}
-
-func randomTimeBeforeNow() time.Time {
-	return time.Now().Add(-time.Duration(rand.Intn(1000)) * time.Hour)
 }
 
 func randomIp() string {

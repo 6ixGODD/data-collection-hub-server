@@ -4,19 +4,26 @@ import (
 	"testing"
 	"time"
 
+	"data-collection-hub-server/test/wire"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestInsertDocumentation(t *testing.T) {
 	// t.Skip("Skip TestInsertDocumentation")
-	title := "Title"
-	content := "Content"
+	var (
+		injector         = wire.GetInjector()
+		documentationDao = injector.DocumentationDao
+		ctx              = injector.Ctx
+		title            = "Title"
+		content          = "Content"
+		err              error
+	)
 
-	documentID, err = documentationDao.InsertDocumentation(documentationDaoCtx, title, content)
+	documentID, err = documentationDao.InsertDocumentation(ctx, title, content)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, documentID)
 
-	documentation, err := documentationDao.GetDocumentationByID(documentationDaoCtx, documentID)
+	documentation, err := documentationDao.GetDocumentationByID(ctx, documentID)
 	assert.NoError(t, err)
 	assert.NotNil(t, documentation)
 	assert.Equal(t, title, documentation.Title)
@@ -25,7 +32,13 @@ func TestInsertDocumentation(t *testing.T) {
 
 func TestGetDocumentation(t *testing.T) {
 	// t.Skip("Skip TestGetDocumentation")
-	documentation, err := documentationDao.GetDocumentationByID(documentationDaoCtx, documentID)
+	var (
+		injector         = wire.GetInjector()
+		documentationDao = injector.DocumentationDao
+		ctx              = injector.Ctx
+		err              error
+	)
+	documentation, err := documentationDao.GetDocumentationByID(ctx, documentID)
 	assert.NoError(t, err)
 	assert.NotNil(t, documentation)
 	assert.NotEmpty(t, documentation.DocumentID)
@@ -38,13 +51,17 @@ func TestGetDocumentation(t *testing.T) {
 func TestGetDocumentationList(t *testing.T) {
 	// t.Skip("Skip TestGetDocumentationList")
 	var (
-		createStartTime = time.Now().Add(-time.Hour)
-		createEndTime   = time.Now().Add(time.Hour)
-		updateStartTime = time.Now().Add(-time.Hour)
-		updateEndTime   = time.Now().Add(time.Hour)
+		injector         = wire.GetInjector()
+		documentationDao = injector.DocumentationDao
+		ctx              = injector.Ctx
+		createStartTime  = time.Now().Add(-time.Hour)
+		createEndTime    = time.Now().Add(time.Hour)
+		updateStartTime  = time.Now().Add(-time.Hour)
+		updateEndTime    = time.Now().Add(time.Hour)
+		err              error
 	)
 	documentationList, count, err := documentationDao.GetDocumentationList(
-		documentationDaoCtx, 0, 10, false, nil, nil, nil, nil,
+		ctx, 0, 10, false, nil, nil, nil, nil,
 	)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, count)
@@ -54,7 +71,7 @@ func TestGetDocumentationList(t *testing.T) {
 	t.Logf("=====================================")
 
 	documentationList, count, err = documentationDao.GetDocumentationList(
-		documentationDaoCtx, 0, 10, false, &createStartTime, &createEndTime, nil, nil,
+		ctx, 0, 10, false, &createStartTime, &createEndTime, nil, nil,
 	)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, count)
@@ -65,7 +82,7 @@ func TestGetDocumentationList(t *testing.T) {
 	t.Logf("=====================================")
 
 	documentationList, count, err = documentationDao.GetDocumentationList(
-		documentationDaoCtx, 0, 10, false, nil, nil, &updateStartTime, &updateEndTime,
+		ctx, 0, 10, false, nil, nil, &updateStartTime, &updateEndTime,
 	)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, count)
@@ -76,7 +93,7 @@ func TestGetDocumentationList(t *testing.T) {
 	t.Logf("=====================================")
 
 	documentationList, count, err = documentationDao.GetDocumentationList(
-		documentationDaoCtx, 0, 10, false, &createStartTime, &createEndTime, &updateStartTime, &updateEndTime,
+		ctx, 0, 10, false, &createStartTime, &createEndTime, &updateStartTime, &updateEndTime,
 	)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, count)
@@ -91,13 +108,19 @@ func TestGetDocumentationList(t *testing.T) {
 
 func TestUpdateDocumentation(t *testing.T) {
 	// t.Skip("Skip TestUpdateDocumentation")
-	title := "New Title"
-	content := "New Content"
+	var (
+		injector         = wire.GetInjector()
+		documentationDao = injector.DocumentationDao
+		ctx              = injector.Ctx
+		title            = "New Title"
+		content          = "New Content"
+		err              error
+	)
 
-	err := documentationDao.UpdateDocumentation(documentationDaoCtx, documentID, &title, &content)
+	err = documentationDao.UpdateDocumentation(ctx, documentID, &title, &content)
 	assert.NoError(t, err)
 
-	documentation, err := documentationDao.GetDocumentationByID(documentationDaoCtx, documentID)
+	documentation, err := documentationDao.GetDocumentationByID(ctx, documentID)
 	assert.NoError(t, err)
 	assert.NotNil(t, documentation)
 	assert.Equal(t, title, documentation.Title)
@@ -106,10 +129,16 @@ func TestUpdateDocumentation(t *testing.T) {
 
 func TestDeleteDocumentation(t *testing.T) {
 	// t.Skip("Skip TestDeleteDocumentation")
-	err := documentationDao.DeleteDocumentation(documentationDaoCtx, documentID)
+	var (
+		injector         = wire.GetInjector()
+		documentationDao = injector.DocumentationDao
+		ctx              = injector.Ctx
+		err              error
+	)
+	err = documentationDao.DeleteDocumentation(ctx, documentID)
 	assert.NoError(t, err)
 
-	documentation, err := documentationDao.GetDocumentationByID(documentationDaoCtx, documentID)
+	documentation, err := documentationDao.GetDocumentationByID(ctx, documentID)
 	assert.Error(t, err)
 	assert.Nil(t, documentation)
 }
@@ -117,14 +146,18 @@ func TestDeleteDocumentation(t *testing.T) {
 func TestDeleteDocumentationList(t *testing.T) {
 	// t.Skip("Skip TestDeleteDocumentationList")
 	var (
-		createStartTime = time.Now().Add(-time.Hour)
-		createEndTime   = time.Now().Add(time.Hour)
-		updateStartTime = time.Now().Add(-time.Hour)
-		updateEndTime   = time.Now().Add(time.Hour)
+		injector         = wire.GetInjector()
+		documentationDao = injector.DocumentationDao
+		ctx              = injector.Ctx
+		createStartTime  = time.Now().Add(-time.Hour)
+		createEndTime    = time.Now().Add(time.Hour)
+		updateStartTime  = time.Now().Add(-time.Hour)
+		updateEndTime    = time.Now().Add(time.Hour)
+		err              error
 	)
 
 	documentationList, count, err := documentationDao.GetDocumentationList(
-		documentationDaoCtx, 0, 10, false, &createStartTime, &createEndTime, &updateStartTime, &updateEndTime,
+		ctx, 0, 10, false, &createStartTime, &createEndTime, &updateStartTime, &updateEndTime,
 	)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, count)
@@ -134,7 +167,7 @@ func TestDeleteDocumentationList(t *testing.T) {
 	t.Logf("=====================================")
 
 	count, err = documentationDao.DeleteDocumentationList(
-		documentationDaoCtx, &createStartTime, &createEndTime, &updateStartTime, &updateEndTime,
+		ctx, &createStartTime, &createEndTime, &updateStartTime, &updateEndTime,
 	)
 	assert.NoError(t, err)
 	assert.NotNil(t, count)
@@ -142,7 +175,7 @@ func TestDeleteDocumentationList(t *testing.T) {
 	t.Logf("=====================================")
 
 	documentationList, count, err = documentationDao.GetDocumentationList(
-		documentationDaoCtx, 0, 10, false, &createStartTime, &createEndTime, &updateStartTime, &updateEndTime,
+		ctx, 0, 10, false, &createStartTime, &createEndTime, &updateStartTime, &updateEndTime,
 	)
 	assert.NoError(t, err)
 	assert.Empty(t, documentationList)

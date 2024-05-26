@@ -127,7 +127,7 @@ func (a authServiceImpl) RefreshToken(ctx context.Context, refreshToken *string)
 
 func (a authServiceImpl) Logout(ctx context.Context, accessToken *string) error {
 	if err := a.cache.Set(
-		ctx, fmt.Sprintf("%s:%s", config.TokenBlacklistCachePrefix, *accessToken), config.CacheTrue,
+		ctx, fmt.Sprintf("%s:%s", config.TokenBlacklistCachePrefix, crypt.MD5(*accessToken)), config.CacheTrue,
 		&a.core.Config.CacheConfig.TokenBlacklistTTL,
 	); err != nil {
 		return errors.CacheError(err)

@@ -4,31 +4,37 @@ import (
 	"testing"
 	"time"
 
+	"data-collection-hub-server/test/wire"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestInsertInstructionData(t *testing.T) {
 	// t.Skip("Skip TestInsertInstructionData")
 	var (
-		userID      = mockUser.RandomUserID()
-		instruction = "Instruction"
-		input       = "Input"
-		output      = "Output"
-		theme       = "Theme"
-		source      = "Source"
-		note        = "Note"
-		statusCode  = "PENDING"
-		statusMsg   = "Pending for review"
+		injector           = wire.GetInjector()
+		instructionDataDao = injector.InstructionDataDao
+		ctx                = injector.Ctx
+		userID             = injector.UserDaoMock.RandomUserID()
+		instruction        = "Instruction"
+		input              = "Input"
+		output             = "Output"
+		theme              = "Theme"
+		source             = "Source"
+		note               = "Note"
+		statusCode         = "PENDING"
+		statusMsg          = "Pending for review"
+		err                error
 	)
 
 	instructionDataID, err = instructionDataDao.InsertInstructionData(
-		instructionDataDaoCtx, userID,
-		mockUser.UserMap[userID].Username, instruction, input, output, theme, source, note, statusCode, statusMsg,
+		ctx, userID,
+		wire.GetInjector().UserDaoMock.UserMap[userID].Username, instruction, input, output, theme, source, note,
+		statusCode, statusMsg,
 	)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, instructionDataID)
 
-	instructionData, err := instructionDataDao.GetInstructionDataByID(instructionDataDaoCtx, instructionDataID)
+	instructionData, err := instructionDataDao.GetInstructionDataByID(ctx, instructionDataID)
 	assert.NoError(t, err)
 	assert.NotNil(t, instructionData)
 	assert.Equal(t, instruction, instructionData.Row.Instruction)
@@ -44,7 +50,13 @@ func TestInsertInstructionData(t *testing.T) {
 
 func TestGetInstructionData(t *testing.T) {
 	// t.Skip("Skip TestGetInstructionData")
-	instructionData, err := instructionDataDao.GetInstructionDataByID(instructionDataDaoCtx, instructionDataID)
+	var (
+		injector           = wire.GetInjector()
+		instructionDataDao = injector.InstructionDataDao
+		ctx                = injector.Ctx
+		err                error
+	)
+	instructionData, err := instructionDataDao.GetInstructionDataByID(ctx, instructionDataID)
 	assert.NoError(t, err)
 	assert.NotNil(t, instructionData)
 	assert.NotEmpty(t, instructionData.InstructionDataID)
@@ -66,17 +78,21 @@ func TestGetInstructionData(t *testing.T) {
 func TestGetInstructionDataList(t *testing.T) {
 	// t.Skip("Skip TestGetInstructionDataList")
 	var (
-		userID          = mockUser.RandomUserID()
-		theme           = "THEME1"
-		statusCode      = "PENDING"
-		createTimeStart = time.Now().AddDate(0, 0, -1)
-		createTimeEnd   = time.Now().AddDate(0, 0, 1)
-		updateTimeStart = time.Now().AddDate(0, 0, -1)
-		updateTimeEnd   = time.Now().AddDate(0, 0, 1)
-		query           = "a"
+		injector           = wire.GetInjector()
+		instructionDataDao = injector.InstructionDataDao
+		ctx                = injector.Ctx
+		userID             = injector.UserDaoMock.RandomUserID()
+		theme              = "THEME1"
+		statusCode         = "PENDING"
+		createTimeStart    = time.Now().AddDate(0, 0, -1)
+		createTimeEnd      = time.Now().AddDate(0, 0, 1)
+		updateTimeStart    = time.Now().AddDate(0, 0, -1)
+		updateTimeEnd      = time.Now().AddDate(0, 0, 1)
+		query              = "a"
+		err                error
 	)
 	instructionDataList, count, err := instructionDataDao.GetInstructionDataList(
-		instructionDataDaoCtx, 0, 10, false, nil, nil, nil,
+		ctx, 0, 10, false, nil, nil, nil,
 		nil, nil, nil, nil, nil,
 	)
 	assert.NoError(t, err)
@@ -89,7 +105,7 @@ func TestGetInstructionDataList(t *testing.T) {
 	t.Logf("=====================================")
 
 	instructionDataList, count, err = instructionDataDao.GetInstructionDataList(
-		instructionDataDaoCtx, 0, 10, false, &userID, nil, nil,
+		ctx, 0, 10, false, &userID, nil, nil,
 		nil, nil, nil, nil, nil,
 	)
 	assert.NoError(t, err)
@@ -100,7 +116,7 @@ func TestGetInstructionDataList(t *testing.T) {
 	t.Logf("=====================================")
 
 	instructionDataList, count, err = instructionDataDao.GetInstructionDataList(
-		instructionDataDaoCtx, 0, 10, false, nil, &theme, nil,
+		ctx, 0, 10, false, nil, &theme, nil,
 		nil, nil, nil, nil, nil,
 	)
 	assert.NoError(t, err)
@@ -111,7 +127,7 @@ func TestGetInstructionDataList(t *testing.T) {
 	t.Logf("=====================================")
 
 	instructionDataList, count, err = instructionDataDao.GetInstructionDataList(
-		instructionDataDaoCtx, 0, 10, false, nil, nil, &statusCode,
+		ctx, 0, 10, false, nil, nil, &statusCode,
 		nil, nil, nil, nil, nil,
 	)
 	assert.NoError(t, err)
@@ -122,7 +138,7 @@ func TestGetInstructionDataList(t *testing.T) {
 	t.Logf("=====================================")
 
 	instructionDataList, count, err = instructionDataDao.GetInstructionDataList(
-		instructionDataDaoCtx, 0, 10, false, nil, nil, nil,
+		ctx, 0, 10, false, nil, nil, nil,
 		&createTimeStart, &createTimeEnd, nil, nil, nil,
 	)
 	assert.NoError(t, err)
@@ -134,7 +150,7 @@ func TestGetInstructionDataList(t *testing.T) {
 	t.Logf("=====================================")
 
 	instructionDataList, count, err = instructionDataDao.GetInstructionDataList(
-		instructionDataDaoCtx, 0, 10, false, nil, nil, nil,
+		ctx, 0, 10, false, nil, nil, nil,
 		nil, nil, &updateTimeStart, &updateTimeEnd, nil,
 	)
 	assert.NoError(t, err)
@@ -146,7 +162,7 @@ func TestGetInstructionDataList(t *testing.T) {
 	t.Logf("=====================================")
 
 	instructionDataList, count, err = instructionDataDao.GetInstructionDataList(
-		instructionDataDaoCtx, 0, 10, false, nil, nil, nil,
+		ctx, 0, 10, false, nil, nil, nil,
 		nil, nil, nil, nil, &query,
 	)
 	assert.NoError(t, err)
@@ -157,7 +173,7 @@ func TestGetInstructionDataList(t *testing.T) {
 	t.Logf("=====================================")
 
 	instructionDataList, count, err = instructionDataDao.GetInstructionDataList(
-		instructionDataDaoCtx, 0, 10, false, &userID, &theme, &statusCode,
+		ctx, 0, 10, false, &userID, &theme, &statusCode,
 		&createTimeStart, &createTimeEnd, &updateTimeStart, &updateTimeEnd, &query,
 	)
 	assert.NoError(t, err)
@@ -178,24 +194,28 @@ func TestGetInstructionDataList(t *testing.T) {
 func TestUpdateInstructionData(t *testing.T) {
 	// t.Skip("Skip TestUpdateInstructionData")
 	var (
-		userID      = mockUser.RandomUserID()
-		instruction = "InstructionUpdated"
-		input       = "InputUpdated"
-		output      = "OutputUpdated"
-		theme       = "THEME2"
-		source      = "SourceUpdated"
-		note        = "NoteUpdated"
-		statusCode  = "APPROVED"
-		statusMsg   = "Approved"
+		injector           = wire.GetInjector()
+		instructionDataDao = injector.InstructionDataDao
+		ctx                = injector.Ctx
+		userID             = injector.UserDaoMock.RandomUserID()
+		instruction        = "InstructionUpdated"
+		input              = "InputUpdated"
+		output             = "OutputUpdated"
+		theme              = "THEME2"
+		source             = "SourceUpdated"
+		note               = "NoteUpdated"
+		statusCode         = "APPROVED"
+		statusMsg          = "Approved"
+		err                error
 	)
 
 	err = instructionDataDao.UpdateInstructionData(
-		instructionDataDaoCtx, instructionDataID, &userID, &instruction, &input, &output, &theme, &source, &note,
+		ctx, instructionDataID, &userID, &instruction, &input, &output, &theme, &source, &note,
 		&statusCode, &statusMsg,
 	)
 	assert.NoError(t, err)
 
-	instructionData, err := instructionDataDao.GetInstructionDataByID(instructionDataDaoCtx, instructionDataID)
+	instructionData, err := instructionDataDao.GetInstructionDataByID(ctx, instructionDataID)
 	assert.NoError(t, err)
 	assert.NotNil(t, instructionData)
 	assert.Equal(t, instruction, instructionData.Row.Instruction)
@@ -210,17 +230,23 @@ func TestUpdateInstructionData(t *testing.T) {
 
 func TestDeleteInstructionData(t *testing.T) {
 	// t.Skip("Skip TestDeleteInstructionData")
-	err := instructionDataDao.SoftDeleteInstructionData(instructionDataDaoCtx, instructionDataID)
+	var (
+		injector           = wire.GetInjector()
+		instructionDataDao = injector.InstructionDataDao
+		ctx                = injector.Ctx
+		err                error
+	)
+	err = instructionDataDao.SoftDeleteInstructionData(ctx, instructionDataID)
 	assert.NoError(t, err)
 
-	instructionData, err := instructionDataDao.GetInstructionDataByID(instructionDataDaoCtx, instructionDataID)
+	instructionData, err := instructionDataDao.GetInstructionDataByID(ctx, instructionDataID)
 	assert.Error(t, err)
 	assert.Nil(t, instructionData)
 
-	err = instructionDataDao.DeleteInstructionData(instructionDataDaoCtx, instructionDataID)
+	err = instructionDataDao.DeleteInstructionData(ctx, instructionDataID)
 	assert.NoError(t, err)
 
-	instructionData, err = instructionDataDao.GetInstructionDataByID(instructionDataDaoCtx, instructionDataID)
+	instructionData, err = instructionDataDao.GetInstructionDataByID(ctx, instructionDataID)
 	assert.Error(t, err)
 	assert.Nil(t, instructionData)
 }
@@ -228,12 +254,16 @@ func TestDeleteInstructionData(t *testing.T) {
 func TestDeleteInstructionDataList(t *testing.T) {
 	// t.Skip("Skip TestDeleteInstructionDataList")
 	var (
-		theme      = "THEME1"
-		statusCode = "PENDING"
+		injector           = wire.GetInjector()
+		instructionDataDao = injector.InstructionDataDao
+		ctx                = injector.Ctx
+		theme              = "THEME1"
+		statusCode         = "PENDING"
+		err                error
 	)
 
 	count, err := instructionDataDao.SoftDeleteInstructionDataList(
-		instructionDataDaoCtx, nil, &theme, nil, nil, nil, nil, nil,
+		ctx, nil, &theme, nil, nil, nil, nil, nil,
 	)
 	assert.NoError(t, err)
 	assert.NotNil(t, count)
@@ -243,13 +273,13 @@ func TestDeleteInstructionDataList(t *testing.T) {
 	t.Logf("=====================================")
 
 	instructionDataList, count, err := instructionDataDao.GetInstructionDataList(
-		instructionDataDaoCtx, 0, 10, false, nil, &theme, nil,
+		ctx, 0, 10, false, nil, &theme, nil,
 		nil, nil, nil, nil, nil,
 	)
 	assert.Empty(t, instructionDataList)
 
 	count, err = instructionDataDao.SoftDeleteInstructionDataList(
-		instructionDataDaoCtx, nil, nil, &statusCode, nil, nil, nil, nil,
+		ctx, nil, nil, &statusCode, nil, nil, nil, nil,
 	)
 	assert.NoError(t, err)
 	assert.NotNil(t, count)
@@ -258,7 +288,7 @@ func TestDeleteInstructionDataList(t *testing.T) {
 	t.Logf("=====================================")
 
 	instructionDataList, count, err = instructionDataDao.GetInstructionDataList(
-		instructionDataDaoCtx, 0, 10, false, nil, nil, &statusCode,
+		ctx, 0, 10, false, nil, nil, &statusCode,
 		nil, nil, nil, nil, nil,
 	)
 	assert.Empty(t, instructionDataList)

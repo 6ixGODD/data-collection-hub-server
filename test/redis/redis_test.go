@@ -1,27 +1,20 @@
-package redis__test
+package redis_test
 
 import (
-	"context"
 	"testing"
 
-	"data-collection-hub-server/internal/pkg/config"
-	"data-collection-hub-server/pkg/redis"
+	"data-collection-hub-server/test/wire"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestRedis(t *testing.T) {
-	cfg, err := config.New()
-	assert.NoError(t, err)
-	assert.NotNil(t, cfg)
-
-	ctx := context.Background()
-	options := cfg.RedisConfig.GetRedisOptions()
-	options.Password = "root"
-	r, err := redis.New(ctx, options)
-	assert.NoError(t, err)
-	assert.NotNil(t, r)
+	var (
+		injector = wire.GetInjector()
+		r        = injector.Redis
+		ctx      = injector.Ctx
+		err      error
+	)
 	t.Logf("redis: %+v", r)
-
 	err = r.RedisClient.Ping(ctx).Err()
 	assert.NoError(t, err)
 

@@ -46,13 +46,7 @@ func InitializeApp(ctx context.Context) (*app.App, error) {
 	if err != nil {
 		return nil, err
 	}
-	redis, err := InitializeRedis(ctx, configConfig)
-	if err != nil {
-		return nil, err
-	}
 	core := &service.Core{
-		Logger: zap,
-		Redis:  redis,
 		Config: configConfig,
 	}
 	mongo, err := InitializeMongo(ctx, configConfig)
@@ -60,6 +54,10 @@ func InitializeApp(ctx context.Context) (*app.App, error) {
 		return nil, err
 	}
 	daoCore, err := dao.NewCore(ctx, mongo, zap, configConfig)
+	if err != nil {
+		return nil, err
+	}
+	redis, err := InitializeRedis(ctx, configConfig)
 	if err != nil {
 		return nil, err
 	}

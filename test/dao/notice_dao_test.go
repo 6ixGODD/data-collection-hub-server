@@ -4,20 +4,27 @@ import (
 	"testing"
 	"time"
 
+	"data-collection-hub-server/test/wire"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestInsertNotice(t *testing.T) {
 	// t.Skip("Skip TestInsertNotice")
-	title := "Title"
-	content := "Content"
-	noticeType := "NORMAL"
+	var (
+		injector   = wire.GetInjector()
+		noticeDao  = injector.NoticeDao
+		ctx        = injector.Ctx
+		title      = "Title"
+		content    = "Content"
+		noticeType = "NORMAL"
+		err        error
+	)
 
-	noticeID, err = noticeDao.InsertNotice(noticeDaoCtx, title, content, noticeType)
+	noticeID, err = noticeDao.InsertNotice(ctx, title, content, noticeType)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, noticeID)
 
-	notice, err := noticeDao.GetNoticeByID(noticeDaoCtx, noticeID)
+	notice, err := noticeDao.GetNoticeByID(ctx, noticeID)
 	assert.NoError(t, err)
 	assert.NotNil(t, notice)
 	assert.Equal(t, title, notice.Title)
@@ -27,7 +34,13 @@ func TestInsertNotice(t *testing.T) {
 
 func TestGetNotice(t *testing.T) {
 	// t.Skip("Skip TestGetNotice")
-	notice, err := noticeDao.GetNoticeByID(noticeDaoCtx, noticeID)
+	var (
+		injector  = wire.GetInjector()
+		ctx       = injector.Ctx
+		noticeDao = injector.NoticeDao
+		err       error
+	)
+	notice, err := noticeDao.GetNoticeByID(ctx, noticeID)
 	assert.NoError(t, err)
 	assert.NotNil(t, notice)
 	assert.NotEmpty(t, notice.NoticeID)
@@ -41,6 +54,9 @@ func TestGetNotice(t *testing.T) {
 func TestGetNoticeList(t *testing.T) {
 	// t.Skip("Skip TestGetNoticeList")
 	var (
+		injector        = wire.GetInjector()
+		ctx             = injector.Ctx
+		noticeDao       = injector.NoticeDao
 		createStartTime = time.Now().Add(-time.Hour)
 		createEndTime   = time.Now().Add(time.Hour)
 		updateStartTime = time.Now().Add(-time.Hour)
@@ -49,7 +65,7 @@ func TestGetNoticeList(t *testing.T) {
 	)
 
 	noticeList, count, err := noticeDao.GetNoticeList(
-		noticeDaoCtx, 0, 10, false, nil, nil, nil, nil, nil,
+		ctx, 0, 10, false, nil, nil, nil, nil, nil,
 	)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, count)
@@ -59,7 +75,7 @@ func TestGetNoticeList(t *testing.T) {
 	t.Logf("=====================================")
 
 	noticeList, count, err = noticeDao.GetNoticeList(
-		noticeDaoCtx, 0, 10, false, &createStartTime, &createEndTime, nil, nil, nil,
+		ctx, 0, 10, false, &createStartTime, &createEndTime, nil, nil, nil,
 	)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, count)
@@ -70,7 +86,7 @@ func TestGetNoticeList(t *testing.T) {
 	t.Logf("=====================================")
 
 	noticeList, count, err = noticeDao.GetNoticeList(
-		noticeDaoCtx, 0, 10, false, nil, nil, &updateStartTime, &updateEndTime, nil,
+		ctx, 0, 10, false, nil, nil, &updateStartTime, &updateEndTime, nil,
 	)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, count)
@@ -81,7 +97,7 @@ func TestGetNoticeList(t *testing.T) {
 	t.Logf("=====================================")
 
 	noticeList, count, err = noticeDao.GetNoticeList(
-		noticeDaoCtx, 0, 10, false, nil, nil, nil, nil, &noticeType,
+		ctx, 0, 10, false, nil, nil, nil, nil, &noticeType,
 	)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, count)
@@ -91,7 +107,7 @@ func TestGetNoticeList(t *testing.T) {
 	t.Logf("=====================================")
 
 	noticeList, count, err = noticeDao.GetNoticeList(
-		noticeDaoCtx, 0, 10, false, &createStartTime, &createEndTime, &updateStartTime, &updateEndTime, &noticeType,
+		ctx, 0, 10, false, &createStartTime, &createEndTime, &updateStartTime, &updateEndTime, &noticeType,
 	)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, count)
@@ -107,14 +123,19 @@ func TestGetNoticeList(t *testing.T) {
 
 func TestUpdateNotice(t *testing.T) {
 	// t.Skip("Skip TestUpdateNotice")
-	title := "New Title"
-	content := "New Content"
-	noticeType := "NORMAL"
+	var (
+		injector   = wire.GetInjector()
+		ctx        = injector.Ctx
+		noticeDao  = injector.NoticeDao
+		title      = "New Title"
+		content    = "New Content"
+		noticeType = "NORMAL"
+	)
 
-	err := noticeDao.UpdateNotice(noticeDaoCtx, noticeID, &title, &content, &noticeType)
+	err := noticeDao.UpdateNotice(ctx, noticeID, &title, &content, &noticeType)
 	assert.NoError(t, err)
 
-	notice, err := noticeDao.GetNoticeByID(noticeDaoCtx, noticeID)
+	notice, err := noticeDao.GetNoticeByID(ctx, noticeID)
 	assert.NoError(t, err)
 	assert.NotNil(t, notice)
 	assert.Equal(t, title, notice.Title)
@@ -124,18 +145,30 @@ func TestUpdateNotice(t *testing.T) {
 
 func TestDeleteNotice(t *testing.T) {
 	// t.Skip("Skip TestDeleteNotice")
-	err := noticeDao.DeleteNotice(noticeDaoCtx, noticeID)
+	var (
+		injector  = wire.GetInjector()
+		ctx       = injector.Ctx
+		noticeDao = injector.NoticeDao
+		err       error
+	)
+	err = noticeDao.DeleteNotice(ctx, noticeID)
 	assert.NoError(t, err)
 
-	notice, err := noticeDao.GetNoticeByID(noticeDaoCtx, noticeID)
+	notice, err := noticeDao.GetNoticeByID(ctx, noticeID)
 	assert.Error(t, err)
 	assert.Nil(t, notice)
 }
 
 func TestDeleteNoticeList(t *testing.T) {
 	// t.Skip("Skip TestDeleteNoticeList")
+	var (
+		injector  = wire.GetInjector()
+		ctx       = injector.Ctx
+		noticeDao = injector.NoticeDao
+		err       error
+	)
 	noticeType := "NORMAL"
-	count, err := noticeDao.DeleteNoticeList(noticeDaoCtx, nil, nil, nil, nil, &noticeType)
+	count, err := noticeDao.DeleteNoticeList(ctx, nil, nil, nil, nil, &noticeType)
 	assert.NoError(t, err)
 	assert.NotNil(t, count)
 	t.Logf("Notice Type: %s", noticeType)
@@ -143,7 +176,7 @@ func TestDeleteNoticeList(t *testing.T) {
 	t.Logf("=====================================")
 
 	noticeList, count, err := noticeDao.GetNoticeList(
-		noticeDaoCtx, 0, 10, false, nil, nil, nil, nil, &noticeType,
+		ctx, 0, 10, false, nil, nil, nil, nil, &noticeType,
 	)
 	assert.Empty(t, noticeList)
 }

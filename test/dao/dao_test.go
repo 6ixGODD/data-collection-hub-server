@@ -1,171 +1,94 @@
 package dao_test
 
 import (
-	"context"
-	"os"
-	"testing"
-
-	"data-collection-hub-server/internal/pkg/config"
-	"data-collection-hub-server/internal/pkg/dao"
-	"data-collection-hub-server/internal/pkg/dao/mods"
-	"data-collection-hub-server/internal/pkg/wire"
-	"data-collection-hub-server/test/dao/mock"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 var (
-	cache *dao.Cache
+	userID            primitive.ObjectID
+	username          string
+	email             string
+	instructionDataID primitive.ObjectID
+	noticeID          primitive.ObjectID
+	documentID        primitive.ObjectID
+	operationLogID    primitive.ObjectID
+	loginLogID        primitive.ObjectID
 )
 
-// User Dao Test Variables
-var (
-	userDaoCtx context.Context
-	userDao    mods.UserDao
-	userID     primitive.ObjectID
-	username   string
-	email      string
-	mockUser   *mock.UserDaoMock
-	err        error
-)
-
-// Instruction Data Dao Test Variables
-var (
-	instructionDataDaoCtx context.Context
-	instructionDataDao    mods.InstructionDataDao
-	instructionDataID     primitive.ObjectID
-	mockInstructionData   *mock.InstructionDataDaoMock
-)
-
-// Notice Dao Test Variables
-var (
-	noticeDaoCtx context.Context
-	noticeDao    mods.NoticeDao
-	noticeID     primitive.ObjectID
-	mockNotice   *mock.NoticeDaoMock
-)
-
-// Documentation Dao Test Variables
-var (
-	documentationDaoCtx context.Context
-	documentationDao    mods.DocumentationDao
-	documentID          primitive.ObjectID
-	mockDocumentation   *mock.DocumentationDaoMock
-)
-
-// Operation Log Dao Test Variables
-var (
-	operationLogDaoCtx context.Context
-	operationLogDao    mods.OperationLogDao
-	operationLogID     primitive.ObjectID
-	mockOperationLog   *mock.OperationLogDaoMock
-)
-
-// Login Log Dao Test Variables
-var (
-	loginLogDaoCtx context.Context
-	loginLogDao    mods.LoginLogDao
-	loginLogID     primitive.ObjectID
-	mockLoginLog   *mock.LoginLogDaoMock
-)
-
-func TestMain(m *testing.M) {
-	ctx := context.Background()
-	cfg := config.New()
-	cfg.MongoConfig.Database = "data-collection-hub"
-	cfg.CacheConfig.RedisConfig.Password = "root"
-	cfg.ZapConfig.Level = "warn"
-	cfg.ZapConfig.DisableStacktrace = true
-	cfg.ZapConfig.DisableCaller = true
-	mongo, err := wire.InitializeMongo(ctx, cfg)
-	if err != nil {
-		panic(err)
-	}
-	redis, err := wire.InitializeRedis(ctx, cfg)
-	if err != nil {
-		panic(err)
-	}
-	zap, err := wire.InitializeZap(cfg)
-	if err != nil {
-		panic(err)
-	}
-	core, err := dao.NewCore(ctx, mongo, zap, cfg)
-	if err != nil {
-		panic(err)
-	}
-	cache = dao.NewCache(redis, cfg)
-
-	// User Dao Test Setup
-	userDaoCtx = ctx
-	userDao, err = mods.NewUserDao(ctx, core, cache)
-	if err != nil {
-		panic(err)
-	}
-	mockUser = mock.NewUserDaoMockWithRandomData(1000, userDao)
-
-	// Instruction Data Dao Test Setup
-	instructionDataDaoCtx = ctx
-	instructionDataDao, err = mods.NewInstructionDataDao(ctx, core, userDao)
-	if err != nil {
-		panic(err)
-	}
-	mockInstructionData = mock.NewInstructionDataDaoMockWithRandomData(1000, mockUser, instructionDataDao)
-
-	// Notice Dao Test Setup
-	noticeDaoCtx = ctx
-	noticeDao, err = mods.NewNoticeDao(ctx, core, cache)
-	if err != nil {
-		panic(err)
-	}
-	mockNotice = mock.NewNoticeDaoMockWithRandomData(1000, noticeDao)
-
-	// Documentation Dao Test Setup
-	documentationDaoCtx = ctx
-	documentationDao, err = mods.NewDocumentationDao(ctx, core, cache)
-	if err != nil {
-		panic(err)
-	}
-	mockDocumentation = mock.NewDocumentationDaoMockWithRandomData(1000, documentationDao)
-
-	// Operation Log Dao Test Setup
-	operationLogDaoCtx = ctx
-	operationLogDao, err = mods.NewOperationLogDao(ctx, core, cache, userDao)
-	if err != nil {
-		panic(err)
-	}
-	mockOperationLog = mock.NewOperationLogDaoMockWithRandomData(
-		1000, operationLogDao, *mockUser, *mockInstructionData, *mockNotice, *mockDocumentation,
-	)
-
-	// Login Log Dao Test Setup
-	loginLogDaoCtx = ctx
-	loginLogDao, err = mods.NewLoginLogDao(ctx, core, cache, userDao)
-	if err != nil {
-		panic(err)
-	}
-	mockLoginLog = mock.NewLoginLogDaoMockWithRandomData(1000, loginLogDao, *mockUser)
-
-	code := m.Run()
-
-	mockUser.Delete()
-	mockInstructionData.Delete()
-	mockNotice.Delete()
-	mockDocumentation.Delete()
-	mockOperationLog.Delete()
-	mockLoginLog.Delete()
-
-	_, _ = userDao.DeleteUserList(ctx, nil, nil, nil, nil, nil, nil, nil, nil)
-	_, _ = instructionDataDao.DeleteInstructionDataList(ctx, nil, nil, nil, nil, nil, nil, nil)
-	_, _ = noticeDao.DeleteNoticeList(ctx, nil, nil, nil, nil, nil)
-	_, _ = documentationDao.DeleteDocumentationList(ctx, nil, nil, nil, nil)
-	_, _ = operationLogDao.DeleteOperationLogList(ctx, nil, nil, nil, nil, nil, nil, nil, nil)
-	_, _ = loginLogDao.DeleteLoginLogList(ctx, nil, nil, nil, nil, nil)
-	err = mongo.Close(ctx)
-	if err != nil {
-		panic(err)
-	}
-	err = redis.Close()
-	if err != nil {
-		panic(err)
-	}
-	os.Exit(code)
-}
+//
+// func TestMain(m *testing.M) {
+// 	config.New().CacheConfig.RedisConfig.Password = "root"
+// 	config.New().CasbinConfig.ModelPath = "../../configs/casbin_model.test.conf"
+// 	config.New().ZapConfig.Level = "warn"
+// 	config.New().ZapConfig.DisableStacktrace = true
+// 	config.New().ZapConfig.DisableCaller = true
+// 	config.New().MongoConfig.Database = "data-collection-hub-test"
+// 	testApp, err = wire.InitializeApp(context.Background())
+// 	if err != nil {
+// 		panic(err)
+// 	}
+//
+// 	daoCore, err := dao.NewCore(testApp.Ctx, testApp.Mongo, testApp.Zap, testApp.Config)
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	cache = dao.NewCache(testApp.Redis, testApp.Config)
+// 	userDao, err = mods.NewUserDao(testApp.Ctx, daoCore, cache)
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	instructionDataDao, err = mods.NewInstructionDataDao(testApp.Ctx, daoCore, userDao)
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	noticeDao, err = mods.NewNoticeDao(testApp.Ctx, daoCore, cache)
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	documentationDao, err = mods.NewDocumentationDao(testApp.Ctx, daoCore, cache)
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	operationLogDao, err = mods.NewOperationLogDao(testApp.Ctx, daoCore, cache, userDao)
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	loginLogDao, err = mods.NewLoginLogDao(testApp.Ctx, daoCore, cache, userDao)
+// 	if err != nil {
+// 		panic(err)
+// 	}
+//
+// 	mockUser = mock.NewUserDaoMockWithRandomData(1000, userDao)
+// 	mockInstructionData = mock.NewInstructionDataDaoMockWithRandomData(1000, mockUser, instructionDataDao)
+// 	mockNotice = mock.NewNoticeDaoMockWithRandomData(1000, noticeDao)
+// 	mockDocumentation = mock.NewDocumentationDaoMockWithRandomData(1000, documentationDao)
+// 	mockOperationLog = mock.NewOperationLogDaoMockWithRandomData(
+// 		1000, operationLogDao, mockUser, mockInstructionData, mockNotice, mockDocumentation,
+// 	)
+// 	mockLoginLog = mock.NewLoginLogDaoMockWithRandomData(1000, loginLogDao, mockUser)
+//
+// 	code := m.Run()
+//
+// 	mockUser.Delete()
+// 	mockInstructionData.Delete()
+// 	mockNotice.Delete()
+// 	mockDocumentation.Delete()
+// 	mockOperationLog.Delete()
+// 	mockLoginLog.Delete()
+//
+// 	_, _ = userDao.DeleteUserList(testApp.Ctx, nil, nil, nil, nil, nil, nil, nil, nil)
+// 	_, _ = instructionDataDao.DeleteInstructionDataList(testApp.Ctx, nil, nil, nil, nil, nil, nil, nil)
+// 	_, _ = noticeDao.DeleteNoticeList(testApp.Ctx, nil, nil, nil, nil, nil)
+// 	_, _ = documentationDao.DeleteDocumentationList(testApp.Ctx, nil, nil, nil, nil)
+// 	_, _ = operationLogDao.DeleteOperationLogList(testApp.Ctx, nil, nil, nil, nil, nil, nil, nil, nil)
+// 	_, _ = loginLogDao.DeleteLoginLogList(testApp.Ctx, nil, nil, nil, nil, nil)
+// 	err = testApp.Mongo.Close(testApp.Ctx)
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	err = testApp.Redis.Close()
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	os.Exit(code)
+// }

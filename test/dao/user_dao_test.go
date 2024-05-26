@@ -6,24 +6,31 @@ import (
 
 	"data-collection-hub-server/internal/pkg/domain/entity"
 	"data-collection-hub-server/pkg/utils/crypt"
-	"data-collection-hub-server/test/dao/mock"
+	"data-collection-hub-server/test/mock"
+	"data-collection-hub-server/test/wire"
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func TestInsertUser(t *testing.T) {
 	// t.Skip("Skip TestInsertUser")
+	var (
+		injector    = wire.GetInjector()
+		ctx         = injector.Ctx
+		userDao     = injector.UserDao
+		password, _ = crypt.Hash("Admin@123")
+		role        = "ADMIN"
+		org         = "Data Collection Hub"
+		err         error
+	)
 	username = "Admin"
 	email = "admin@admin.com"
-	password, err := crypt.Hash("Admin@123")
 	assert.NoError(t, err)
-	role := "ADMIN"
-	org := "Data Collection Hub"
-	userID, err = userDao.InsertUser(userDaoCtx, username, email, password, role, org)
+	userID, err = userDao.InsertUser(ctx, username, email, password, role, org)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, userID)
 
-	user, err := userDao.GetUserByID(userDaoCtx, userID)
+	user, err := userDao.GetUserByID(ctx, userID)
 	assert.NoError(t, err)
 	assert.NotNil(t, user)
 	assert.Equal(t, username, user.Username)
@@ -35,7 +42,13 @@ func TestInsertUser(t *testing.T) {
 
 func TestGetUser(t *testing.T) {
 	// t.Skip("Skip TestGetUser")
-	user, err := userDao.GetUserByID(userDaoCtx, userID)
+	var (
+		injector = wire.GetInjector()
+		ctx      = injector.Ctx
+		userDao  = injector.UserDao
+		err      error
+	)
+	user, err := userDao.GetUserByID(ctx, userID)
 	assert.NoError(t, err)
 	assert.NotNil(t, user)
 	assert.NotEmpty(t, user.UserID)
@@ -47,15 +60,15 @@ func TestGetUser(t *testing.T) {
 	assert.NotEmpty(t, user.UpdatedAt)
 	assert.False(t, user.Deleted)
 
-	_, _ = userDao.GetUserByID(userDaoCtx, userID)
+	_, _ = userDao.GetUserByID(ctx, userID)
 
-	userCache, err := cache.Get(userDaoCtx, "dao:user:userID:"+user.UserID.Hex())
+	userCache, err := wire.GetInjector().Cache.Get(ctx, "dao:user:userID:"+user.UserID.Hex())
 	assert.NoError(t, err)
 	assert.NotNil(t, userCache)
 	assert.NotEmpty(t, userCache)
-	t.Logf("User cache: %v", *userCache)
+	t.Logf("User wire.GetInjector().Cache: %v", *userCache)
 
-	user, err = userDao.GetUserByEmail(userDaoCtx, email)
+	user, err = userDao.GetUserByEmail(ctx, email)
 	assert.NoError(t, err)
 	assert.NotNil(t, user)
 	assert.NotEmpty(t, user.UserID)
@@ -66,9 +79,9 @@ func TestGetUser(t *testing.T) {
 	assert.NotEmpty(t, user.CreatedAt)
 	assert.NotEmpty(t, user.UpdatedAt)
 	assert.False(t, user.Deleted)
-	_, _ = userDao.GetUserByEmail(userDaoCtx, email)
+	_, _ = userDao.GetUserByEmail(ctx, email)
 
-	user, err = userDao.GetUserByUsername(userDaoCtx, username)
+	user, err = userDao.GetUserByUsername(ctx, username)
 	assert.NoError(t, err)
 	assert.NotNil(t, user)
 	assert.NotEmpty(t, user.UserID)
@@ -79,17 +92,17 @@ func TestGetUser(t *testing.T) {
 	assert.NotEmpty(t, user.CreatedAt)
 	assert.NotEmpty(t, user.UpdatedAt)
 	assert.False(t, user.Deleted)
-	_, _ = userDao.GetUserByUsername(userDaoCtx, username)
+	_, _ = userDao.GetUserByUsername(ctx, username)
 
-	userNil, err := userDao.GetUserByID(userDaoCtx, primitive.NewObjectID())
+	userNil, err := userDao.GetUserByID(ctx, primitive.NewObjectID())
 	assert.Error(t, err)
 	assert.Nil(t, userNil)
 
-	userNil, err = userDao.GetUserByEmail(userDaoCtx, "")
+	userNil, err = userDao.GetUserByEmail(ctx, "")
 	assert.Error(t, err)
 	assert.Nil(t, userNil)
 
-	userNil, err = userDao.GetUserByUsername(userDaoCtx, "")
+	userNil, err = userDao.GetUserByUsername(ctx, "")
 	assert.Error(t, err)
 	assert.Nil(t, userNil)
 }
@@ -97,6 +110,9 @@ func TestGetUser(t *testing.T) {
 func TestGetUserList(t *testing.T) {
 	// t.Skip("Skip TestGetUserList")
 	var (
+		injector           = wire.GetInjector()
+		ctx                = injector.Ctx
+		userDao            = injector.UserDao
 		organization       = "FOO"
 		role               = "USER"
 		createTimeStart    = time.Now().Add(-time.Hour)
@@ -108,7 +124,7 @@ func TestGetUserList(t *testing.T) {
 		query              = "Fo"
 	)
 	userList, count, err := userDao.GetUserList(
-		userDaoCtx, 0, 10, false, nil, nil, nil,
+		ctx, 0, 10, false, nil, nil, nil,
 		nil, nil, nil, nil,
 		nil, nil,
 	)
@@ -123,7 +139,7 @@ func TestGetUserList(t *testing.T) {
 	t.Logf("=====================================")
 
 	userList, count, err = userDao.GetUserList(
-		userDaoCtx, 0, 10, false, &organization, nil, nil,
+		ctx, 0, 10, false, &organization, nil, nil,
 		nil, nil, nil, nil,
 		nil, nil,
 	)
@@ -135,7 +151,7 @@ func TestGetUserList(t *testing.T) {
 	t.Logf("=====================================")
 
 	userList, count, err = userDao.GetUserList(
-		userDaoCtx, 0, 10, false, &organization, &role, nil,
+		ctx, 0, 10, false, &organization, &role, nil,
 		nil, nil, nil, nil,
 		nil, nil,
 	)
@@ -149,7 +165,7 @@ func TestGetUserList(t *testing.T) {
 	t.Logf("=====================================")
 
 	userList, count, err = userDao.GetUserList(
-		userDaoCtx, 0, 10, false, nil, nil, &createTimeStart,
+		ctx, 0, 10, false, nil, nil, &createTimeStart,
 		&createTimeEnd, nil, nil, nil,
 		nil, nil,
 	)
@@ -163,7 +179,7 @@ func TestGetUserList(t *testing.T) {
 	t.Logf("=====================================")
 
 	userList, count, err = userDao.GetUserList(
-		userDaoCtx, 0, 10, false, nil, nil, nil,
+		ctx, 0, 10, false, nil, nil, nil,
 		nil, &updateTimeStart, &updateTimeEnd, nil,
 		nil, nil,
 	)
@@ -177,7 +193,7 @@ func TestGetUserList(t *testing.T) {
 	t.Logf("=====================================")
 
 	userList, count, err = userDao.GetUserList(
-		userDaoCtx, 0, 10, false, nil, nil, nil,
+		ctx, 0, 10, false, nil, nil, nil,
 		nil, nil, nil, &lastLoginTimeStart,
 		&lastLoginTimeEnd, nil,
 	)
@@ -191,7 +207,7 @@ func TestGetUserList(t *testing.T) {
 	t.Logf("=====================================")
 
 	userList, count, err = userDao.GetUserList(
-		userDaoCtx, 0, 10, false, nil, nil, nil,
+		ctx, 0, 10, false, nil, nil, nil,
 		nil, nil, nil, nil,
 		nil, &query,
 	)
@@ -204,7 +220,7 @@ func TestGetUserList(t *testing.T) {
 	t.Logf("=====================================")
 
 	userList, count, err = userDao.GetUserList(
-		userDaoCtx, 0, 10, false, &organization, &role, &createTimeStart,
+		ctx, 0, 10, false, &organization, &role, &createTimeStart,
 		&createTimeEnd, &updateTimeStart, &updateTimeEnd, &lastLoginTimeStart,
 		&lastLoginTimeEnd, &query,
 	)
@@ -227,16 +243,21 @@ func TestGetUserList(t *testing.T) {
 
 func TestUpdateUser(t *testing.T) {
 	// t.Skip("Skip TestUpdateUser")
-	username := "User"
-	email := "user@user.com"
-	role := "USER"
-	org := "Data Collection Hub X"
-	password, err := crypt.Hash("User@123")
-	assert.NoError(t, err)
-	err = userDao.UpdateUser(userDaoCtx, userID, &username, &email, &password, &role, &org)
+	var (
+		injector    = wire.GetInjector()
+		ctx         = injector.Ctx
+		userDao     = injector.UserDao
+		username    = "User"
+		email       = "user@user.com"
+		role        = "USER"
+		org         = "Data Collection Hub X"
+		password, _ = crypt.Hash("User@123")
+		err         error
+	)
+	err = userDao.UpdateUser(ctx, userID, &username, &email, &password, &role, &org)
 	assert.NoError(t, err)
 
-	user, err := userDao.GetUserByID(userDaoCtx, userID)
+	user, err := userDao.GetUserByID(ctx, userID)
 	assert.NoError(t, err)
 	assert.NotNil(t, user)
 	assert.Equal(t, username, user.Username)
@@ -248,17 +269,23 @@ func TestUpdateUser(t *testing.T) {
 
 func TestDeleteUser(t *testing.T) {
 	// t.Skip("Skip TestDeleteUser")
-	err := userDao.SoftDeleteUser(userDaoCtx, userID)
+	var (
+		injector = wire.GetInjector()
+		ctx      = injector.Ctx
+		userDao  = injector.UserDao
+		err      error
+	)
+	err = userDao.SoftDeleteUser(ctx, userID)
 	assert.NoError(t, err)
 
-	user, err := userDao.GetUserByID(userDaoCtx, userID)
+	user, err := userDao.GetUserByID(ctx, userID)
 	assert.Error(t, err)
 	assert.Nil(t, user)
 
-	err = userDao.DeleteUser(userDaoCtx, userID)
+	err = userDao.DeleteUser(ctx, userID)
 	assert.NoError(t, err)
 
-	user, err = userDao.GetUserByID(userDaoCtx, userID)
+	user, err = userDao.GetUserByID(ctx, userID)
 	assert.Error(t, err)
 	assert.Nil(t, user)
 }
@@ -266,11 +293,14 @@ func TestDeleteUser(t *testing.T) {
 func TestDeleteUserList(t *testing.T) {
 	// t.Skip("Skip TestDeleteUserList")
 	var (
+		injector     = wire.GetInjector()
+		ctx          = injector.Ctx
+		userDao      = injector.UserDao
 		organization = "FOO"
 		role         = "USER"
 	)
 
-	count, err := userDao.SoftDeleteUserList(userDaoCtx, &organization, nil, nil, nil, nil, nil, nil, nil)
+	count, err := userDao.SoftDeleteUserList(ctx, &organization, nil, nil, nil, nil, nil, nil, nil)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, count)
 	t.Logf("Organization: %s", organization)
@@ -278,13 +308,13 @@ func TestDeleteUserList(t *testing.T) {
 	t.Logf("=====================================")
 
 	userList, count, err := userDao.GetUserList(
-		userDaoCtx, 0, 10, false, &organization, nil, nil,
+		ctx, 0, 10, false, &organization, nil, nil,
 		nil, nil, nil, nil,
 		nil, nil,
 	)
 	assert.Empty(t, userList)
 
-	count, err = userDao.DeleteUserList(userDaoCtx, nil, &role, nil, nil, nil, nil, nil, nil)
+	count, err = userDao.DeleteUserList(ctx, nil, &role, nil, nil, nil, nil, nil, nil)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, count)
 	t.Logf("Role: %s", role)
@@ -292,13 +322,13 @@ func TestDeleteUserList(t *testing.T) {
 	t.Logf("=====================================")
 
 	userList, count, err = userDao.GetUserList(
-		userDaoCtx, 0, 10, false, nil, &role, nil,
+		ctx, 0, 10, false, nil, &role, nil,
 		nil, nil, nil, nil,
 		nil, nil,
 	)
 	assert.Empty(t, userList)
 
-	count, err = userDao.SoftDeleteUserList(userDaoCtx, nil, &role, nil, nil, nil, nil, nil, nil)
+	count, err = userDao.SoftDeleteUserList(ctx, nil, &role, nil, nil, nil, nil, nil, nil)
 	assert.NoError(t, err)
 	assert.NotNil(t, count)
 	t.Logf("Role: %s", role)
@@ -306,13 +336,13 @@ func TestDeleteUserList(t *testing.T) {
 	t.Logf("=====================================")
 
 	userList, count, err = userDao.GetUserList(
-		userDaoCtx, 0, 10, false, nil, &role, nil,
+		ctx, 0, 10, false, nil, &role, nil,
 		nil, nil, nil, nil,
 		nil, nil,
 	)
 	assert.Empty(t, userList)
 
-	count, err = userDao.DeleteUserList(userDaoCtx, nil, &role, nil, nil, nil, nil, nil, nil)
+	count, err = userDao.DeleteUserList(ctx, nil, &role, nil, nil, nil, nil, nil, nil)
 	assert.NoError(t, err)
 	assert.NotNil(t, count)
 	t.Logf("Role: %s", role)
@@ -320,7 +350,7 @@ func TestDeleteUserList(t *testing.T) {
 	t.Logf("=====================================")
 
 	userList, count, err = userDao.GetUserList(
-		userDaoCtx, 0, 10, false, nil, &role, nil,
+		ctx, 0, 10, false, nil, &role, nil,
 		nil, nil, nil, nil,
 		nil, nil,
 	)
@@ -328,15 +358,20 @@ func TestDeleteUserList(t *testing.T) {
 }
 
 func BenchmarkInsertUser(b *testing.B) {
+	var (
+		injector = wire.GetInjector()
+		ctx      = injector.Ctx
+		userDao  = injector.UserDao
+	)
 	for i := 0; i < b.N; i++ {
 		b.StopTimer()
 		usernameMock, emailMock, password, role, org := mock.GenerateUser()
 		b.StartTimer()
-		InsertUserID, err := userDao.InsertUser(userDaoCtx, usernameMock, emailMock, password, role, org)
+		InsertUserID, err := userDao.InsertUser(ctx, usernameMock, emailMock, password, role, org)
 		b.StopTimer()
 		assert.NoError(b, err)
 		assert.NotEmpty(b, InsertUserID)
-		mockUser.Create(
+		injector.UserDaoMock.Create(
 			&entity.UserModel{
 				UserID:       InsertUserID,
 				Username:     usernameMock,
@@ -351,23 +386,28 @@ func BenchmarkInsertUser(b *testing.B) {
 }
 
 func BenchmarkGetUser(b *testing.B) {
+	var (
+		injector = wire.GetInjector()
+		ctx      = injector.Ctx
+		userDao  = injector.UserDao
+	)
 	for i := 0; i < b.N; i++ {
-		userID := mockUser.RandomUserID()
-		user, err := userDao.GetUserByID(userDaoCtx, userID)
+		userID := injector.UserDaoMock.RandomUserID()
+		user, err := userDao.GetUserByID(ctx, userID)
 		assert.NoError(b, err)
 		assert.NotNil(b, user)
 	}
 
 	for i := 0; i < b.N; i++ {
-		email := mockUser.UserMap[mockUser.RandomUserID()].Email
-		user, err := userDao.GetUserByEmail(userDaoCtx, email)
+		email := injector.UserDaoMock.UserMap[injector.UserDaoMock.RandomUserID()].Email
+		user, err := userDao.GetUserByEmail(ctx, email)
 		assert.NoError(b, err)
 		assert.NotNil(b, user)
 	}
 
 	for i := 0; i < b.N; i++ {
-		username := mockUser.UserMap[mockUser.RandomUserID()].Username
-		user, err := userDao.GetUserByUsername(userDaoCtx, username)
+		username := injector.UserDaoMock.UserMap[injector.UserDaoMock.RandomUserID()].Username
+		user, err := userDao.GetUserByUsername(ctx, username)
 		assert.NoError(b, err)
 		assert.NotNil(b, user)
 	}

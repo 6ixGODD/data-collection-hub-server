@@ -4,27 +4,32 @@ import (
 	"testing"
 	"time"
 
+	"data-collection-hub-server/test/wire"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestInsertOperationLog(t *testing.T) {
 	var (
-		userID      = mockUser.RandomUserID()
-		entityID    = mockUser.RandomUserID()
-		entityType  = "USER"
-		ipAddress   = "123.456.789.100"
-		operation   = "CREATE"
-		userAgent   = "Mozilla/5.0"
-		description = "Create user"
-		status      = "SUCCESS"
+		injector        = wire.GetInjector()
+		ctx             = injector.Ctx
+		operationLogDao = injector.OperationLogDao
+		userID          = injector.UserDaoMock.RandomUserID()
+		entityID        = injector.UserDaoMock.RandomUserID()
+		entityType      = "USER"
+		ipAddress       = "123.456.789.100"
+		operation       = "CREATE"
+		userAgent       = "Mozilla/5.0"
+		description     = "Create user"
+		status          = "SUCCESS"
+		err             error
 	)
 	operationLogID, err = operationLogDao.InsertOperationLog(
-		operationLogDaoCtx, userID, entityID, ipAddress, userAgent, operation, entityType, description, status,
+		ctx, userID, entityID, ipAddress, userAgent, operation, entityType, description, status,
 	)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, operationLogID)
 
-	operationLog, err := operationLogDao.GetOperationLogByID(operationLogDaoCtx, operationLogID)
+	operationLog, err := operationLogDao.GetOperationLogByID(ctx, operationLogID)
 	assert.NoError(t, err)
 	assert.NotNil(t, operationLog)
 	assert.Equal(t, userID, operationLog.UserID)
@@ -39,43 +44,49 @@ func TestInsertOperationLog(t *testing.T) {
 
 func TestCacheOperationLog(t *testing.T) {
 	var (
-		userID      = mockUser.RandomUserID()
-		entityID    = mockUser.RandomUserID()
-		entityType  = "cache USER"
-		ipAddress   = "cache 123.456.789.100"
-		operation   = "cache CREATE"
-		userAgent   = "cache Mozilla/5.0"
-		description = "cache Create user"
-		status      = "cache SUCCESS"
+		injector        = wire.GetInjector()
+		ctx             = injector.Ctx
+		operationLogDao = injector.OperationLogDao
+		userID          = injector.UserDaoMock.RandomUserID()
+		entityID        = injector.UserDaoMock.RandomUserID()
+		entityType      = "cache USER"
+		ipAddress       = "cache 123.456.789.100"
+		operation       = "cache CREATE"
+		userAgent       = "cache Mozilla/5.0"
+		description     = "cache Create user"
+		status          = "cache SUCCESS"
 	)
 	err := operationLogDao.CacheOperationLog(
-		operationLogDaoCtx, userID, entityID, ipAddress, userAgent, operation, entityType, description, status,
+		ctx, userID, entityID, ipAddress, userAgent, operation, entityType, description, status,
 	)
 	assert.NoError(t, err)
-	pop, err := cache.LeftPop(operationLogDaoCtx, "log:operation")
+	pop, err := wire.GetInjector().Cache.LeftPop(ctx, "log:operation")
 	assert.NoError(t, err)
 	assert.NotNil(t, pop)
 	assert.NotEmpty(t, *pop)
 	t.Logf("Operation log: %s", *pop)
 	t.Logf("=====================================")
 	err = operationLogDao.CacheOperationLog(
-		operationLogDaoCtx, userID, entityID, ipAddress, userAgent, operation, entityType, description, status,
+		ctx, userID, entityID, ipAddress, userAgent, operation, entityType, description, status,
 	)
 	assert.NoError(t, err)
 }
 
 func TestSyncOperationLog(t *testing.T) {
 	var (
-		entityType  = "cache USER"
-		ipAddress   = "cache 123.456.789.100"
-		operation   = "cache CREATE"
-		userAgent   = "cache Mozilla/5.0"
-		description = "cache Create user"
-		status      = "cache SUCCESS"
+		injector        = wire.GetInjector()
+		ctx             = injector.Ctx
+		operationLogDao = injector.OperationLogDao
+		entityType      = "cache USER"
+		ipAddress       = "cache 123.456.789.100"
+		operation       = "cache CREATE"
+		userAgent       = "cache Mozilla/5.0"
+		description     = "cache Create user"
+		status          = "cache SUCCESS"
 	)
-	operationLogDao.SyncOperationLog(operationLogDaoCtx)
+	operationLogDao.SyncOperationLog(ctx)
 	operationLogList, count, err := operationLogDao.GetOperationLogList(
-		operationLogDaoCtx, 0, 10, false, nil, nil, nil, nil, &ipAddress, &operation, &entityType, &status, nil,
+		ctx, 0, 10, false, nil, nil, nil, nil, &ipAddress, &operation, &entityType, &status, nil,
 	)
 	assert.NoError(t, err)
 	assert.NotNil(t, count)
@@ -96,23 +107,26 @@ func TestSyncOperationLog(t *testing.T) {
 
 func TestGetOperationLogList(t *testing.T) {
 	var (
-		userID     = mockUser.RandomUserID()
-		startTime  = time.Now().AddDate(0, 0, -1)
-		endTime    = time.Now()
-		entityID   = mockUser.RandomUserID()
-		entityType = "USER"
-		ipAddress  = "123.456.789.100"
-		operation  = "CREATE"
-		status     = "SUCCESS"
-		query      = "a"
+		injector        = wire.GetInjector()
+		ctx             = injector.Ctx
+		operationLogDao = injector.OperationLogDao
+		userID          = injector.UserDaoMock.RandomUserID()
+		startTime       = time.Now().AddDate(0, 0, -1)
+		endTime         = time.Now()
+		entityID        = wire.GetInjector().UserDaoMock.RandomUserID()
+		entityType      = "USER"
+		ipAddress       = "123.456.789.100"
+		operation       = "CREATE"
+		status          = "SUCCESS"
+		query           = "a"
 	)
 	for i := 0; i < 100; i++ {
-		_ = mockOperationLog.GenerateOperationLogWithUserID(userID)
-		_ = mockOperationLog.GenerateOperationLogWithIpAddress(ipAddress)
-		_ = mockOperationLog.GenerateOperationLogWithEntityID(entityID)
+		_ = injector.OperationLogDaoMock.GenerateOperationLogWithUserID(userID)
+		_ = injector.OperationLogDaoMock.GenerateOperationLogWithIpAddress(ipAddress)
+		_ = injector.OperationLogDaoMock.GenerateOperationLogWithEntityID(entityID)
 	}
 	operationLogList, count, err := operationLogDao.GetOperationLogList(
-		operationLogDaoCtx, 0, 10, false, nil, nil, nil, nil, nil, nil, nil, nil, nil,
+		ctx, 0, 10, false, nil, nil, nil, nil, nil, nil, nil, nil, nil,
 	)
 	assert.NoError(t, err)
 	assert.NotNil(t, count)
@@ -124,7 +138,7 @@ func TestGetOperationLogList(t *testing.T) {
 	t.Logf("=====================================")
 
 	operationLogList, count, err = operationLogDao.GetOperationLogList(
-		operationLogDaoCtx, 0, 10, false, &startTime, &endTime, nil, nil, nil, nil, nil, nil, nil,
+		ctx, 0, 10, false, &startTime, &endTime, nil, nil, nil, nil, nil, nil, nil,
 	)
 	assert.NoError(t, err)
 	assert.NotNil(t, count)
@@ -135,7 +149,7 @@ func TestGetOperationLogList(t *testing.T) {
 	t.Logf("=====================================")
 
 	operationLogList, count, err = operationLogDao.GetOperationLogList(
-		operationLogDaoCtx, 0, 10, false, nil, nil, &userID, nil, nil, nil, nil, nil, nil,
+		ctx, 0, 10, false, nil, nil, &userID, nil, nil, nil, nil, nil, nil,
 	)
 	assert.NoError(t, err)
 	assert.NotNil(t, count)
@@ -145,7 +159,7 @@ func TestGetOperationLogList(t *testing.T) {
 	t.Logf("=====================================")
 
 	operationLogList, count, err = operationLogDao.GetOperationLogList(
-		operationLogDaoCtx, 0, 10, false, nil, nil, nil, &entityID, nil, nil, nil, nil, nil,
+		ctx, 0, 10, false, nil, nil, nil, &entityID, nil, nil, nil, nil, nil,
 	)
 	assert.NoError(t, err)
 	assert.NotNil(t, count)
@@ -155,7 +169,7 @@ func TestGetOperationLogList(t *testing.T) {
 	t.Logf("=====================================")
 
 	operationLogList, count, err = operationLogDao.GetOperationLogList(
-		operationLogDaoCtx, 0, 10, false, nil, nil, nil, nil, nil, nil, &entityType, nil, nil,
+		ctx, 0, 10, false, nil, nil, nil, nil, nil, nil, &entityType, nil, nil,
 	)
 	assert.NoError(t, err)
 	assert.NotNil(t, count)
@@ -165,7 +179,7 @@ func TestGetOperationLogList(t *testing.T) {
 	t.Logf("=====================================")
 
 	operationLogList, count, err = operationLogDao.GetOperationLogList(
-		operationLogDaoCtx, 0, 10, false, nil, nil, nil, nil, &ipAddress, nil, nil, nil, nil,
+		ctx, 0, 10, false, nil, nil, nil, nil, &ipAddress, nil, nil, nil, nil,
 	)
 	assert.NoError(t, err)
 	assert.NotNil(t, count)
@@ -175,7 +189,7 @@ func TestGetOperationLogList(t *testing.T) {
 	t.Logf("=====================================")
 
 	operationLogList, count, err = operationLogDao.GetOperationLogList(
-		operationLogDaoCtx, 0, 10, false, nil, nil, nil, nil, nil, &operation, nil, nil, nil,
+		ctx, 0, 10, false, nil, nil, nil, nil, nil, &operation, nil, nil, nil,
 	)
 	assert.NoError(t, err)
 	assert.NotNil(t, count)
@@ -185,7 +199,7 @@ func TestGetOperationLogList(t *testing.T) {
 	t.Logf("=====================================")
 
 	operationLogList, count, err = operationLogDao.GetOperationLogList(
-		operationLogDaoCtx, 0, 10, false, nil, nil, nil, nil, nil, nil, &entityType, nil, nil,
+		ctx, 0, 10, false, nil, nil, nil, nil, nil, nil, &entityType, nil, nil,
 	)
 	assert.NoError(t, err)
 	assert.NotNil(t, count)
@@ -195,7 +209,7 @@ func TestGetOperationLogList(t *testing.T) {
 	t.Logf("=====================================")
 
 	operationLogList, count, err = operationLogDao.GetOperationLogList(
-		operationLogDaoCtx, 0, 10, false, nil, nil, nil, nil, nil, nil, nil, &status, nil,
+		ctx, 0, 10, false, nil, nil, nil, nil, nil, nil, nil, &status, nil,
 	)
 	assert.NoError(t, err)
 	assert.NotNil(t, count)
@@ -205,7 +219,7 @@ func TestGetOperationLogList(t *testing.T) {
 	t.Logf("=====================================")
 
 	operationLogList, count, err = operationLogDao.GetOperationLogList(
-		operationLogDaoCtx, 0, 10, false, nil, nil, nil, nil, nil, nil, nil, nil, &query,
+		ctx, 0, 10, false, nil, nil, nil, nil, nil, nil, nil, nil, &query,
 	)
 	assert.NoError(t, err)
 	assert.NotNil(t, count)
@@ -215,7 +229,7 @@ func TestGetOperationLogList(t *testing.T) {
 	t.Logf("=====================================")
 
 	operationLogList, count, err = operationLogDao.GetOperationLogList(
-		operationLogDaoCtx, 0, 10, false, &startTime, &endTime, &userID, &entityID, &ipAddress, &operation, &entityType,
+		ctx, 0, 10, false, &startTime, &endTime, &userID, &entityID, &ipAddress, &operation, &entityType,
 		&status, &query,
 	)
 	assert.NoError(t, err)
@@ -235,35 +249,43 @@ func TestGetOperationLogList(t *testing.T) {
 }
 
 func TestDeleteOperationLog(t *testing.T) {
-	err := operationLogDao.DeleteOperationLog(operationLogDaoCtx, operationLogID)
+	var (
+		injector        = wire.GetInjector()
+		ctx             = injector.Ctx
+		operationLogDao = injector.OperationLogDao
+	)
+	err := operationLogDao.DeleteOperationLog(ctx, operationLogID)
 	assert.NoError(t, err)
 
-	operationLog, err := operationLogDao.GetOperationLogByID(operationLogDaoCtx, operationLogID)
+	operationLog, err := operationLogDao.GetOperationLogByID(ctx, operationLogID)
 	assert.Error(t, err)
 	assert.Nil(t, operationLog)
 }
 
 func TestDeleteOperationLogList(t *testing.T) {
 	var (
-		userID     = mockUser.RandomUserID()
-		entityID   = mockUser.RandomUserID()
-		entityType = "USER"
-		ipAddress  = "123.456.789.100"
-		operation  = "CREATE"
-		status     = "SUCCESS"
+		injector        = wire.GetInjector()
+		ctx             = injector.Ctx
+		operationLogDao = injector.OperationLogDao
+		userID          = injector.UserDaoMock.RandomUserID()
+		entityID        = injector.UserDaoMock.RandomUserID()
+		entityType      = "USER"
+		ipAddress       = "123.456.789.100"
+		operation       = "CREATE"
+		status          = "SUCCESS"
 	)
 	for i := 0; i < 10; i++ {
-		_ = mockOperationLog.GenerateOperationLogWithUserID(userID)
-		_ = mockOperationLog.GenerateOperationLogWithIpAddress(ipAddress)
-		_ = mockOperationLog.GenerateOperationLogWithEntityID(entityID)
+		_ = injector.OperationLogDaoMock.GenerateOperationLogWithUserID(userID)
+		_ = injector.OperationLogDaoMock.GenerateOperationLogWithIpAddress(ipAddress)
+		_ = injector.OperationLogDaoMock.GenerateOperationLogWithEntityID(entityID)
 	}
 	count, err := operationLogDao.DeleteOperationLogList(
-		operationLogDaoCtx, nil, nil, &userID, nil, nil, nil, nil, nil,
+		ctx, nil, nil, &userID, nil, nil, nil, nil, nil,
 	)
 	assert.NoError(t, err)
 	assert.NotNil(t, count)
 	operationLogList, _, err := operationLogDao.GetOperationLogList(
-		operationLogDaoCtx, 0, 10, false, nil, nil, &userID, nil, nil, nil, nil, nil, nil,
+		ctx, 0, 10, false, nil, nil, &userID, nil, nil, nil, nil, nil, nil,
 	)
 	assert.NoError(t, err)
 	assert.Empty(t, operationLogList)
@@ -272,12 +294,12 @@ func TestDeleteOperationLogList(t *testing.T) {
 	t.Logf("=====================================")
 
 	count, err = operationLogDao.DeleteOperationLogList(
-		operationLogDaoCtx, nil, nil, nil, &entityID, nil, nil, nil, nil,
+		ctx, nil, nil, nil, &entityID, nil, nil, nil, nil,
 	)
 	assert.NoError(t, err)
 	assert.NotNil(t, count)
 	operationLogList, _, err = operationLogDao.GetOperationLogList(
-		operationLogDaoCtx, 0, 10, false, nil, nil, nil, &entityID, nil, nil, nil, nil, nil,
+		ctx, 0, 10, false, nil, nil, nil, &entityID, nil, nil, nil, nil, nil,
 	)
 	assert.NoError(t, err)
 	assert.Empty(t, operationLogList)
@@ -286,12 +308,12 @@ func TestDeleteOperationLogList(t *testing.T) {
 	t.Logf("=====================================")
 
 	count, err = operationLogDao.DeleteOperationLogList(
-		operationLogDaoCtx, nil, nil, nil, nil, &ipAddress, nil, nil, nil,
+		ctx, nil, nil, nil, nil, &ipAddress, nil, nil, nil,
 	)
 	assert.NoError(t, err)
 	assert.NotNil(t, count)
 	operationLogList, _, err = operationLogDao.GetOperationLogList(
-		operationLogDaoCtx, 0, 10, false, nil, nil, nil, nil, &ipAddress, nil, nil, nil, nil,
+		ctx, 0, 10, false, nil, nil, nil, nil, &ipAddress, nil, nil, nil, nil,
 	)
 	assert.NoError(t, err)
 	assert.Empty(t, operationLogList)
@@ -300,12 +322,12 @@ func TestDeleteOperationLogList(t *testing.T) {
 	t.Logf("=====================================")
 
 	count, err = operationLogDao.DeleteOperationLogList(
-		operationLogDaoCtx, nil, nil, nil, nil, nil, &operation, nil, nil,
+		ctx, nil, nil, nil, nil, nil, &operation, nil, nil,
 	)
 	assert.NoError(t, err)
 	assert.NotNil(t, count)
 	operationLogList, _, err = operationLogDao.GetOperationLogList(
-		operationLogDaoCtx, 0, 10, false, nil, nil, nil, nil, nil, nil, &operation, nil, nil,
+		ctx, 0, 10, false, nil, nil, nil, nil, nil, nil, &operation, nil, nil,
 	)
 	assert.NoError(t, err)
 	assert.Empty(t, operationLogList)
@@ -314,12 +336,12 @@ func TestDeleteOperationLogList(t *testing.T) {
 	t.Logf("=====================================")
 
 	count, err = operationLogDao.DeleteOperationLogList(
-		operationLogDaoCtx, nil, nil, nil, nil, nil, nil, &entityType, nil,
+		ctx, nil, nil, nil, nil, nil, nil, &entityType, nil,
 	)
 	assert.NoError(t, err)
 	assert.NotNil(t, count)
 	operationLogList, _, err = operationLogDao.GetOperationLogList(
-		operationLogDaoCtx, 0, 10, false, nil, nil, nil, nil, nil, nil, nil, &entityType, nil,
+		ctx, 0, 10, false, nil, nil, nil, nil, nil, nil, nil, &entityType, nil,
 	)
 	assert.NoError(t, err)
 	assert.Empty(t, operationLogList)
@@ -328,12 +350,12 @@ func TestDeleteOperationLogList(t *testing.T) {
 	t.Logf("=====================================")
 
 	count, err = operationLogDao.DeleteOperationLogList(
-		operationLogDaoCtx, nil, nil, nil, nil, nil, nil, nil, &status,
+		ctx, nil, nil, nil, nil, nil, nil, nil, &status,
 	)
 	assert.NoError(t, err)
 	assert.NotNil(t, count)
 	operationLogList, _, err = operationLogDao.GetOperationLogList(
-		operationLogDaoCtx, 0, 10, false, nil, nil, nil, nil, nil, nil, nil, &status, nil,
+		ctx, 0, 10, false, nil, nil, nil, nil, nil, nil, nil, &status, nil,
 	)
 	assert.NoError(t, err)
 	assert.Empty(t, operationLogList)

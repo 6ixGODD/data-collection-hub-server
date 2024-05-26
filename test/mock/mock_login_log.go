@@ -16,15 +16,15 @@ type LoginLogDaoMock struct {
 	UserMock    UserDaoMock
 }
 
-func NewLoginLogDaoMock(loginLogDao mods.LoginLogDao, userMock UserDaoMock) *LoginLogDaoMock {
+func NewLoginLogDaoMock(loginLogDao mods.LoginLogDao, userMock *UserDaoMock) *LoginLogDaoMock {
 	return &LoginLogDaoMock{
 		LoginLogMap: make(map[primitive.ObjectID]*entity.LoginLogModel),
 		LoginLogDao: loginLogDao,
-		UserMock:    userMock,
+		UserMock:    *userMock,
 	}
 }
 
-func NewLoginLogDaoMockWithRandomData(n int, loginLogDao mods.LoginLogDao, userMock UserDaoMock) *LoginLogDaoMock {
+func NewLoginLogDaoMockWithRandomData(n int, loginLogDao mods.LoginLogDao, userMock *UserDaoMock) *LoginLogDaoMock {
 	loginLogDaoMock := NewLoginLogDaoMock(loginLogDao, userMock)
 	for i := 0; i < n; i++ {
 		loginLog := loginLogDaoMock.GenerateLoginLogModel()

@@ -20,22 +20,22 @@ type OperationLogDaoMock struct {
 }
 
 func NewOperationLogDaoMock(
-	operationLogDao mods.OperationLogDao, userMock UserDaoMock, instructionDataMock InstructionDataDaoMock,
-	noticeMock NoticeDaoMock, documentationMock DocumentationDaoMock,
+	operationLogDao mods.OperationLogDao, userMock *UserDaoMock, instructionDataMock *InstructionDataDaoMock,
+	noticeMock *NoticeDaoMock, documentationMock *DocumentationDaoMock,
 ) *OperationLogDaoMock {
 	return &OperationLogDaoMock{
 		OperationLogMap:     make(map[primitive.ObjectID]*entity.OperationLogModel),
 		OperationLogDao:     operationLogDao,
-		UserMock:            userMock,
-		InstructionDataMock: instructionDataMock,
-		NoticeMock:          noticeMock,
-		DocumentationMock:   documentationMock,
+		UserMock:            *userMock,
+		InstructionDataMock: *instructionDataMock,
+		NoticeMock:          *noticeMock,
+		DocumentationMock:   *documentationMock,
 	}
 }
 
 func NewOperationLogDaoMockWithRandomData(
-	n int, operationLogDao mods.OperationLogDao, userMock UserDaoMock, instructionDataMock InstructionDataDaoMock,
-	noticeMock NoticeDaoMock, documentationMock DocumentationDaoMock,
+	n int, operationLogDao mods.OperationLogDao, userMock *UserDaoMock, instructionDataMock *InstructionDataDaoMock,
+	noticeMock *NoticeDaoMock, documentationMock *DocumentationDaoMock,
 ) *OperationLogDaoMock {
 	operationLogDaoMock := NewOperationLogDaoMock(
 		operationLogDao, userMock, instructionDataMock, noticeMock, documentationMock,
