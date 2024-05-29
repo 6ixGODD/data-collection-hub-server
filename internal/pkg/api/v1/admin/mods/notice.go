@@ -26,7 +26,7 @@ func (api *NoticeApi) InsertNotice(c *fiber.Ctx) error {
 		return errors.InvalidRequest(err)
 	}
 
-	noticeIDHex, err := api.NoticeService.InsertNotice(ctx, *req.Title, *req.Content, *req.NoticeType)
+	noticeIDHex, err := api.NoticeService.InsertNotice(ctx, req.Title, req.Content, req.NoticeType)
 	var (
 		userID, _  = primitive.ObjectIDFromHex(ctx.Value(config.UserIDKey).(string))
 		ipAddr     = c.IP()

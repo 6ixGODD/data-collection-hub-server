@@ -33,7 +33,7 @@ func (d *DatasetApi) InsertInstructionData(c *fiber.Ctx) error {
 	}
 
 	instructionDataIDHex, err := d.DatasetService.InsertInstructionData(
-		ctx, *req.Instruction, *req.Input, *req.Output, *req.Theme, *req.Source, *req.Note,
+		ctx, req.Instruction, req.Input, req.Output, req.Theme, req.Source, req.Note,
 	)
 	var (
 		entityID, _ = primitive.ObjectIDFromHex(instructionDataIDHex)
