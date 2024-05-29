@@ -2,6 +2,7 @@ package mods
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"data-collection-hub-server/internal/pkg/config"
@@ -29,7 +30,14 @@ func NewProfileService(core *service.Core, userDao dao.UserDao) ProfileService {
 }
 
 func (p profileServiceImpl) GetProfile(ctx context.Context) (*common.GetProfileResponse, error) {
-	userID, err := primitive.ObjectIDFromHex(ctx.Value(config.UserIDKey).(string))
+	var (
+		userIDHex string
+		ok        bool
+	)
+	if userIDHex, ok = ctx.Value(config.UserIDKey).(string); !ok {
+		return nil, errors.UserNotFound(fmt.Errorf("user id not found")) // TODO: change error type
+	}
+	userID, err := primitive.ObjectIDFromHex(userIDHex)
 	if err != nil {
 		return nil, errors.UserNotFound(err) // TODO: change error type
 	}

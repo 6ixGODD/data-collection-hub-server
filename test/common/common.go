@@ -1,4 +1,4 @@
-package test
+package common
 
 import (
 	"context"
@@ -12,14 +12,14 @@ import (
 
 func Setup() error {
 	cfg := config.New()
-	viper.SetConfigFile("../configs/test/server.test.yml")
+	viper.SetConfigFile("../../configs/test/server.test.yml")
 	if err := viper.ReadInConfig(); err != nil {
 		return err
 	}
 	if err := viper.Unmarshal(cfg); err != nil {
 		return err
 	}
-	injector, err := wire.InitializeTestInjector(context.Background(), cfg)
+	injector, err := wire.InitializeTestInjector(context.Background(), cfg, 1000)
 	if err != nil {
 		return err
 	}

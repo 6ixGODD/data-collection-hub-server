@@ -63,7 +63,7 @@ func (m *DocumentationDaoMock) GenerateDocumentationModel() *entity.Documentatio
 }
 
 func GenerateDocumentation() (string, string) {
-	return randomString(10), randomString(10)
+	return RandomString(10), RandomString(10)
 }
 
 func (m *DocumentationDaoMock) Delete() {

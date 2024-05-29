@@ -14,7 +14,7 @@ import (
 type DocumentationService interface {
 	GetDocumentation(ctx context.Context, documentationID *primitive.ObjectID) (*common.GetDocumentationResponse, error)
 	GetDocumentationList(
-		ctx context.Context, page, pageSize *int64, updateBefore, updateAfter *time.Time,
+		ctx context.Context, page, pageSize *int64, updateTimeStart, updateTimeEnd *time.Time,
 	) (*common.GetDocumentationListResponse, error)
 }
 

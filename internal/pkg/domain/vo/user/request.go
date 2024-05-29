@@ -25,7 +25,7 @@ type (
 		Output      *string `json:"output" validate:"required,max=1000"`
 		Theme       *string `json:"theme" validate:"required"`
 		Source      *string `json:"source" validate:"required,max=1000"`
-		Note        *string `json:"note" validate:"omitempty,max=1000"`
+		Note        *string `json:"note" validate:"required,omitempty,max=1000"`
 	}
 
 	UpdateInstructionDataRequest struct {

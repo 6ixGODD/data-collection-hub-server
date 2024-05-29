@@ -6,7 +6,10 @@ import (
 
 	"data-collection-hub-server/test/wire"
 	"github.com/stretchr/testify/assert"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
+
+var operationLogID primitive.ObjectID
 
 func TestInsertOperationLog(t *testing.T) {
 	var (

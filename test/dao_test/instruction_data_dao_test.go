@@ -6,7 +6,10 @@ import (
 
 	"data-collection-hub-server/test/wire"
 	"github.com/stretchr/testify/assert"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
+
+var instructionDataID primitive.ObjectID
 
 func TestInsertInstructionData(t *testing.T) {
 	// t.Skip("Skip TestInsertInstructionData")
@@ -28,7 +31,7 @@ func TestInsertInstructionData(t *testing.T) {
 
 	instructionDataID, err = instructionDataDao.InsertInstructionData(
 		ctx, userID,
-		wire.GetInjector().UserDaoMock.UserMap[userID].Username, instruction, input, output, theme, source, note,
+		instruction, input, output, theme, source, note,
 		statusCode, statusMsg,
 	)
 	assert.NoError(t, err)
@@ -188,6 +191,60 @@ func TestGetInstructionDataList(t *testing.T) {
 	t.Logf("Query: %s", query)
 	t.Logf("Instruction data count: %d", *count)
 	t.Logf("Instruction data list: %v", instructionDataList)
+	t.Logf("=====================================")
+}
+
+func TestCountInstructionData(t *testing.T) {
+	var (
+		injector           = wire.GetInjector()
+		instructionDataDao = injector.InstructionDataDao
+		ctx                = injector.Ctx
+		userID             = injector.UserDaoMock.RandomUserID()
+		theme              = "THEME1"
+		statusCode         = "PENDING"
+		createTimeStart    = time.Now().AddDate(0, 0, -1)
+		createTimeEnd      = time.Now().AddDate(0, 0, 1)
+		updateTimeStart    = time.Now().AddDate(0, 0, -1)
+		updateTimeEnd      = time.Now().AddDate(0, 0, 1)
+		err                error
+	)
+	count, err := instructionDataDao.CountInstructionData(
+		ctx, nil, nil, nil, nil, nil, nil, nil,
+	)
+	assert.NoError(t, err)
+	assert.NotNil(t, count)
+	t.Logf("Instruction data count: %d", *count)
+	t.Logf("=====================================")
+
+	groupBy := "theme"
+	aggregateCount, err := instructionDataDao.AggregateCountInstructionData(ctx, &groupBy)
+	assert.NoError(t, err)
+	assert.NotNil(t, aggregateCount)
+	t.Logf("Group by: %s", groupBy)
+	t.Logf("Aggregate count: %v", aggregateCount)
+	t.Logf("=====================================")
+
+	groupBy = "status.code"
+	aggregateCount, err = instructionDataDao.AggregateCountInstructionData(ctx, &groupBy)
+	assert.NoError(t, err)
+	assert.NotNil(t, aggregateCount)
+	t.Logf("Group by: %s", groupBy)
+	t.Logf("Aggregate count: %v", aggregateCount)
+	t.Logf("=====================================")
+
+	count, err = instructionDataDao.CountInstructionData(
+		ctx, &userID, &theme, &statusCode, &createTimeStart, &createTimeEnd, &updateTimeStart, &updateTimeEnd,
+	)
+	assert.NoError(t, err)
+	assert.NotNil(t, count)
+	t.Logf("User ID: %s", userID)
+	t.Logf("Theme: %s", theme)
+	t.Logf("Status code: %s", statusCode)
+	t.Logf("Create time start: %v", createTimeStart)
+	t.Logf("Create time end: %v", createTimeEnd)
+	t.Logf("Update time start: %v", updateTimeStart)
+	t.Logf("Update time end: %v", updateTimeEnd)
+	t.Logf("Instruction data count: %d", *count)
 	t.Logf("=====================================")
 }
 

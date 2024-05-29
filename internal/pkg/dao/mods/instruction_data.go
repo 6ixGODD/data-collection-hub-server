@@ -31,7 +31,7 @@ type InstructionDataDao interface {
 	InsertInstructionData(
 		ctx context.Context,
 		userID primitive.ObjectID,
-		username, rowInstruction, rowInput, rowOutput, theme, source, note, statusCode, statusMessage string,
+		rowInstruction, rowInput, rowOutput, theme, source, note, statusCode, statusMessage string,
 	) (primitive.ObjectID, error)
 	UpdateInstructionData(
 		ctx context.Context, instructionDataID primitive.ObjectID, userID *primitive.ObjectID,
@@ -213,7 +213,7 @@ func (i *InstructionDataDaoImpl) AggregateCountInstructionData(
 	}
 	countMap := make(map[string]int64, len(result))
 	for _, item := range result {
-		countMap[item["_id"].(string)] = item["count"].(int64)
+		countMap[item["_id"].(string)] = int64(item["count"].(int32))
 	}
 	i.Dao.Logger.Info(
 		"InstructionDataDaoImpl.AggregateCountGetInstructionData: success",
@@ -226,8 +226,17 @@ func (i *InstructionDataDaoImpl) AggregateCountInstructionData(
 func (i *InstructionDataDaoImpl) InsertInstructionData(
 	ctx context.Context,
 	userID primitive.ObjectID,
-	username, rowInstruction, rowInput, rowOutput, theme, source, note, statusCode, statusMessage string,
+	rowInstruction, rowInput, rowOutput, theme, source, note, statusCode, statusMessage string,
 ) (primitive.ObjectID, error) {
+	user, err := i.UserDao.GetUserByID(ctx, userID)
+	if err != nil {
+		i.Dao.Logger.Error(
+			"InstructionDataDaoImpl.InsertInstructionData: failed to GetUserByID",
+			zap.String("userID", userID.Hex()), zap.Error(err),
+		)
+		return primitive.NilObjectID, err
+	}
+	username := user.Username
 	doc := bson.M{
 		"user_id":  userID,
 		"username": username,

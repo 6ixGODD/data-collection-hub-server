@@ -59,10 +59,25 @@ func (m *InstructionDataDaoMock) RandomInstructionDataID() primitive.ObjectID {
 
 func (m *InstructionDataDaoMock) GenerateInstructionDataModel() *entity.InstructionDataModel {
 	userID := m.UserMock.RandomUserID()
-	username := m.UserMock.UserMap[userID].Username
 	instruction, input, output, theme, source, note, statusCode, statusMessage := randomInstructionData()
 	instructionDataID, err := m.InstructionDataDao.InsertInstructionData(
-		context.Background(), userID, username, instruction, input, output, theme, source, note, statusCode,
+		context.Background(), userID, instruction, input, output, theme, source, note, statusCode,
+		statusMessage,
+	)
+	if err != nil {
+		panic(err)
+	}
+	instructionData, err := m.InstructionDataDao.GetInstructionDataByID(context.Background(), instructionDataID)
+	if err != nil {
+		panic(err)
+	}
+	return instructionData
+}
+
+func (m *InstructionDataDaoMock) GenerateInstructionDataModelWithUserID(userID primitive.ObjectID) *entity.InstructionDataModel {
+	instruction, input, output, theme, source, note, statusCode, statusMessage := randomInstructionData()
+	instructionDataID, err := m.InstructionDataDao.InsertInstructionData(
+		context.Background(), userID, instruction, input, output, theme, source, note, statusCode,
 		statusMessage,
 	)
 	if err != nil {
@@ -83,13 +98,13 @@ func (m *InstructionDataDaoMock) Delete() {
 
 // GenerateInstructionData generates a new instruction data, returns instruction, input, output, theme, source, note, status code, status message
 func randomInstructionData() (string, string, string, string, string, string, string, string) {
-	return randomString(10), randomString(10), randomString(10), randomEnum(
+	return RandomString(10), RandomString(10), RandomString(10), RandomEnum(
 			[]string{
 				"THEME1", "THEME2", "THEME3",
 			},
-		), "https://" + randomString(10) + ".com", randomString(10), randomEnum(
+		), "https://" + RandomString(10) + ".com", RandomString(10), RandomEnum(
 			[]string{
 				"PENDING", "APPROVED", "REJECTED",
 			},
-		), randomString(10)
+		), RandomString(10)
 }

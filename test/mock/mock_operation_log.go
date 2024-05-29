@@ -86,7 +86,7 @@ func (m *OperationLogDaoMock) GenerateOperationLogWithIpAddress(ipAddress string
 func (m *OperationLogDaoMock) GenerateOperationLogWithEntityID(entityID primitive.ObjectID) *entity.OperationLogModel {
 	userID := m.UserMock.RandomUserID()
 	ipAddress, userAgent, operation, description, status := GenerateOperationLog()
-	entityType := randomEnum([]string{"INSTRUCTION", "NOTICE", "DOCUMENTATION", "USER"})
+	entityType := RandomEnum([]string{"INSTRUCTION", "NOTICE", "DOCUMENTATION", "USER"})
 	operationLogID, err := m.OperationLogDao.InsertOperationLog(
 		context.Background(), userID, entityID, ipAddress, userAgent, operation, entityType, description, status,
 	)
@@ -143,11 +143,11 @@ func (m *OperationLogDaoMock) Delete() {
 
 // GenerateOperationLog generate an operation log and return ip address, user agent, operation, description and status
 func GenerateOperationLog() (string, string, string, string, string) {
-	return randomIp(), randomEnum([]string{"Chrome", "Firefox", "Safari", "Edge"}), randomEnum(
+	return RandomIp(), RandomEnum([]string{"Chrome", "Firefox", "Safari", "Edge"}), RandomEnum(
 		[]string{
 			"CREATE", "UPDATE", "DELETE",
 		},
-	), randomString(20), randomEnum([]string{"SUCCESS", "FAILURE"})
+	), RandomString(20), RandomEnum([]string{"SUCCESS", "FAILURE"})
 }
 
 // RandomEntity return an entity id and entity type randomly
@@ -159,7 +159,7 @@ func RandomEntity(
 	noticeID := noticeMock.RandomNoticeID()
 	documentID := documentationMock.RandomDocumentationID()
 	userID := userMock.RandomUserID()
-	entityType := randomEnum([]string{"INSTRUCTION", "NOTICE", "DOCUMENTATION", "USER"})
+	entityType := RandomEnum([]string{"INSTRUCTION", "NOTICE", "DOCUMENTATION", "USER"})
 	switch entityType {
 	case "INSTRUCTION":
 		return instructionDataID, entityType

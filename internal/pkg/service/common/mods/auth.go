@@ -44,7 +44,7 @@ func (a authServiceImpl) Login(ctx context.Context, email, password *string) (*c
 		return nil, errors.DBError(errors.ReadError(err))
 	}
 	if !crypt.Compare(*password, user.Password) {
-		return nil, errors.PasswordWrong(err)
+		return nil, errors.PasswordWrong(fmt.Errorf("password wrong")) // TODO: Change error type
 	}
 	accessToken, err := a.jwt.GenerateAccessToken(user.UserID.Hex())
 	if err != nil {
@@ -136,7 +136,14 @@ func (a authServiceImpl) Logout(ctx context.Context, accessToken *string) error 
 }
 
 func (a authServiceImpl) ChangePassword(ctx context.Context, oldPassword, newPassword *string) error {
-	userID, err := primitive.ObjectIDFromHex(ctx.Value(config.UserIDKey).(string))
+	var (
+		userIDHex string
+		ok        bool
+	)
+	if userIDHex, ok = ctx.Value(config.UserIDKey).(string); !ok {
+		return errors.InvalidToken(fmt.Errorf("user id not found in context")) // TODO: Change error type
+	}
+	userID, err := primitive.ObjectIDFromHex(userIDHex)
 	if err != nil {
 		return errors.InvalidToken(err) // TODO: Change error type
 	}
@@ -151,7 +158,7 @@ func (a authServiceImpl) ChangePassword(ctx context.Context, oldPassword, newPas
 	if err != nil {
 		return errors.ServiceError(err)
 	}
-	if err = a.userDao.UpdateUser(ctx, userID, nil, nil, nil, &hashedPassword, nil); err != nil {
+	if err = a.userDao.UpdateUser(ctx, userID, nil, nil, &hashedPassword, nil, nil); err != nil {
 		return errors.DBError(errors.WriteError(err))
 	}
 	return nil

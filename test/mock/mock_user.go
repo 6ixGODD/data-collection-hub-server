@@ -78,9 +78,9 @@ func (m *UserDaoMock) Delete() {
 
 // GenerateUser generates a new user, returns username, email, password, role, organization
 func GenerateUser() (string, string, string, string, string) {
-	return randomString(10),
-		randomString(10) + "@test.com",
-		randomString(10),
-		randomEnum([]string{"ADMIN", "USER"}),
-		randomEnum([]string{"FOO", "BAR", "BAZ", "QUX"})
+	return RandomString(10),
+		RandomString(10) + "@test.com",
+		RandomString(10),
+		RandomEnum([]string{"ADMIN", "USER"}),
+		RandomEnum([]string{"FOO", "BAR", "BAZ", "QUX"})
 }

@@ -110,16 +110,16 @@ var (
 	)
 
 	MockProviderSet = wire.NewSet(
-		mock.NewUserDaoMock,
-		mock.NewInstructionDataDaoMock,
-		mock.NewNoticeDaoMock,
-		mock.NewLoginLogDaoMock,
-		mock.NewOperationLogDaoMock,
-		mock.NewDocumentationDaoMock,
+		mock.NewUserDaoMockWithRandomData,
+		mock.NewInstructionDataDaoMockWithRandomData,
+		mock.NewNoticeDaoMockWithRandomData,
+		mock.NewLoginLogDaoMockWithRandomData,
+		mock.NewOperationLogDaoMockWithRandomData,
+		mock.NewDocumentationDaoMockWithRandomData,
 	)
 )
 
-func InitializeTestInjector(ctx context.Context, config *config.Config) (*Injector, error) {
+func InitializeTestInjector(ctx context.Context, config *config.Config, n int) (*Injector, error) {
 	wire.Build(
 		InitializeMongo,
 		InitializeRedis,

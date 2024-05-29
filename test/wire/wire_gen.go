@@ -8,6 +8,7 @@ package wire
 
 import (
 	"context"
+
 	"data-collection-hub-server/internal/pkg/config"
 	"data-collection-hub-server/internal/pkg/dao"
 	"data-collection-hub-server/internal/pkg/dao/mods"
@@ -31,7 +32,7 @@ import (
 
 // Injectors from wire.go:
 
-func InitializeTestInjector(ctx context.Context, config2 *config.Config) (*Injector, error) {
+func InitializeTestInjector(ctx context.Context, config2 *config.Config, n int) (*Injector, error) {
 	redis, err := InitializeRedis(ctx, config2)
 	if err != nil {
 		return nil, err
@@ -78,12 +79,12 @@ func InitializeTestInjector(ctx context.Context, config2 *config.Config) (*Injec
 	if err != nil {
 		return nil, err
 	}
-	userDaoMock := mock.NewUserDaoMock(userDao)
-	instructionDataDaoMock := mock.NewInstructionDataDaoMock(userDaoMock, instructionDataDao)
-	noticeDaoMock := mock.NewNoticeDaoMock(noticeDao)
-	documentationDaoMock := mock.NewDocumentationDaoMock(documentationDao)
-	loginLogDaoMock := mock.NewLoginLogDaoMock(loginLogDao, userDaoMock)
-	operationLogDaoMock := mock.NewOperationLogDaoMock(operationLogDao, userDaoMock, instructionDataDaoMock, noticeDaoMock, documentationDaoMock)
+	userDaoMock := mock.NewUserDaoMockWithRandomData(n, userDao)
+	instructionDataDaoMock := mock.NewInstructionDataDaoMockWithRandomData(n, userDaoMock, instructionDataDao)
+	noticeDaoMock := mock.NewNoticeDaoMockWithRandomData(n, noticeDao)
+	documentationDaoMock := mock.NewDocumentationDaoMockWithRandomData(n, documentationDao)
+	loginLogDaoMock := mock.NewLoginLogDaoMockWithRandomData(n, loginLogDao, userDaoMock)
+	operationLogDaoMock := mock.NewOperationLogDaoMockWithRandomData(n, operationLogDao, userDaoMock, instructionDataDaoMock, noticeDaoMock, documentationDaoMock)
 	serviceCore := &service.Core{
 		Config: config2,
 	}
@@ -195,5 +196,5 @@ var (
 
 	DaoProviderSet = wire.NewSet(dao.NewCore, dao.NewCache, mods.NewUserDao, mods.NewInstructionDataDao, mods.NewNoticeDao, mods.NewLoginLogDao, mods.NewOperationLogDao, mods.NewDocumentationDao)
 
-	MockProviderSet = wire.NewSet(mock.NewUserDaoMock, mock.NewInstructionDataDaoMock, mock.NewNoticeDaoMock, mock.NewLoginLogDaoMock, mock.NewOperationLogDaoMock, mock.NewDocumentationDaoMock)
+	MockProviderSet = wire.NewSet(mock.NewUserDaoMockWithRandomData, mock.NewInstructionDataDaoMockWithRandomData, mock.NewNoticeDaoMockWithRandomData, mock.NewLoginLogDaoMockWithRandomData, mock.NewOperationLogDaoMockWithRandomData, mock.NewDocumentationDaoMockWithRandomData)
 )

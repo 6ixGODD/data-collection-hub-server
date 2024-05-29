@@ -6,7 +6,10 @@ import (
 
 	"data-collection-hub-server/test/wire"
 	"github.com/stretchr/testify/assert"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
+
+var loginLogID primitive.ObjectID
 
 func TestInsertLoginLog(t *testing.T) {
 	// t.Skip("Skip TestInsertLoginLog")

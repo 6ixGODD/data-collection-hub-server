@@ -72,5 +72,5 @@ func (m *NoticeDaoMock) Delete() {
 
 // GenerateNotice generates random notice data, and returns the title, content, and notice type
 func GenerateNotice() (string, string, string) {
-	return randomString(10), randomString(100), randomEnum([]string{"URGENT", "NORMAL"})
+	return RandomString(10), RandomString(100), RandomEnum([]string{"URGENT", "NORMAL"})
 }

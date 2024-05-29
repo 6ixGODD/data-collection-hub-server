@@ -13,7 +13,7 @@ import (
 )
 
 type UserService interface {
-	InsertUser(ctx context.Context, username, email, password, role, organization *string) error
+	InsertUser(ctx context.Context, username, email, password, role, organization *string) (string, error)
 	GetUser(ctx context.Context, userID *primitive.ObjectID) (*admin.GetUserResponse, error)
 	GetUserList(
 		ctx context.Context, page, pageSize *int64, desc *bool, role *string,
@@ -36,13 +36,18 @@ func NewUserService(core *service.Core, userDao dao.UserDao) UserService {
 	}
 }
 
-func (u UserServiceImpl) InsertUser(ctx context.Context, username, email, password, role, organization *string) error {
+func (u UserServiceImpl) InsertUser(ctx context.Context, username, email, password, role, organization *string) (
+	string, error,
+) {
 	passwordHash, err := crypt.Hash(*password)
-	_, err = u.userDao.InsertUser(ctx, *username, *email, passwordHash, *role, *organization)
 	if err != nil {
-		return errors.DBError(errors.WriteError(err))
+		return "", errors.ServiceError(err)
 	}
-	return nil
+	userID, err := u.userDao.InsertUser(ctx, *username, *email, passwordHash, *role, *organization)
+	if err != nil {
+		return "", errors.DBError(errors.WriteError(err))
+	}
+	return userID.Hex(), nil
 }
 
 func (u UserServiceImpl) GetUser(ctx context.Context, userID *primitive.ObjectID) (*admin.GetUserResponse, error) {

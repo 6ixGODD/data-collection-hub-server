@@ -2,6 +2,7 @@ package mods
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"data-collection-hub-server/internal/pkg/config"
@@ -31,11 +32,18 @@ func NewStatisticService(core *service.Core, instructionDataDao dao.InstructionD
 func (s statisticServiceImpl) GetDataStatistic(
 	ctx context.Context, startDate, endDate *time.Time,
 ) (*user.GetDataStatisticResponse, error) {
-	pendingStatus := config.InstructionDataStatusPending
-	approvedStatus := config.InstructionDataStatusApproved
-	rejectedStatus := config.InstructionDataStatusRejected
-	themeField := "theme"
-	userID, err := primitive.ObjectIDFromHex(ctx.Value(config.UserIDKey).(string))
+	var (
+		pendingStatus  = config.InstructionDataStatusPending
+		approvedStatus = config.InstructionDataStatusApproved
+		rejectedStatus = config.InstructionDataStatusRejected
+		themeField     = "theme"
+		userIDHex      string
+		ok             bool
+	)
+	if userIDHex, ok = ctx.Value(config.UserIDKey).(string); !ok {
+		return nil, errors.UserNotFound(errors.UserNotFound(fmt.Errorf("user id not found in context")))
+	}
+	userID, err := primitive.ObjectIDFromHex(userIDHex)
 	if err != nil {
 		return nil, errors.UserNotFound(err) // TODO: change error type
 	}

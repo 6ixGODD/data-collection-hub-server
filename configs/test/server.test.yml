@@ -32,9 +32,9 @@ fiber:
   enable_print_routes: true
 
 jwt:
-  jwt_token_duration: "3600s"
-  jwt_refresh_duration: "7200s"
-  jwt_refresh_buffer: "300s"
+  jwt_token_duration: "3s"
+  jwt_refresh_duration: "7s"
+  jwt_refresh_buffer: "3s"
 
 mongo:
   mongo_uri: "mongodb://localhost:27017"
@@ -95,7 +95,7 @@ tasks:
   update_key_spec: "@weekly"
 
 zap:
-  zap_level: "info"
+  zap_level: "error"
   zap_encoding: "console"
   zap_development: true
   zap_output_paths: [ "stdout" ]

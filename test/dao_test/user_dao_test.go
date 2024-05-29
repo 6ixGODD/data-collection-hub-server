@@ -12,6 +12,12 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+var (
+	userID   primitive.ObjectID
+	username string
+	email    string
+)
+
 func TestInsertUser(t *testing.T) {
 	// t.Skip("Skip TestInsertUser")
 	var (

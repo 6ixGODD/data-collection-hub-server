@@ -78,7 +78,7 @@ func (m *LoginLogDaoMock) GenerateLoginLogWithUserID(userID primitive.ObjectID) 
 
 func (m *LoginLogDaoMock) GenerateLoginLogWithIpAddress(ipAddress string) *entity.LoginLogModel {
 	userID := m.UserMock.RandomUserID()
-	userAgent := randomEnum([]string{"Chrome", "Firefox", "Safari", "Edge"})
+	userAgent := RandomEnum([]string{"Chrome", "Firefox", "Safari", "Edge"})
 	loginLogID, err := m.LoginLogDao.InsertLoginLog(context.Background(), userID, ipAddress, userAgent)
 	if err != nil {
 		panic(err)
@@ -93,7 +93,7 @@ func (m *LoginLogDaoMock) GenerateLoginLogWithIpAddress(ipAddress string) *entit
 
 func (m *LoginLogDaoMock) GenerateLoginLogWithUserAgent(userAgent string) *entity.LoginLogModel {
 	userID := m.UserMock.RandomUserID()
-	ipAddress := randomIp()
+	ipAddress := RandomIp()
 	loginLogID, err := m.LoginLogDao.InsertLoginLog(context.Background(), userID, ipAddress, userAgent)
 	if err != nil {
 		panic(err)
@@ -117,7 +117,7 @@ func (m *LoginLogDaoMock) Delete() {
 }
 
 func GenerateLoginLog() (ipAddress, userAgent string) {
-	ipAddress = randomIp()
-	userAgent = randomEnum([]string{"Chrome", "Firefox", "Safari", "Edge"})
+	ipAddress = RandomIp()
+	userAgent = RandomEnum([]string{"Chrome", "Firefox", "Safari", "Edge"})
 	return ipAddress, userAgent
 }

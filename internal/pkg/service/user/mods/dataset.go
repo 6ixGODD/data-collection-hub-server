@@ -2,6 +2,7 @@ package mods
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"data-collection-hub-server/internal/pkg/config"
@@ -14,7 +15,7 @@ import (
 
 type DatasetService interface {
 	InsertInstructionData(
-		ctx context.Context, userID *primitive.ObjectID, Instruction, Input, Output, Theme, Source, Note *string,
+		ctx context.Context, Instruction, Input, Output, Theme, Source, Note *string,
 	) (string, error)
 	GetInstructionData(ctx context.Context, instructionDataID primitive.ObjectID) (
 		*user.GetInstructionDataResponse, error,
@@ -47,14 +48,21 @@ func NewDatasetService(
 }
 
 func (d datasetServiceImpl) InsertInstructionData(
-	ctx context.Context, userID *primitive.ObjectID, Instruction, Input, Output, Theme, Source, Note *string,
+	ctx context.Context, Instruction, Input, Output, Theme, Source, Note *string,
 ) (string, error) {
-	usr, err := d.userDao.GetUserByID(ctx, *userID)
+	var (
+		userIDHex string
+		ok        bool
+	)
+	if userIDHex, ok = ctx.Value(config.UserIDKey).(string); !ok {
+		return "", errors.UserNotFound(fmt.Errorf("user id not found in context")) // TODO: change error type
+	}
+	userID, err := primitive.ObjectIDFromHex(userIDHex)
 	if err != nil {
 		return "", errors.UserNotFound(err) // TODO: change error type
 	}
 	instructionDataID, err := d.instructionDataDao.InsertInstructionData(
-		ctx, *userID, usr.Username, *Instruction, *Input, *Output, *Theme, *Source, *Note,
+		ctx, userID, *Instruction, *Input, *Output, *Theme, *Source, *Note,
 		config.InstructionDataStatusPending, "",
 	)
 	if err != nil {
@@ -100,7 +108,14 @@ func (d datasetServiceImpl) GetInstructionDataList(
 	ctx context.Context, page, pageSize *int64, updateBefore, updateAfter *time.Time, theme, status *string,
 ) (*user.GetInstructionDataListResponse, error) {
 	offset := (*page - 1) * *pageSize
-	userID, err := primitive.ObjectIDFromHex(ctx.Value(config.UserIDKey).(string))
+	var (
+		userIDHex string
+		ok        bool
+	)
+	if userIDHex, ok = ctx.Value(config.UserIDKey).(string); !ok {
+		return nil, errors.UserNotFound(fmt.Errorf("user id not found in context")) // TODO: change error type
+	}
+	userID, err := primitive.ObjectIDFromHex(userIDHex)
 	if err != nil {
 		return nil, errors.UserNotFound(err) // TODO: change error type
 	}
@@ -159,7 +174,14 @@ func (d datasetServiceImpl) UpdateInstructionData(
 }
 
 func (d datasetServiceImpl) DeleteInstructionData(ctx context.Context, instructionDataID *primitive.ObjectID) error {
-	err := d.instructionDataDao.SoftDeleteInstructionData(ctx, *instructionDataID)
+	instructionData, err := d.instructionDataDao.GetInstructionDataByID(ctx, *instructionDataID)
+	if err != nil {
+		return errors.DBError(errors.ReadError(err))
+	}
+	if instructionData.Status.Code != config.InstructionDataStatusPending {
+		return errors.PermissionDeny(fmt.Errorf("instruction data status is not pending")) // TODO: change error type
+	}
+	err = d.instructionDataDao.SoftDeleteInstructionData(ctx, *instructionDataID)
 	if err != nil {
 		return errors.DBError(errors.WriteError(err))
 	}

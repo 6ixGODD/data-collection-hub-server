@@ -124,7 +124,7 @@ func (j *Jwt) GenerateRefreshToken(subject string) (string, error) {
 		jwt.SigningMethodES256, &jwt.StandardClaims{
 			Subject:   subject,
 			IssuedAt:  time.Now().Unix(),
-			ExpiresAt: time.Now().Add(j.tokenDuration).Unix(),
+			ExpiresAt: time.Now().Add(j.refreshDuration).Unix(),
 			NotBefore: time.Now().Unix(),
 		},
 	)
