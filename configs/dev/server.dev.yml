@@ -98,7 +98,7 @@ zap:
   zap_level: "info"
   zap_encoding: "console"
   zap_development: true
-  zap_output_paths: [ "stdout" ]
+  zap_output_paths: [ "stdout", "./_dev.log" ]
   zap_error_output_paths: [ "stderr" ]
   zap_caller_skip: 1
   zap_disable_caller: false
