@@ -41,7 +41,7 @@ func NewAuthService(core *service.Core, userDao daos.UserDao, cache *dao.Cache, 
 func (a authServiceImpl) Login(ctx context.Context, email, password *string) (*common.LoginResponse, error) {
 	user, err := a.userDao.GetUserByEmail(ctx, *email)
 	if err != nil {
-		return nil, errors.DBError(errors.ReadError(err))
+		return nil, errors.DBError(err) // TODO: Change error type
 	}
 	if !crypt.Compare(*password, user.Password) {
 		return nil, errors.PasswordWrong(fmt.Errorf("password wrong")) // TODO: Change error type

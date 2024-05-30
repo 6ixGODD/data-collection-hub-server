@@ -1,6 +1,6 @@
 base:
   app_name: "data-collection-hub"
-  app_port: "8080"
+  app_port: "8000"
   app_host: "localhost"
   app_version: "1.0.0"
   enable_tls: false
@@ -10,7 +10,7 @@ base:
   enable_prometheus: true
 
 casbin:
-  casbin_model_path: "./configs/casbin_model.test.conf"
+  casbin_model_path: "./configs/casbin_model.conf"
   casbin_policy_adapter_url: "mongodb://localhost:27017/data-collection-hub"
 
 fiber:
@@ -101,8 +101,8 @@ zap:
   zap_output_paths: [ "stdout" ]
   zap_error_output_paths: [ "stderr" ]
   zap_caller_skip: 1
-  zap_disable_caller: false
-  zap_disable_stacktrace: false
+  zap_disable_caller: true
+  zap_disable_stacktrace: true
 
 idempotency:
   idempotency_header_key: "Idempotency-Key"

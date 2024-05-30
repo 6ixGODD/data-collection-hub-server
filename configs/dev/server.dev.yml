@@ -1,6 +1,6 @@
 base:
   app_name: "data-collection-hub"
-  app_port: "8080"
+  app_port: "8000"
   app_host: "localhost"
   app_version: "1.0.0"
   enable_tls: false
@@ -10,8 +10,8 @@ base:
   enable_prometheus: true
 
 casbin:
-  casbin_model_path: "./configs/casbin_model.test.conf"
-  casbin_policy_adapter_url: "mongodb://localhost:27017/data-collection-hub"
+  casbin_model_path: "./configs/casbin_model.conf"
+  casbin_policy_adapter_url: "mongodb://localhost:27017/data-collection-hub-dev"
 
 fiber:
   prefork: false

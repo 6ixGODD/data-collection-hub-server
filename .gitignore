@@ -163,4 +163,8 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
+# Local env file
 .env
+
+# logs
+*.log

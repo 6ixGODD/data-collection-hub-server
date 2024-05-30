@@ -26,7 +26,6 @@ func (api *AuthApi) Login(c *fiber.Ctx) error {
 	}
 
 	resp, err := api.AuthService.Login(ctx, req.Email, req.Password)
-
 	if err != nil {
 		return err
 	}

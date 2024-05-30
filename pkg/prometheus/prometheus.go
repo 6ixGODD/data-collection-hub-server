@@ -62,15 +62,12 @@ func (p *Prometheus) PrometheusFiberHandler() fiber.Handler {
 
 		start := time.Now()
 
-		err := c.Next()
-		if err != nil {
-			return c.SendStatus(fiber.StatusInternalServerError) // TODO: Change to return err
-		}
+		_ = c.Next()
 
 		r := c.Route()
 
 		statusCode := strconv.Itoa(c.Response().StatusCode())
-		elapsed := float64(time.Since(start).Nanoseconds()) / 1000000000
+		elapsed := float64(time.Since(start).Nanoseconds()) / 1e9
 
 		p.reqCount.With(
 			prometheus.Labels{"status_code": statusCode, "method": c.Method(), "path": r.Path},
