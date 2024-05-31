@@ -27,7 +27,7 @@ func NewIdempotencyService(core *service.Core, cache *dao.Cache) IdempotencyServ
 }
 
 func (s *idempotencyServiceImpl) GenerateIdempotencyToken(ctx context.Context) (string, error) {
-	token, err := common.GenerateUUID()
+	token, err := common.GenerateUUID4()
 	if err != nil {
 		return "", err
 	}

@@ -7,12 +7,14 @@ import (
 	"data-collection-hub-server/internal/pkg/domain/vo/admin"
 	adminservice "data-collection-hub-server/internal/pkg/service/admin/mods"
 	"data-collection-hub-server/pkg/errors"
+	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type StatisticApi struct {
 	StatisticService adminservice.StatisticService
+	Validator        *validator.Validate
 }
 
 func (s *StatisticApi) GetDataStatistic(c *fiber.Ctx) error {
@@ -20,22 +22,17 @@ func (s *StatisticApi) GetDataStatistic(c *fiber.Ctx) error {
 	if err := c.QueryParser(req); err != nil {
 		return errors.InvalidRequest(err)
 	}
+	if err := s.Validator.Struct(req); err != nil {
+		return errors.InvalidParams(err) // Compare this line with the original one
+	}
 
 	// Parse start and end date
 	var startDate, endDate *time.Time
-	var err error
-
 	if req.StartDate != nil {
-		*startDate, err = time.Parse(time.RFC3339, *req.StartDate)
-		if err != nil {
-			return errors.InvalidRequest(err)
-		}
+		*startDate, _ = time.Parse(time.RFC3339, *req.StartDate)
 	}
 	if req.EndDate != nil {
-		*endDate, err = time.Parse(time.RFC3339, *req.EndDate)
-		if err != nil {
-			return errors.InvalidRequest(err)
-		}
+		*endDate, _ = time.Parse(time.RFC3339, *req.EndDate)
 	}
 	resp, err := s.StatisticService.GetDataStatistic(c.UserContext(), startDate, endDate)
 	if err != nil {
@@ -54,6 +51,9 @@ func (s *StatisticApi) GetUserStatistic(c *fiber.Ctx) error {
 	req := new(admin.GetUserStatisticRequest)
 	if err := c.QueryParser(req); err != nil {
 		return errors.InvalidRequest(err)
+	}
+	if err := s.Validator.Struct(req); err != nil {
+		return errors.InvalidParams(err) // Compare this line with the original one
 	}
 
 	userID, err := primitive.ObjectIDFromHex(*req.UserID)
@@ -78,6 +78,9 @@ func (s *StatisticApi) GetUserStatisticList(c *fiber.Ctx) error {
 	req := new(admin.GetUserStatisticListRequest)
 	if err := c.QueryParser(req); err != nil {
 		return errors.InvalidRequest(err)
+	}
+	if err := s.Validator.Struct(req); err != nil {
+		return errors.InvalidParams(err) // Compare this line with the original one
 	}
 
 	var (

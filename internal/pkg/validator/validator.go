@@ -1,0 +1,90 @@
+package validator
+
+import (
+	"sync"
+	"time"
+
+	"data-collection-hub-server/internal/pkg/config"
+	"github.com/go-playground/validator/v10"
+)
+
+var (
+	validateInstance *validator.Validate
+	once             sync.Once
+)
+
+func earlierThan(fl validator.FieldLevel) bool {
+	endTimePtr := fl.Parent().FieldByName(fl.Param()).Interface().(*string)
+	if endTimePtr == nil {
+		return false
+	}
+	startTime, err := time.Parse(time.RFC3339, fl.Field().String())
+	if err != nil {
+		return false
+	}
+	endTime, err := time.Parse(time.RFC3339, *endTimePtr)
+	if err != nil {
+		return false
+	}
+	return startTime.Before(endTime)
+}
+
+func rfc3339(fl validator.FieldLevel) bool {
+	_, err := time.Parse(time.RFC3339, fl.Field().String())
+	return err == nil
+}
+
+func instructionDataStatus(fl validator.FieldLevel) bool {
+	switch fl.Field().String() {
+	case config.InstructionDataStatusPending, config.InstructionDataStatusApproved, config.InstructionDataStatusRejected:
+		return true
+	default:
+		return false
+	}
+}
+
+func noticeType(fl validator.FieldLevel) bool {
+	switch fl.Field().String() {
+	case config.NoticeTypeUrgent, config.NoticeTypeNormal:
+		return true
+	default:
+		return false
+	}
+}
+
+func userRole(fl validator.FieldLevel) bool {
+	switch fl.Field().String() {
+	case config.UserRoleAdmin, config.UserRoleUser:
+		return true
+	default:
+		return false
+	}
+}
+
+func NewValidator() (*validator.Validate, error) {
+	var err error
+	once.Do(
+		func() {
+			validate := validator.New()
+			if err = validate.RegisterValidation("earlierThan", earlierThan); err != nil {
+				return
+			}
+			if err = validate.RegisterValidation("rfc3339", rfc3339); err != nil {
+				return
+			}
+			if err = validate.RegisterValidation(
+				"instructionDataStatus", instructionDataStatus,
+			); err != nil {
+				return
+			}
+			if err = validate.RegisterValidation("noticeType", noticeType); err != nil {
+				return
+			}
+			if err = validate.RegisterValidation("userRole", userRole); err != nil {
+				return
+			}
+			validateInstance = validate
+		},
+	)
+	return validateInstance, err
+}

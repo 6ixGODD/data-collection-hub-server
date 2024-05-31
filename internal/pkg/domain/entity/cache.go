@@ -22,7 +22,7 @@ type OperationLogCache struct {
 	UserAgent   string    `json:"user_agent"`    // User Agent
 	Operation   string    `json:"operation"`     // Operation, 'CREATE' | 'UPDATE' | 'DELETE'
 	EntityIDHex string    `json:"entity_id_hex"` // Entity(Instruction Data) ID in Hex
-	EntityType  string    `json:"entity_type"`   // Entity NoticeType, 'INSTRUCTION' | 'USER' | 'DOCUMENTATION' | 'NOTICE'
+	EntityType  string    `json:"entity_type"`   // Entity noticeType, 'INSTRUCTION' | 'USER' | 'DOCUMENTATION' | 'NOTICE'
 	Description string    `json:"description"`   // Description of Operation
 	Status      string    `json:"status"`        // Status, 'SUCCESS' | 'FAILURE'
 	CreatedAt   time.Time `json:"created_at"`    // Created Time in ISO 8601

@@ -8,6 +8,8 @@ import (
 	commonservice "data-collection-hub-server/internal/pkg/service/common/mods"
 	sysservice "data-collection-hub-server/internal/pkg/service/sys/mods"
 	"data-collection-hub-server/pkg/errors"
+	"data-collection-hub-server/pkg/utils/check"
+	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -15,17 +17,21 @@ import (
 type AuthApi struct {
 	AuthService commonservice.AuthService
 	LogsService sysservice.LogsService
+	Validator   *validator.Validate
 }
 
-func (api *AuthApi) Login(c *fiber.Ctx) error {
+func (a *AuthApi) Login(c *fiber.Ctx) error {
 	ctx := c.UserContext()
 	req := new(common.LoginRequest)
 
 	if err := c.BodyParser(req); err != nil {
 		return errors.InvalidRequest(err)
 	}
+	if err := a.Validator.Struct(req); err != nil {
+		return errors.InvalidParams(err) // Compare this line with the original one
+	}
 
-	resp, err := api.AuthService.Login(ctx, req.Email, req.Password)
+	resp, err := a.AuthService.Login(ctx, req.Email, req.Password)
 	if err != nil {
 		return err
 	}
@@ -33,7 +39,7 @@ func (api *AuthApi) Login(c *fiber.Ctx) error {
 	userID, _ := primitive.ObjectIDFromHex(resp.Meta.UserID)
 	ipAddr := c.IP()
 	userAgent := c.Get(fiber.HeaderUserAgent)
-	_ = api.LogsService.CacheLoginLog(ctx, &userID, &ipAddr, &userAgent)
+	_ = a.LogsService.CacheLoginLog(ctx, &userID, &ipAddr, &userAgent)
 	return c.JSON(
 		vo.Response{
 			Code:    errors.CodeSuccess,
@@ -43,12 +49,16 @@ func (api *AuthApi) Login(c *fiber.Ctx) error {
 	)
 }
 
-func (api *AuthApi) Logout(c *fiber.Ctx) error {
+func (a *AuthApi) Logout(c *fiber.Ctx) error {
 	token := c.Get(fiber.HeaderAuthorization)
 	if token == "" {
-		return errors.InvalidRequest(errors.TokenMissed(fmt.Errorf("token is missed")))
+		return errors.TokenMissed(fmt.Errorf("token is missed"))
 	}
-	err := api.AuthService.Logout(c.UserContext(), &token)
+	if !check.IsBearerToken(token) {
+		return errors.InvalidToken(fmt.Errorf("token should start with 'Bearer' or 'bearer'"))
+	}
+	token = token[7:]
+	err := a.AuthService.Logout(c.UserContext(), &token)
 	if err != nil {
 		return err
 	}
@@ -62,14 +72,17 @@ func (api *AuthApi) Logout(c *fiber.Ctx) error {
 	)
 }
 
-func (api *AuthApi) RefreshToken(c *fiber.Ctx) error {
+func (a *AuthApi) RefreshToken(c *fiber.Ctx) error {
 	req := new(common.RefreshTokenRequest)
 
 	if err := c.BodyParser(req); err != nil {
 		return errors.InvalidRequest(err)
 	}
+	if err := a.Validator.Struct(req); err != nil {
+		return errors.InvalidParams(err) // Compare this line with the original one
+	}
 
-	resp, err := api.AuthService.RefreshToken(c.UserContext(), req.RefreshToken)
+	resp, err := a.AuthService.RefreshToken(c.UserContext(), req.RefreshToken)
 	if err != nil {
 		return err
 	}
@@ -83,14 +96,17 @@ func (api *AuthApi) RefreshToken(c *fiber.Ctx) error {
 	)
 }
 
-func (api *AuthApi) ChangePassword(c *fiber.Ctx) error {
+func (a *AuthApi) ChangePassword(c *fiber.Ctx) error {
 	req := new(common.ChangePasswordRequest)
 
 	if err := c.BodyParser(req); err != nil {
 		return errors.InvalidRequest(err)
 	}
+	if err := a.Validator.Struct(req); err != nil {
+		return errors.InvalidParams(err) // Compare this line with the original one
+	}
 
-	err := api.AuthService.ChangePassword(c.UserContext(), req.OldPassword, req.NewPassword)
+	err := a.AuthService.ChangePassword(c.UserContext(), req.OldPassword, req.NewPassword)
 	if err != nil {
 		return err
 	}

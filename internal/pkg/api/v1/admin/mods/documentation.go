@@ -9,6 +9,7 @@ import (
 	adminservice "data-collection-hub-server/internal/pkg/service/admin/mods"
 	sysservice "data-collection-hub-server/internal/pkg/service/sys/mods"
 	"data-collection-hub-server/pkg/errors"
+	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -16,6 +17,7 @@ import (
 type DocumentationApi struct {
 	DocumentationService adminservice.DocumentationService
 	LogsService          sysservice.LogsService
+	Validator            *validator.Validate
 }
 
 func (d DocumentationApi) InsertDocumentation(c *fiber.Ctx) error {
@@ -24,6 +26,10 @@ func (d DocumentationApi) InsertDocumentation(c *fiber.Ctx) error {
 
 	if err := c.BodyParser(req); err != nil {
 		return errors.InvalidRequest(err)
+	}
+
+	if err := d.Validator.Struct(req); err != nil {
+		return errors.InvalidParams(err) // Compare this line with the original one
 	}
 
 	documentationIDHex, err := d.DocumentationService.InsertDocumentation(ctx, req.Title, req.Content)
@@ -72,6 +78,9 @@ func (d DocumentationApi) UpdateDocumentation(c *fiber.Ctx) error {
 		return errors.InvalidRequest(err)
 	}
 
+	if err := d.Validator.Struct(req); err != nil {
+		return errors.InvalidParams(err) // Compare this line with the original one
+	}
 	documentationID, err := primitive.ObjectIDFromHex(*req.DocumentationID)
 	if err != nil {
 		return errors.InvalidRequest(err)
@@ -120,6 +129,9 @@ func (d DocumentationApi) DeleteDocumentation(c *fiber.Ctx) error {
 		return errors.InvalidRequest(err)
 	}
 
+	if err := d.Validator.Struct(req); err != nil {
+		return errors.InvalidParams(err) // Compare this line with the original one
+	}
 	documentationID, err := primitive.ObjectIDFromHex(*req.DocumentationID)
 	if err != nil {
 		return errors.InvalidRequest(err)

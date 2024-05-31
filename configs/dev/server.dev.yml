@@ -25,11 +25,11 @@ fiber:
   write_buffer_size: 4096
   proxy_header: "X-Forwarded-For"
   disable_keepalive: false
-  disable_startup_message: false
+  disable_startup_message: true
   reduce_memory_usage: false
   enable_trusted_proxy_check: false
   trusted_proxies: [ ]
-  enable_print_routes: true
+  enable_print_routes: false
 
 jwt:
   jwt_token_duration: "3600s"
@@ -38,7 +38,7 @@ jwt:
 
 mongo:
   mongo_uri: "mongodb://localhost:27017"
-  mongo_database: "data-collection-hub"
+  mongo_database: "data-collection-hub-dev"
   mongo_connect_timeout_ms: 10000
   mongo_max_pool_size: 10
   mongo_min_pool_size: 1

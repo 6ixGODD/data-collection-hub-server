@@ -10,6 +10,7 @@ import (
 	sysservice "data-collection-hub-server/internal/pkg/service/sys/mods"
 	userservice "data-collection-hub-server/internal/pkg/service/user/mods"
 	"data-collection-hub-server/pkg/errors"
+	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -17,6 +18,7 @@ import (
 type DatasetApi struct {
 	DatasetService userservice.DatasetService
 	LogsService    sysservice.LogsService
+	Validator      *validator.Validate
 }
 
 func (d *DatasetApi) InsertInstructionData(c *fiber.Ctx) error {
@@ -25,6 +27,9 @@ func (d *DatasetApi) InsertInstructionData(c *fiber.Ctx) error {
 
 	if err := c.BodyParser(req); err != nil {
 		return errors.InvalidRequest(err)
+	}
+	if err := d.Validator.Struct(req); err != nil {
+		return errors.InvalidParams(err) // Compare this line with the original one
 	}
 
 	userID, err := primitive.ObjectIDFromHex(ctx.Value(config.UserIDKey).(string))
@@ -77,6 +82,9 @@ func (d *DatasetApi) GetInstructionData(c *fiber.Ctx) error {
 	if err := c.QueryParser(req); err != nil {
 		return errors.InvalidRequest(err)
 	}
+	if err := d.Validator.Struct(req); err != nil {
+		return errors.InvalidParams(err) // Compare this line with the original one
+	}
 
 	instructionDataID, err := primitive.ObjectIDFromHex(*req.InstructionDataID)
 	if err != nil {
@@ -103,6 +111,9 @@ func (d *DatasetApi) GetInstructionDataList(c *fiber.Ctx) error {
 	if err := c.QueryParser(req); err != nil {
 		return errors.InvalidRequest(err)
 	}
+	if err := d.Validator.Struct(req); err != nil {
+		return errors.InvalidParams(err) // Compare this line with the original one
+	}
 
 	var (
 		updateBefore, updateAfter *time.Time
@@ -110,16 +121,10 @@ func (d *DatasetApi) GetInstructionDataList(c *fiber.Ctx) error {
 	)
 
 	if req.UpdateStartTime != nil {
-		*updateBefore, err = time.Parse(time.RFC3339, *req.UpdateStartTime)
-		if err != nil {
-			return errors.InvalidRequest(err)
-		}
+		*updateBefore, _ = time.Parse(time.RFC3339, *req.UpdateStartTime)
 	}
 	if req.UpdateEndTime != nil {
-		*updateAfter, err = time.Parse(time.RFC3339, *req.UpdateEndTime)
-		if err != nil {
-			return errors.InvalidRequest(err)
-		}
+		*updateAfter, _ = time.Parse(time.RFC3339, *req.UpdateEndTime)
 	}
 
 	resp, err := d.DatasetService.GetInstructionDataList(
@@ -144,6 +149,9 @@ func (d *DatasetApi) UpdateInstructionData(c *fiber.Ctx) error {
 
 	if err := c.BodyParser(req); err != nil {
 		return errors.InvalidRequest(err)
+	}
+	if err := d.Validator.Struct(req); err != nil {
+		return errors.InvalidParams(err) // Compare this line with the original one
 	}
 
 	instructionDataID, err := primitive.ObjectIDFromHex(*req.InstructionDataID)
@@ -196,6 +204,9 @@ func (d *DatasetApi) DeleteInstructionData(c *fiber.Ctx) error {
 
 	if err := c.QueryParser(req); err != nil {
 		return errors.InvalidRequest(err)
+	}
+	if err := d.Validator.Struct(req); err != nil {
+		return errors.InvalidParams(err) // Compare this line with the original one
 	}
 
 	instructionDataID, err := primitive.ObjectIDFromHex(*req.InstructionDataID)

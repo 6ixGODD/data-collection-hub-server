@@ -15,7 +15,7 @@ type OperationLogModel struct {
 	UserAgent      string             `json:"user_agent" bson:"user_agent"`   // User Agent
 	Operation      string             `json:"operation" bson:"operation"`     // Operation, 'CREATE' | 'UPDATE' | 'DELETE'
 	EntityID       primitive.ObjectID `json:"entity_id" bson:"entity_id"`     // Entity(Instruction Data) ID
-	EntityType     string             `json:"entity_type" bson:"entity_type"` // Entity NoticeType, 'INSTRUCTION' | 'USER' | 'DOCUMENTATION' | 'NOTICE'
+	EntityType     string             `json:"entity_type" bson:"entity_type"` // Entity noticeType, 'INSTRUCTION' | 'USER' | 'DOCUMENTATION' | 'NOTICE'
 	Description    string             `json:"description" bson:"description"` // Description of Operation
 	Status         string             `json:"status" bson:"status"`           // Status, 'SUCCESS' | 'FAILURE'
 	CreatedAt      time.Time          `json:"created_at" bson:"created_at"`   // Created Time in ISO 8601

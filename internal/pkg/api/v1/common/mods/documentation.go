@@ -7,12 +7,14 @@ import (
 	"data-collection-hub-server/internal/pkg/domain/vo/common"
 	commonservice "data-collection-hub-server/internal/pkg/service/common/mods"
 	"data-collection-hub-server/pkg/errors"
+	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type DocumentationApi struct {
 	DocumentationService commonservice.DocumentationService
+	Validator            *validator.Validate
 }
 
 func (d DocumentationApi) GetDocumentation(c *fiber.Ctx) error {
@@ -20,6 +22,9 @@ func (d DocumentationApi) GetDocumentation(c *fiber.Ctx) error {
 
 	if err := c.QueryParser(req); err != nil {
 		return errors.InvalidRequest(err)
+	}
+	if err := d.Validator.Struct(req); err != nil {
+		return errors.InvalidParams(err) // Compare this line with the original one
 	}
 
 	documentationID, err := primitive.ObjectIDFromHex(*req.DocumentationID)
@@ -44,6 +49,9 @@ func (d DocumentationApi) GetDocumentationList(c *fiber.Ctx) error {
 
 	if err := c.QueryParser(req); err != nil {
 		return errors.InvalidRequest(err)
+	}
+	if err := d.Validator.Struct(req); err != nil {
+		return errors.InvalidParams(err) // Compare this line with the original one
 	}
 
 	var (

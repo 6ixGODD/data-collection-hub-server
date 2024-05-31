@@ -32,6 +32,7 @@ import (
 	userservice "data-collection-hub-server/internal/pkg/service/user"
 	userservices "data-collection-hub-server/internal/pkg/service/user/mods"
 	"data-collection-hub-server/internal/pkg/tasks"
+	"data-collection-hub-server/internal/pkg/validator"
 	"github.com/google/wire"
 )
 
@@ -62,6 +63,10 @@ var (
 		wire.Struct(new(userapi.User), "*"),
 		wire.Struct(new(adminapi.Admin), "*"),
 		wire.Struct(new(api.Api), "*"),
+	)
+
+	ValidatorProviderSet = wire.NewSet(
+		validator.NewValidator,
 	)
 
 	ServiceProviderSet = wire.NewSet(
@@ -122,6 +127,7 @@ func InitializeApp(ctx context.Context) (*app.App, error) {
 		InitializePrometheus,
 		DaoProviderSet,
 		ServiceProviderSet,
+		ValidatorProviderSet,
 		ApiProviderSet,
 		RouterProviderSet,
 		MiddlewareProviderSet,

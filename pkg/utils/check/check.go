@@ -40,3 +40,10 @@ func IsValidTimeRange(start, end time.Time) bool {
 	}
 	return false
 }
+
+func IsBearerToken(token string) bool {
+	if len(token) > 7 && token[:6] == "Bearer" || token[:6] == "bearer" {
+		return true
+	}
+	return false
+}

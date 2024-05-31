@@ -8,6 +8,7 @@ import (
 	"data-collection-hub-server/internal/pkg/config"
 	"data-collection-hub-server/internal/pkg/dao"
 	"data-collection-hub-server/internal/pkg/domain/entity"
+	"data-collection-hub-server/pkg/utils/common"
 	"github.com/goccy/go-json"
 	"github.com/qiniu/qmgo/options"
 	"go.mongodb.org/mongo-driver/bson"
@@ -120,7 +121,8 @@ func (i *InstructionDataDaoImpl) GetInstructionDataList(
 		doc["updated_time"] = bson.M{"$gte": *updateTimeStart, "$lte": *updateTimeEnd}
 	}
 	if query != nil {
-		pattern := fmt.Sprintf(".*%s.*", *query)
+		safetyQuery := common.EscapeSpecialChars(*query)
+		pattern := fmt.Sprintf(".*%s.*", safetyQuery)
 		doc["$or"] = []bson.M{
 			{"username": bson.M{"$regex": primitive.Regex{Pattern: pattern, Options: "i"}}},
 		}

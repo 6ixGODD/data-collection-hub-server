@@ -11,7 +11,7 @@ base:
 
 casbin:
   casbin_model_path: "./configs/casbin_model.conf"
-  casbin_policy_adapter_url: "mongodb://localhost:27017/data-collection-hub-test"
+  casbin_policy_adapter_url: "mongodb://localhost:27017/data-collection-hub-dev"
 
 fiber:
   prefork: false
@@ -38,7 +38,7 @@ jwt:
 
 mongo:
   mongo_uri: "mongodb://localhost:27017"
-  mongo_database: "data-collection-hub"
+  mongo_database: "data-collection-hub-dev"
   mongo_connect_timeout_ms: 10000
   mongo_max_pool_size: 10
   mongo_min_pool_size: 1

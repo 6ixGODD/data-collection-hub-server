@@ -1,9 +1,11 @@
 package jwt_test
 
 import (
+	"os"
 	"testing"
 	"time"
 
+	"data-collection-hub-server/test/common"
 	"data-collection-hub-server/test/wire"
 	"github.com/stretchr/testify/assert"
 )
@@ -14,7 +16,19 @@ const (
 	invalidSubject = ""
 )
 
+func TestMain(m *testing.M) {
+	if err := common.Setup(); err != nil {
+		panic(err)
+	}
+	code := m.Run()
+	if err := common.Teardown(); err != nil {
+		panic(err)
+	}
+	os.Exit(code)
+}
+
 func TestJwtGenerateAccessToken(t *testing.T) {
+
 	var (
 		injector = wire.GetInjector()
 		j        = injector.Jwt

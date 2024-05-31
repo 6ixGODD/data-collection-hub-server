@@ -82,16 +82,16 @@ func (s StatisticServiceImpl) GetDataStatistic(
 	}
 
 	if startDate == nil && endDate == nil {
-		_startDate := time.Now().AddDate(0, 0, -6)
-		_endDate := time.Now()
-		startDate = &_startDate
-		endDate = &_endDate
+		__startDate := time.Now().AddDate(0, 0, -6)
+		__endDate := time.Now()
+		startDate = &__startDate
+		endDate = &__endDate
 	} else if startDate == nil {
-		_startDate := endDate.AddDate(0, 0, -6)
-		startDate = &_startDate
+		__startDate := endDate.AddDate(0, 0, -6)
+		startDate = &__startDate
 	} else if endDate == nil {
-		_endDate := startDate.AddDate(0, 0, 6)
-		endDate = &_endDate
+		__endDate := startDate.AddDate(0, 0, 6)
+		endDate = &__endDate
 	}
 	timeRangeStatistic := make([]*admin.TimeRangeStatistic, 0, int(endDate.Sub(*startDate).Hours()/24)+1)
 	for i := 0; i <= int(endDate.Sub(*startDate).Hours()/24); i++ {

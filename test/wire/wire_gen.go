@@ -32,26 +32,26 @@ import (
 
 // Injectors from wire.go:
 
-func InitializeTestInjector(ctx context.Context, config2 *config.Config, n int) (*Injector, error) {
-	redis, err := InitializeRedis(ctx, config2)
+func InitializeTestInjector(ctx context.Context, cfg *config.Config, n int) (*Injector, error) {
+	redis, err := InitializeRedis(ctx, cfg)
 	if err != nil {
 		return nil, err
 	}
-	cache := dao.NewCache(redis, config2)
-	mongo, err := InitializeMongo(ctx, config2)
+	cache := dao.NewCache(redis, cfg)
+	mongo, err := InitializeMongo(ctx, cfg)
 	if err != nil {
 		return nil, err
 	}
-	zap, err := InitializeZap(config2)
+	zap, err := InitializeZap(cfg)
 	if err != nil {
 		return nil, err
 	}
-	jwt, err := InitializeJwt(config2)
+	jwt, err := InitializeJwt(cfg)
 	if err != nil {
 		return nil, err
 	}
-	prometheus := InitializePrometheus(config2)
-	core, err := dao.NewCore(ctx, mongo, zap, config2)
+	prometheus := InitializePrometheus(cfg)
+	core, err := dao.NewCore(ctx, mongo, zap, cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +86,7 @@ func InitializeTestInjector(ctx context.Context, config2 *config.Config, n int) 
 	loginLogDaoMock := mock.NewLoginLogDaoMockWithRandomData(n, loginLogDao, userDaoMock)
 	operationLogDaoMock := mock.NewOperationLogDaoMockWithRandomData(n, operationLogDao, userDaoMock, instructionDataDaoMock, noticeDaoMock, documentationDaoMock)
 	serviceCore := &service.Core{
-		Config: config2,
+		Config: cfg,
 	}
 	dataAuditService := mods2.NewDataAuditService(serviceCore, instructionDataDao)
 	documentationService := mods2.NewDocumentationService(serviceCore, documentationDao)
@@ -104,7 +104,7 @@ func InitializeTestInjector(ctx context.Context, config2 *config.Config, n int) 
 	modsStatisticService := mods5.NewStatisticService(serviceCore, instructionDataDao)
 	wireInjector := &Injector{
 		Ctx:                        ctx,
-		Config:                     config2,
+		Config:                     cfg,
 		Cache:                      cache,
 		Mongo:                      mongo,
 		Redis:                      redis,

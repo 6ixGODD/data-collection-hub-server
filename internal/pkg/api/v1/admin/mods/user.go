@@ -7,12 +7,14 @@ import (
 	"data-collection-hub-server/internal/pkg/domain/vo/admin"
 	adminservice "data-collection-hub-server/internal/pkg/service/admin/mods"
 	"data-collection-hub-server/pkg/errors"
+	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type UserApi struct {
 	UserService adminservice.UserService
+	Validator   *validator.Validate
 }
 
 func (u *UserApi) InsertUser(c *fiber.Ctx) error {
@@ -20,6 +22,9 @@ func (u *UserApi) InsertUser(c *fiber.Ctx) error {
 
 	if err := c.BodyParser(req); err != nil {
 		return errors.InvalidRequest(err)
+	}
+	if err := u.Validator.Struct(req); err != nil {
+		return errors.InvalidParams(err) // Compare this line with the original one
 	}
 
 	_, err := u.UserService.InsertUser(
@@ -43,6 +48,9 @@ func (u *UserApi) GetUser(c *fiber.Ctx) error {
 
 	if err := c.QueryParser(req); err != nil {
 		return errors.InvalidRequest(err)
+	}
+	if err := u.Validator.Struct(req); err != nil {
+		return errors.InvalidParams(err) // Compare this line with the original one
 	}
 
 	userID, err := primitive.ObjectIDFromHex(*req.UserID)
@@ -69,6 +77,9 @@ func (u *UserApi) GetUserList(c *fiber.Ctx) error {
 
 	if err := c.QueryParser(req); err != nil {
 		return errors.InvalidRequest(err)
+	}
+	if err := u.Validator.Struct(req); err != nil {
+		return errors.InvalidParams(err) // Compare this line with the original one
 	}
 
 	var (
@@ -125,6 +136,9 @@ func (u *UserApi) UpdateUser(c *fiber.Ctx) error {
 	if err := c.BodyParser(req); err != nil {
 		return errors.InvalidRequest(err)
 	}
+	if err := u.Validator.Struct(req); err != nil {
+		return errors.InvalidParams(err) // Compare this line with the original one
+	}
 
 	userID, err := primitive.ObjectIDFromHex(*req.UserID)
 	if err != nil {
@@ -151,6 +165,9 @@ func (u *UserApi) DeleteUser(c *fiber.Ctx) error {
 	if err := c.QueryParser(req); err != nil {
 		return errors.InvalidRequest(err)
 	}
+	if err := u.Validator.Struct(req); err != nil {
+		return errors.InvalidParams(err) // Compare this line with the original one
+	}
 
 	userID, err := primitive.ObjectIDFromHex(*req.UserID)
 	if err != nil {
@@ -175,6 +192,9 @@ func (u *UserApi) ChangeUserPassword(c *fiber.Ctx) error {
 
 	if err := c.BodyParser(req); err != nil {
 		return errors.InvalidRequest(err)
+	}
+	if err := u.Validator.Struct(req); err != nil {
+		return errors.InvalidParams(err) // Compare this line with the original one
 	}
 
 	userID, err := primitive.ObjectIDFromHex(*req.UserID)

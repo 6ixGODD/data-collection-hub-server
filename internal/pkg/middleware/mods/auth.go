@@ -7,6 +7,7 @@ import (
 	"data-collection-hub-server/internal/pkg/dao"
 	"data-collection-hub-server/pkg/errors"
 	"data-collection-hub-server/pkg/jwt"
+	"data-collection-hub-server/pkg/utils/check"
 	"data-collection-hub-server/pkg/utils/crypt"
 	"github.com/gofiber/fiber/v2"
 )
@@ -32,6 +33,10 @@ func (a *AuthMiddleware) authMiddleware() fiber.Handler {
 		if token == "" {
 			return errors.TokenMissed(fmt.Errorf("token missed"))
 		}
+		if !check.IsBearerToken(token) {
+			return errors.InvalidToken(fmt.Errorf("token should start with 'Bearer' or 'bearer'"))
+		}
+		token = token[7:]
 		if ok, err := a.Cache.Get(c.Context(), crypt.MD5(token)); err == nil && *ok == config.CacheTrue {
 			return errors.InvalidToken(fmt.Errorf("token invalid"))
 		}

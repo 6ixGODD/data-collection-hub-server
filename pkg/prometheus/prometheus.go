@@ -62,7 +62,7 @@ func (p *Prometheus) PrometheusFiberHandler() fiber.Handler {
 
 		start := time.Now()
 
-		_ = c.Next()
+		err := c.Next()
 
 		r := c.Route()
 
@@ -75,6 +75,6 @@ func (p *Prometheus) PrometheusFiberHandler() fiber.Handler {
 		p.reqDuration.With(
 			prometheus.Labels{"method": c.Method(), "handler": r.Path},
 		).Observe(elapsed)
-		return nil
+		return err
 	}
 }

@@ -9,6 +9,7 @@ import (
 	"data-collection-hub-server/internal/pkg/config"
 	"data-collection-hub-server/internal/pkg/dao"
 	"data-collection-hub-server/internal/pkg/domain/entity"
+	"data-collection-hub-server/pkg/utils/common"
 	"github.com/goccy/go-json"
 	"github.com/qiniu/qmgo/options"
 	"go.mongodb.org/mongo-driver/bson"
@@ -104,11 +105,13 @@ func (l *LoginLogDaoImpl) GetLoginLogList(
 		doc["user_agent"] = *userAgent
 	}
 	if query != nil {
+		safetyQuery := common.EscapeSpecialChars(*query)
+		pattern := fmt.Sprintf(".*%s.*", safetyQuery)
 		doc["$or"] = []bson.M{
-			{"username": bson.M{"$regex": *query, "$options": "i"}},
-			{"email": bson.M{"$regex": *query, "$options": "i"}},
-			{"ip_address": bson.M{"$regex": *query, "$options": "i"}},
-			{"user_agent": bson.M{"$regex": *query, "$options": "i"}},
+			{"username": bson.M{"$regex": primitive.Regex{Pattern: pattern, Options: "i"}}},
+			{"email": bson.M{"$regex": primitive.Regex{Pattern: pattern, Options: "i"}}},
+			{"ip_address": bson.M{"$regex": primitive.Regex{Pattern: pattern, Options: "i"}}},
+			{"user_agent": bson.M{"$regex": primitive.Regex{Pattern: pattern, Options: "i"}}},
 		}
 	}
 	docJSON, _ := json.Marshal(doc)

@@ -2,10 +2,9 @@ package common
 
 import (
 	"context"
-	"os"
-	"testing"
 
 	"data-collection-hub-server/internal/pkg/config"
+	"data-collection-hub-server/pkg/utils/crypt"
 	"data-collection-hub-server/test/wire"
 	"github.com/spf13/viper"
 )
@@ -36,7 +35,14 @@ func Teardown() error {
 	_, _ = injector.DocumentationDao.DeleteDocumentationList(injector.Ctx, nil, nil, nil, nil)
 	_, _ = injector.LoginLogDao.DeleteLoginLogList(injector.Ctx, nil, nil, nil, nil, nil)
 	_, _ = injector.OperationLogDao.DeleteOperationLogList(injector.Ctx, nil, nil, nil, nil, nil, nil, nil, nil)
-
+	var (
+		username    = "Admin"
+		password, _ = crypt.Hash("Admin@123")
+		email       = "6goddddddd@gmail.com"
+		role        = config.UserRoleAdmin
+		org         = "Org"
+	)
+	_, _ = injector.UserDao.InsertUser(injector.Ctx, username, email, password, role, org)
 	err := injector.Cache.Flush(injector.Ctx, nil)
 	if err != nil {
 		return err
@@ -50,15 +56,4 @@ func Teardown() error {
 		return err
 	}
 	return nil
-}
-
-func TestMain(m *testing.M) {
-	if err := Setup(); err != nil {
-		panic(err)
-	}
-	code := m.Run()
-	if err := Teardown(); err != nil {
-		panic(err)
-	}
-	os.Exit(code)
 }

@@ -9,6 +9,7 @@ import (
 	"data-collection-hub-server/internal/pkg/config"
 	"data-collection-hub-server/internal/pkg/dao"
 	"data-collection-hub-server/internal/pkg/domain/entity"
+	"data-collection-hub-server/pkg/utils/common"
 	"github.com/goccy/go-json"
 	"github.com/qiniu/qmgo/options"
 	"go.mongodb.org/mongo-driver/bson"
@@ -121,9 +122,11 @@ func (o *OperationLogDaoImpl) GetOperationLogList(
 		doc["status"] = *status
 	}
 	if query != nil {
+		safetyQuery := common.EscapeSpecialChars(*query)
+		pattern := fmt.Sprintf(".*%s.*", safetyQuery)
 		doc["$or"] = []bson.M{
-			{"username": bson.M{"$regex": *query, "$options": "i"}},
-			{"email": bson.M{"$regex": *query, "$options": "i"}},
+			{"username": bson.M{"$regex": primitive.Regex{Pattern: pattern, Options: "i"}}},
+			{"email": bson.M{"$regex": primitive.Regex{Pattern: pattern, Options: "i"}}},
 		}
 	}
 	docJSON, _ := json.Marshal(doc)

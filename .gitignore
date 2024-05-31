@@ -166,5 +166,8 @@ $RECYCLE.BIN/
 # Local env file
 .env
 
-# logs
+# logs files
 *.log
+logs/
+_logs/
+

@@ -7,12 +7,14 @@ import (
 	"data-collection-hub-server/internal/pkg/domain/vo/admin"
 	adminservice "data-collection-hub-server/internal/pkg/service/admin/mods"
 	"data-collection-hub-server/pkg/errors"
+	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type LogsApi struct {
 	LogsService adminservice.LogsService
+	Validator   *validator.Validate
 }
 
 func (l *LogsApi) GetLoginLog(c *fiber.Ctx) error {
@@ -22,6 +24,9 @@ func (l *LogsApi) GetLoginLog(c *fiber.Ctx) error {
 		return errors.InvalidRequest(err)
 	}
 
+	if err := l.Validator.Struct(req); err != nil {
+		return errors.InvalidParams(err) // Compare this line with the original one
+	}
 	loginLogID, err := primitive.ObjectIDFromHex(*req.LoginLogID)
 	if err != nil {
 		return errors.InvalidRequest(err)
@@ -46,6 +51,9 @@ func (l *LogsApi) GetLoginLogList(c *fiber.Ctx) error {
 
 	if err := c.QueryParser(req); err != nil {
 		return errors.InvalidRequest(err)
+	}
+	if err := l.Validator.Struct(req); err != nil {
+		return errors.InvalidParams(err) // Compare this line with the original one
 	}
 
 	var (
@@ -88,6 +96,9 @@ func (l *LogsApi) GetOperationLog(c *fiber.Ctx) error {
 	if err := c.QueryParser(req); err != nil {
 		return errors.InvalidRequest(err)
 	}
+	if err := l.Validator.Struct(req); err != nil {
+		return errors.InvalidParams(err) // Compare this line with the original one
+	}
 
 	operationLogID, err := primitive.ObjectIDFromHex(*req.OperationLogID)
 	if err != nil {
@@ -113,6 +124,9 @@ func (l *LogsApi) GetOperationLogList(c *fiber.Ctx) error {
 
 	if err := c.QueryParser(req); err != nil {
 		return errors.InvalidRequest(err)
+	}
+	if err := l.Validator.Struct(req); err != nil {
+		return errors.InvalidParams(err) // Compare this line with the original one
 	}
 
 	var (

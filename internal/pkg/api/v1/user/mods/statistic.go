@@ -7,17 +7,22 @@ import (
 	"data-collection-hub-server/internal/pkg/domain/vo/user"
 	userservice "data-collection-hub-server/internal/pkg/service/user/mods"
 	"data-collection-hub-server/pkg/errors"
+	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 )
 
 type StatisticApi struct {
 	StatisticService userservice.StatisticService
+	Validator        *validator.Validate
 }
 
 func (s *StatisticApi) GetDataStatistic(c *fiber.Ctx) error {
 	req := new(user.GetDataStatisticRequest)
 	if err := c.QueryParser(req); err != nil {
 		return errors.InvalidRequest(err)
+	}
+	if err := s.Validator.Struct(req); err != nil {
+		return errors.InvalidParams(err) // Compare this line with the original one
 	}
 
 	var (

@@ -10,6 +10,7 @@ import (
 	adminservice "data-collection-hub-server/internal/pkg/service/admin/mods"
 	sysservice "data-collection-hub-server/internal/pkg/service/sys/mods"
 	"data-collection-hub-server/pkg/errors"
+	"github.com/go-playground/validator/v10"
 	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -18,6 +19,7 @@ import (
 type DataAuditApi struct {
 	DataAuditService adminservice.DataAuditService
 	LogsService      sysservice.LogsService
+	Validator        *validator.Validate
 }
 
 func (d *DataAuditApi) GetInstructionData(c *fiber.Ctx) error {
@@ -25,6 +27,9 @@ func (d *DataAuditApi) GetInstructionData(c *fiber.Ctx) error {
 
 	if err := c.QueryParser(req); err != nil {
 		return errors.InvalidRequest(err)
+	}
+	if err := d.Validator.Struct(req); err != nil {
+		return errors.InvalidParams(err) // Compare this line with the original one
 	}
 	instructionDataID, err := primitive.ObjectIDFromHex(*req.InstructionDataID)
 	if err != nil {
@@ -48,6 +53,10 @@ func (d *DataAuditApi) GetInstructionDataList(c *fiber.Ctx) error {
 
 	if err := c.QueryParser(req); err != nil {
 		return errors.InvalidRequest(err)
+	}
+
+	if err := d.Validator.Struct(req); err != nil {
+		return errors.InvalidParams(err) // Compare this line with the original one
 	}
 
 	var (
@@ -110,6 +119,11 @@ func (d *DataAuditApi) ApproveInstructionData(c *fiber.Ctx) error {
 	if err := c.BodyParser(req); err != nil {
 		return errors.InvalidRequest(err)
 	}
+
+	if err := d.Validator.Struct(req); err != nil {
+		return errors.InvalidParams(err) // XXX: Change error type
+	}
+
 	instructionDataID, err := primitive.ObjectIDFromHex(*req.InstructionDataID)
 	if err != nil {
 		return errors.InvalidRequest(err)
@@ -133,6 +147,11 @@ func (d *DataAuditApi) RejectInstructionData(c *fiber.Ctx) error {
 	if err := c.BodyParser(req); err != nil {
 		return errors.InvalidRequest(err)
 	}
+
+	if err := d.Validator.Struct(req); err != nil {
+		return errors.InvalidParams(err) // XXX: Change error type
+	}
+
 	instructionDataID, err := primitive.ObjectIDFromHex(*req.InstructionDataID)
 	if err != nil {
 		return errors.InvalidRequest(err)
@@ -157,6 +176,11 @@ func (d *DataAuditApi) UpdateInstructionData(c *fiber.Ctx) error {
 	if err := c.BodyParser(req); err != nil {
 		return errors.InvalidRequest(err)
 	}
+
+	if err := d.Validator.Struct(req); err != nil {
+		return errors.InvalidParams(err) // XXX: Change error type
+	}
+
 	instructionDataID, err := primitive.ObjectIDFromHex(*req.InstructionDataID)
 	if err != nil {
 		return errors.InvalidRequest(err)
@@ -212,6 +236,11 @@ func (d *DataAuditApi) ExportInstructionData(c *fiber.Ctx) error {
 	if err := c.QueryParser(req); err != nil {
 		return errors.InvalidRequest(err)
 	}
+
+	if err := d.Validator.Struct(req); err != nil {
+		return errors.InvalidParams(err) // XXX: Change error type
+	}
+
 	var (
 		userID                         *primitive.ObjectID
 		createBefore, createAfter      *time.Time
@@ -263,10 +292,8 @@ func (d *DataAuditApi) ExportInstructionData(c *fiber.Ctx) error {
 	}
 	c.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 	c.Set(
-		fiber.HeaderContentDisposition, fmt.Sprintf(
-			"attachment; filename=%s",
-			fmt.Sprintf("instruction_%s.json", time.Now().Format(time.RFC3339)),
-		),
+		fiber.HeaderContentDisposition,
+		fmt.Sprintf("attachment; filename=%s", fmt.Sprintf("instruction_%s.json", time.Now().Format(time.RFC3339))),
 	)
 	return c.Send(dataJSON)
 }
@@ -277,6 +304,11 @@ func (d *DataAuditApi) ExportInstructionDataAsAlpaca(c *fiber.Ctx) error {
 	if err := c.QueryParser(req); err != nil {
 		return errors.InvalidRequest(err)
 	}
+
+	if err := d.Validator.Struct(req); err != nil {
+		return errors.InvalidParams(err) // XXX: Change error type
+	}
+
 	var (
 		userID                         *primitive.ObjectID
 		createStartTime, createEndTime *time.Time
@@ -337,19 +369,23 @@ func (d *DataAuditApi) ExportInstructionDataAsAlpaca(c *fiber.Ctx) error {
 }
 
 func (d *DataAuditApi) DeleteInstructionData(c *fiber.Ctx) error {
-	ctx := c.UserContext()
 	req := new(admin.DeleteInstructionDataRequest)
 
 	if err := c.QueryParser(req); err != nil {
 		return errors.InvalidRequest(err)
 	}
+
+	if err := d.Validator.Struct(req); err != nil {
+		return errors.InvalidParams(err) // XXX: Change error type
+	}
+
 	instructionDataID, err := primitive.ObjectIDFromHex(*req.InstructionDataID)
 	if err != nil {
 		return errors.InvalidRequest(err)
 	}
-	err = d.DataAuditService.DeleteInstructionData(ctx, &instructionDataID)
+	err = d.DataAuditService.DeleteInstructionData(c.UserContext(), &instructionDataID)
 	var (
-		userID, _  = primitive.ObjectIDFromHex(ctx.Value(config.UserIDKey).(string))
+		userID, _  = primitive.ObjectIDFromHex(c.UserContext().Value(config.UserIDKey).(string))
 		ipAddr     = c.IP()
 		userAgent  = c.Get(fiber.HeaderUserAgent)
 		operation  = config.OperationTypeDelete
@@ -362,7 +398,8 @@ func (d *DataAuditApi) DeleteInstructionData(c *fiber.Ctx) error {
 			status      = config.OperationStatusFailure
 		)
 		_ = d.LogsService.CacheOperationLog(
-			ctx, &userID, &instructionDataID, &ipAddr, &userAgent, &operation, &entityType, &description, &status,
+			c.UserContext(), &userID, &instructionDataID, &ipAddr, &userAgent, &operation, &entityType, &description,
+			&status,
 		)
 		return err
 	}
@@ -372,7 +409,8 @@ func (d *DataAuditApi) DeleteInstructionData(c *fiber.Ctx) error {
 		status      = config.OperationStatusSuccess
 	)
 	_ = d.LogsService.CacheOperationLog(
-		ctx, &userID, &instructionDataID, &ipAddr, &userAgent, &operation, &entityType, &description, &status,
+		c.UserContext(), &userID, &instructionDataID, &ipAddr, &userAgent, &operation, &entityType, &description,
+		&status,
 	)
 	return c.JSON(
 		vo.Response{
