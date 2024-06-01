@@ -4,16 +4,18 @@ import (
 	"context"
 	"time"
 
+	"data-collection-hub-server/internal/pkg/config"
 	dao "data-collection-hub-server/internal/pkg/dao/mods"
 	"data-collection-hub-server/internal/pkg/domain/vo/admin"
 	"data-collection-hub-server/internal/pkg/service"
 	"data-collection-hub-server/pkg/errors"
 	"data-collection-hub-server/pkg/utils/crypt"
+	"github.com/casbin/casbin/v2"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type UserService interface {
-	InsertUser(ctx context.Context, username, email, password, role, organization *string) (string, error)
+	InsertUser(ctx context.Context, username, email, password, organization *string) (string, error)
 	GetUser(ctx context.Context, userID *primitive.ObjectID) (*admin.GetUserResponse, error)
 	GetUserList(
 		ctx context.Context, page, pageSize *int64, desc *bool, role *string,
@@ -24,32 +26,44 @@ type UserService interface {
 	ChangeUserPassword(ctx context.Context, userID *primitive.ObjectID, newPassword *string) error
 }
 
+// UserServiceImpl implements the UserService.
 type UserServiceImpl struct {
-	core    *service.Core
-	userDao dao.UserDao
+	core     *service.Core
+	userDao  dao.UserDao
+	enforcer *casbin.Enforcer
 }
 
-func NewUserService(core *service.Core, userDao dao.UserDao) UserService {
+// NewUserService is a wire provider function that returns a UserServiceImpl.
+func NewUserService(core *service.Core, userDao dao.UserDao, enforcer *casbin.Enforcer) UserService {
 	return &UserServiceImpl{
-		core:    core,
-		userDao: userDao,
+		core:     core,
+		userDao:  userDao,
+		enforcer: enforcer,
 	}
 }
 
-func (u UserServiceImpl) InsertUser(ctx context.Context, username, email, password, role, organization *string) (
-	string, error,
-) {
+// InsertUser inserts a new user into mongodb and creates a new role for the user in casbin.
+// Returns the user ID if successful.
+func (u UserServiceImpl) InsertUser(
+	ctx context.Context, username, email, password, organization *string,
+) (string, error) {
 	passwordHash, err := crypt.Hash(*password)
 	if err != nil {
 		return "", errors.ServiceError(err)
 	}
-	userID, err := u.userDao.InsertUser(ctx, *username, *email, passwordHash, *role, *organization)
+	userID, err := u.userDao.InsertUser(ctx, *username, *email, passwordHash, config.UserRoleUser, *organization)
 	if err != nil {
 		return "", errors.DBError(errors.WriteError(err))
+	}
+	_, err = u.enforcer.AddRoleForUser(userID.Hex(), config.UserRoleUser)
+	if err != nil {
+		return "", err
 	}
 	return userID.Hex(), nil
 }
 
+// GetUser retrieves a user by user ID.
+// Returns the user if successful.
 func (u UserServiceImpl) GetUser(ctx context.Context, userID *primitive.ObjectID) (*admin.GetUserResponse, error) {
 	user, err := u.userDao.GetUserByID(ctx, *userID)
 	if err != nil {
@@ -68,6 +82,8 @@ func (u UserServiceImpl) GetUser(ctx context.Context, userID *primitive.ObjectID
 	}, nil
 }
 
+// GetUserList retrieves a list of users based on the query parameters.
+// Returns the list of users if successful.
 func (u UserServiceImpl) GetUserList(
 	ctx context.Context, page, pageSize *int64, desc *bool, role *string,
 	lastLoginBefore, lastLoginAfter, createdBefore, createdAfter *time.Time, query *string,
@@ -101,6 +117,8 @@ func (u UserServiceImpl) GetUserList(
 	}, nil
 }
 
+// UpdateUser updates a user's information.
+// Returns nil if successful.
 func (u UserServiceImpl) UpdateUser(
 	ctx context.Context, userID *primitive.ObjectID, username, email, role, organization *string,
 ) error {
@@ -111,6 +129,8 @@ func (u UserServiceImpl) UpdateUser(
 	return nil
 }
 
+// DeleteUser deletes a user by user ID.
+// Returns nil if successful.
 func (u UserServiceImpl) DeleteUser(ctx context.Context, userID *primitive.ObjectID) error {
 	err := u.userDao.DeleteUser(ctx, *userID)
 	if err != nil {
@@ -119,6 +139,8 @@ func (u UserServiceImpl) DeleteUser(ctx context.Context, userID *primitive.Objec
 	return nil
 }
 
+// ChangeUserPassword changes a user's password.
+// Returns nil if successful.
 func (u UserServiceImpl) ChangeUserPassword(
 	ctx context.Context, userID *primitive.ObjectID, newPassword *string,
 ) error {

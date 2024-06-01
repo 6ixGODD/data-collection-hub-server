@@ -27,6 +27,7 @@ func Setup() error {
 }
 
 func Teardown() error {
+	var err error
 	injector := wire.GetInjector()
 
 	_, _ = injector.UserDao.DeleteUserList(injector.Ctx, nil, nil, nil, nil, nil, nil, nil, nil)
@@ -39,11 +40,17 @@ func Teardown() error {
 		username    = "Admin"
 		password, _ = crypt.Hash("Admin@123")
 		email       = "6goddddddd@gmail.com"
-		role        = config.UserRoleAdmin
 		org         = "Org"
 	)
-	_, _ = injector.UserDao.InsertUser(injector.Ctx, username, email, password, role, org)
-	err := injector.Cache.Flush(injector.Ctx, nil)
+	userID, err := injector.UserDao.InsertUser(injector.Ctx, username, email, password, config.UserRoleAdmin, org)
+	if err != nil {
+		return err
+	}
+	_, err = injector.Enforcer.AddRolesForUser(userID.Hex(), []string{config.UserRoleAdmin, config.UserRoleUser})
+	if err != nil {
+		return err
+	}
+	err = injector.Cache.Flush(injector.Ctx, nil)
 	if err != nil {
 		return err
 	}

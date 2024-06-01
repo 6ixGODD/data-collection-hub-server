@@ -424,8 +424,8 @@ func (i *InstructionDataDaoImpl) DeleteInstructionDataList(
 	ctx context.Context, userID *primitive.ObjectID, theme, statusCode *string,
 	createTimeStart, createTimeEnd, updateTimeStart, updateTimeEnd *time.Time,
 ) (*int64, error) {
-	collection := i.Dao.Mongo.MongoClient.Database(i.Dao.Mongo.DatabaseName).Collection(config.InstructionDataCollectionName)
-	doc := bson.M{"deleted": false}
+	coll := i.Dao.Mongo.MongoClient.Database(i.Dao.Mongo.DatabaseName).Collection(config.InstructionDataCollectionName)
+	doc := bson.M{}
 	if userID != nil {
 		doc["user_id"] = *userID
 	}
@@ -443,17 +443,17 @@ func (i *InstructionDataDaoImpl) DeleteInstructionDataList(
 	}
 	docJSON, _ := json.Marshal(doc)
 
-	result, err := collection.RemoveAll(ctx, doc)
+	result, err := coll.RemoveAll(ctx, doc)
 	if err != nil {
 		i.Dao.Logger.Error(
 			"InstructionDataDaoImpl.DeleteInstructionDataList: failed to delete instruction data list",
 			zap.Error(err), zap.ByteString(config.InstructionDataCollectionName, docJSON),
 		)
-	} else {
-		i.Dao.Logger.Info(
-			"InstructionDataDaoImpl.DeleteInstructionDataList: success",
-			zap.Int64("count", result.DeletedCount), zap.ByteString(config.InstructionDataCollectionName, docJSON),
-		)
+		return nil, err
 	}
-	return &result.DeletedCount, err
+	i.Dao.Logger.Info(
+		"InstructionDataDaoImpl.DeleteInstructionDataList: success",
+		zap.Int64("count", result.DeletedCount), zap.ByteString(config.InstructionDataCollectionName, docJSON),
+	)
+	return &result.DeletedCount, nil
 }

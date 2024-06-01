@@ -1,6 +1,7 @@
 package redis
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/redis/go-redis/v9"
@@ -42,8 +43,11 @@ func New(ctx context.Context, options *redis.Options) (*Redis, error) {
 	return redisInstance, err
 }
 
-func Set(options *redis.Options) error {
+func Update(options *redis.Options) error {
 	var err error
+	if err := redisInstance.Close(); err != nil {
+		return err
+	}
 	redisInstance = &Redis{
 		redisConfig: &Config{
 			redisOptions: options,
@@ -63,6 +67,9 @@ func (r *Redis) Init() error {
 		return nil
 	}
 	client := redis.NewClient(r.redisConfig.redisOptions)
+	if client == nil {
+		return fmt.Errorf("failed to init redis client")
+	}
 	if _, err := client.Ping(r.ctx).Result(); err != nil {
 		return err
 	}

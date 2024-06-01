@@ -46,7 +46,7 @@ func New(
 	return jwtInstance, err
 }
 
-func Set(privateKey *ecdsa.PrivateKey, tokenDuration, refreshDuration, refreshBuffer time.Duration) error {
+func Update(privateKey *ecdsa.PrivateKey, tokenDuration, refreshDuration, refreshBuffer time.Duration) error {
 	var err error
 	if privateKey == nil {
 		privateKey = jwtInstance.privateKey

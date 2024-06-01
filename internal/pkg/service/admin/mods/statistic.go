@@ -40,10 +40,13 @@ func NewStatisticService(
 func (s StatisticServiceImpl) GetDataStatistic(
 	ctx context.Context, startDate, endDate *time.Time,
 ) (*admin.GetDataStatisticResponse, error) {
-	pendingStatus := config.InstructionDataStatusPending
-	approvedStatus := config.InstructionDataStatusApproved
-	rejectedStatus := config.InstructionDataStatusRejected
-	themeField := "theme"
+	var (
+		pendingStatus  = config.InstructionDataStatusPending
+		approvedStatus = config.InstructionDataStatusApproved
+		rejectedStatus = config.InstructionDataStatusRejected
+		themeField     = "theme"
+	)
+
 	total, err := s.instructionDataDao.CountInstructionData(
 		ctx, nil, nil, nil, nil,
 		nil, nil, nil,

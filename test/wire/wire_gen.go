@@ -8,7 +8,6 @@ package wire
 
 import (
 	"context"
-
 	"data-collection-hub-server/internal/pkg/config"
 	"data-collection-hub-server/internal/pkg/dao"
 	"data-collection-hub-server/internal/pkg/dao/mods"
@@ -27,31 +26,32 @@ import (
 	"data-collection-hub-server/pkg/redis"
 	"data-collection-hub-server/pkg/zap"
 	"data-collection-hub-server/test/mock"
+	"github.com/casbin/casbin/v2"
 	"github.com/google/wire"
 )
 
 // Injectors from wire.go:
 
-func InitializeTestInjector(ctx context.Context, cfg *config.Config, n int) (*Injector, error) {
-	redis, err := InitializeRedis(ctx, cfg)
+func InitializeTestInjector(ctx context.Context, config2 *config.Config, n int) (*Injector, error) {
+	redis, err := InitializeRedis(ctx, config2)
 	if err != nil {
 		return nil, err
 	}
-	cache := dao.NewCache(redis, cfg)
-	mongo, err := InitializeMongo(ctx, cfg)
+	cache := dao.NewCache(redis, config2)
+	mongo, err := InitializeMongo(ctx, config2)
 	if err != nil {
 		return nil, err
 	}
-	zap, err := InitializeZap(cfg)
+	zap, err := InitializeZap(config2)
 	if err != nil {
 		return nil, err
 	}
-	jwt, err := InitializeJwt(cfg)
+	jwt, err := InitializeJwt(config2)
 	if err != nil {
 		return nil, err
 	}
-	prometheus := InitializePrometheus(cfg)
-	core, err := dao.NewCore(ctx, mongo, zap, cfg)
+	prometheus := InitializePrometheus(config2)
+	core, err := dao.NewCore(ctx, mongo, zap, config2)
 	if err != nil {
 		return nil, err
 	}
@@ -86,14 +86,18 @@ func InitializeTestInjector(ctx context.Context, cfg *config.Config, n int) (*In
 	loginLogDaoMock := mock.NewLoginLogDaoMockWithRandomData(n, loginLogDao, userDaoMock)
 	operationLogDaoMock := mock.NewOperationLogDaoMockWithRandomData(n, operationLogDao, userDaoMock, instructionDataDaoMock, noticeDaoMock, documentationDaoMock)
 	serviceCore := &service.Core{
-		Config: cfg,
+		Config: config2,
 	}
 	dataAuditService := mods2.NewDataAuditService(serviceCore, instructionDataDao)
 	documentationService := mods2.NewDocumentationService(serviceCore, documentationDao)
 	noticeService := mods2.NewNoticeService(serviceCore, noticeDao)
 	logsService := mods2.NewLogsService(serviceCore, loginLogDao, operationLogDao)
 	statisticService := mods2.NewStatisticService(serviceCore, instructionDataDao, userDao)
-	userService := mods2.NewUserService(serviceCore, userDao)
+	enforcer, err := InitializeCasbinEnforcer(config2)
+	if err != nil {
+		return nil, err
+	}
+	userService := mods2.NewUserService(serviceCore, userDao, enforcer)
 	authService := mods3.NewAuthService(serviceCore, userDao, cache, jwt)
 	idempotencyService := mods3.NewIdempotencyService(serviceCore, cache)
 	modsDocumentationService := mods3.NewDocumentationService(serviceCore, documentationDao)
@@ -104,7 +108,7 @@ func InitializeTestInjector(ctx context.Context, cfg *config.Config, n int) (*In
 	modsStatisticService := mods5.NewStatisticService(serviceCore, instructionDataDao)
 	wireInjector := &Injector{
 		Ctx:                        ctx,
-		Config:                     cfg,
+		Config:                     config2,
 		Cache:                      cache,
 		Mongo:                      mongo,
 		Redis:                      redis,
@@ -137,6 +141,7 @@ func InitializeTestInjector(ctx context.Context, cfg *config.Config, n int) (*In
 		SysLogsService:             modsLogsService,
 		UserDatasetService:         datasetService,
 		UserStatisticService:       modsStatisticService,
+		Enforcer:                   enforcer,
 	}
 	return wireInjector, nil
 }
@@ -189,6 +194,9 @@ type Injector struct {
 	// User services
 	UserDatasetService   mods5.DatasetService
 	UserStatisticService mods5.StatisticService
+
+	// Casbin enforcer
+	Enforcer *casbin.Enforcer
 }
 
 var (

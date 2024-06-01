@@ -32,7 +32,7 @@ type (
 		CreateEndTime   *string `query:"create_end_time" validate:"omitnil,rfc3339"`
 		UpdateStartTime *string `query:"update_start_time" validate:"omitnil,rfc3339,earlierThan=UpdateEndTime"`
 		UpdateEndTime   *string `query:"update_end_time" validate:"omitnil,rfc3339"`
-		Theme           *string `query:"theme" validate:"omitnil,InstructionDataTheme"`
+		Theme           *string `query:"theme" validate:""`
 		Status          *string `query:"status" validate:"omitnil,instructionDataStatus"`
 		Query           *string `query:"query" validate:""`
 	}
@@ -52,7 +52,7 @@ type (
 		Instruction       *string `json:"instruction" validate:"omitnil,max=1000,min=1"`
 		Input             *string `json:"input" validate:"omitnil,max=1000,min=1"`
 		Output            *string `json:"output" validate:"omitnil,max=1000,min=1"`
-		Theme             *string `json:"theme" validate:"omitnil,InstructionDataTheme"`
+		Theme             *string `json:"theme" validate:""`
 		Source            *string `json:"source" validate:"omitnil,max=100"`
 		Note              *string `json:"note" validate:"omitnil,max=1000"`
 	}
@@ -64,7 +64,7 @@ type (
 		CreateEndTime   *string `query:"create_end_time" validate:"omitnil,rfc3339"`
 		UpdateStartTime *string `query:"update_start_time" validate:"omitnil,rfc3339,earlierThan=UpdateEndTime"`
 		UpdateEndTime   *string `query:"update_end_time" validate:"omitnil,rfc3339"`
-		Theme           *string `query:"theme" validate:"omitnil,InstructionDataTheme"`
+		Theme           *string `query:"theme" validate:""`
 		Status          *string `query:"status" validate:"omitnil,instructionDataStatus"`
 	}
 
@@ -93,7 +93,6 @@ type (
 		Username     *string `json:"username" validate:"required,min=3,max=20"`
 		Email        *string `json:"email" validate:"required,email,max=100"`
 		Password     *string `json:"password" validate:"required,min=8,max=20"`
-		Role         *string `json:"role" validate:"required,userRole"`
 		Organization *string `json:"organization" validate:"required,max=100"`
 	}
 

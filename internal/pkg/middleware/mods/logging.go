@@ -31,7 +31,6 @@ func (l *LoggingMiddleware) loggingMiddleware() fiber.Handler {
 		err = c.Next()
 		if err != nil {
 			sysLogger.Warn("Failed to execute request", zap.Error(err))
-			return err
 		}
 
 		if c.Response().StatusCode() >= fiber.StatusInternalServerError {
@@ -78,6 +77,6 @@ func (l *LoggingMiddleware) loggingMiddleware() fiber.Handler {
 			)
 		}
 
-		return nil
+		return err
 	}
 }

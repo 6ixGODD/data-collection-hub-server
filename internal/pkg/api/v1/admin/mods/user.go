@@ -28,7 +28,7 @@ func (u *UserApi) InsertUser(c *fiber.Ctx) error {
 	}
 
 	_, err := u.UserService.InsertUser(
-		c.UserContext(), req.Username, req.Email, req.Password, req.Role, req.Organization,
+		c.UserContext(), req.Username, req.Email, req.Password, req.Organization,
 	)
 	if err != nil {
 		return err

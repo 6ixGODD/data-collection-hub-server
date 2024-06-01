@@ -4,10 +4,12 @@ import (
 	"context"
 
 	"data-collection-hub-server/internal/pkg/config"
+	"data-collection-hub-server/internal/pkg/domain/vo"
 	"data-collection-hub-server/internal/pkg/errors"
 	"data-collection-hub-server/internal/pkg/middleware"
 	"data-collection-hub-server/internal/pkg/router"
 	"data-collection-hub-server/internal/pkg/tasks"
+	e "data-collection-hub-server/pkg/errors"
 	"data-collection-hub-server/pkg/mongo"
 	"data-collection-hub-server/pkg/redis"
 	logging "data-collection-hub-server/pkg/zap"
@@ -106,12 +108,21 @@ func (a *App) Init(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	rbac := casbin.New(
+	c := casbin.New(
 		casbin.Config{
 			ModelFilePath: a.Config.CasbinConfig.ModelPath,
 			PolicyAdapter: adapter,
 			Lookup: func(c *fiber.Ctx) string {
 				return c.Locals(config.UserIDKey).(string)
+			},
+			Forbidden: func(ctx *fiber.Ctx) error {
+				return ctx.Status(fiber.StatusForbidden).JSON(
+					vo.Response{
+						Code:    e.CodePermissionDeny,
+						Message: "Forbidden access",
+						Data:    nil,
+					},
+				)
 			},
 		},
 	)
@@ -119,7 +130,7 @@ func (a *App) Init(ctx context.Context) error {
 	idempotencyMiddleware := a.Middleware.IdempotencyMiddleware.IdempotencyMiddleware()
 
 	// Register routers
-	a.Router.RegisterRouter(app, rbac, idempotencyMiddleware)
+	a.Router.RegisterRouter(app, c, idempotencyMiddleware)
 
 	// Set app
 	a.App = app

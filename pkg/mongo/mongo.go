@@ -37,7 +37,10 @@ func New(ctx context.Context, config *qmgo.Config, PingTimeout int64, databaseNa
 	return mongoInstance, err
 }
 
-func Set(ctx context.Context, config *qmgo.Config, PingTimeout int64, databaseName string) error {
+func Update(ctx context.Context, config *qmgo.Config, PingTimeout int64, databaseName string) error {
+	if err := mongoInstance.Close(ctx); err != nil {
+		return err
+	}
 	mongoInstance = &Mongo{
 		qmgoConfig:   config,
 		pingTimeout:  PingTimeout,

@@ -34,6 +34,7 @@ import (
 	user2 "data-collection-hub-server/internal/pkg/service/user"
 	mods7 "data-collection-hub-server/internal/pkg/service/user/mods"
 	"data-collection-hub-server/internal/pkg/tasks"
+	"data-collection-hub-server/internal/pkg/validator"
 	"github.com/google/wire"
 )
 
@@ -80,17 +81,28 @@ func InitializeApp(ctx context.Context) (*app.App, error) {
 		return nil, err
 	}
 	logsService := mods3.NewLogsService(core, loginLogDao, operationLogDao)
+	validate, err := validator.NewValidator()
+	if err != nil {
+		return nil, err
+	}
 	dataAuditApi := &mods4.DataAuditApi{
 		DataAuditService: dataAuditService,
 		LogsService:      logsService,
+		Validator:        validate,
 	}
 	statisticService := mods2.NewStatisticService(core, instructionDataDao, userDao)
 	statisticApi := &mods4.StatisticApi{
 		StatisticService: statisticService,
+		Validator:        validate,
 	}
-	userService := mods2.NewUserService(core, userDao)
+	enforcer, err := InitializeCasbinEnforcer(configConfig)
+	if err != nil {
+		return nil, err
+	}
+	userService := mods2.NewUserService(core, userDao, enforcer)
 	userApi := &mods4.UserApi{
 		UserService: userService,
+		Validator:   validate,
 	}
 	noticeDao, err := mods.NewNoticeDao(ctx, daoCore, cache)
 	if err != nil {
@@ -100,6 +112,7 @@ func InitializeApp(ctx context.Context) (*app.App, error) {
 	noticeApi := &mods4.NoticeApi{
 		NoticeService: noticeService,
 		LogsService:   logsService,
+		Validator:     validate,
 	}
 	documentationDao, err := mods.NewDocumentationDao(ctx, daoCore, cache)
 	if err != nil {
@@ -109,10 +122,12 @@ func InitializeApp(ctx context.Context) (*app.App, error) {
 	documentationApi := &mods4.DocumentationApi{
 		DocumentationService: documentationService,
 		LogsService:          logsService,
+		Validator:            validate,
 	}
 	modsLogsService := mods2.NewLogsService(core, loginLogDao, operationLogDao)
 	logsApi := &mods4.LogsApi{
 		LogsService: modsLogsService,
+		Validator:   validate,
 	}
 	adminAdmin := &admin.Admin{
 		DataAuditApi:     dataAuditApi,
@@ -130,6 +145,7 @@ func InitializeApp(ctx context.Context) (*app.App, error) {
 	authApi := &mods6.AuthApi{
 		AuthService: authService,
 		LogsService: logsService,
+		Validator:   validate,
 	}
 	profileService := mods5.NewProfileService(core, userDao)
 	profileApi := &mods6.ProfileApi{
@@ -138,10 +154,12 @@ func InitializeApp(ctx context.Context) (*app.App, error) {
 	modsDocumentationService := mods5.NewDocumentationService(core, documentationDao)
 	modsDocumentationApi := &mods6.DocumentationApi{
 		DocumentationService: modsDocumentationService,
+		Validator:            validate,
 	}
 	modsNoticeService := mods5.NewNoticeService(core, noticeDao)
 	modsNoticeApi := &mods6.NoticeApi{
 		NoticeService: modsNoticeService,
+		Validator:     validate,
 	}
 	commonCommon := &common.Common{
 		AuthApi:          authApi,
@@ -153,10 +171,12 @@ func InitializeApp(ctx context.Context) (*app.App, error) {
 	datasetApi := &mods8.DatasetApi{
 		DatasetService: datasetService,
 		LogsService:    logsService,
+		Validator:      validate,
 	}
 	modsStatisticService := mods7.NewStatisticService(core, instructionDataDao)
 	modsStatisticApi := &mods8.StatisticApi{
 		StatisticService: modsStatisticService,
+		Validator:        validate,
 	}
 	userUser := &user.User{
 		DatasetApi:   datasetApi,
@@ -227,6 +247,8 @@ var (
 	RouterProviderSet = wire.NewSet(wire.Struct(new(mods9.AdminRouter), "*"), wire.Struct(new(mods9.UserRouter), "*"), wire.Struct(new(mods9.CommonRouter), "*"), wire.Struct(new(router.Router), "*"), wire.Struct(new(router2.Router), "*"))
 
 	ApiProviderSet = wire.NewSet(wire.Struct(new(mods6.AuthApi), "*"), wire.Struct(new(mods6.ProfileApi), "*"), wire.Struct(new(mods6.DocumentationApi), "*"), wire.Struct(new(mods6.NoticeApi), "*"), wire.Struct(new(mods6.IdempotencyApi), "*"), wire.Struct(new(mods8.DatasetApi), "*"), wire.Struct(new(mods8.StatisticApi), "*"), wire.Struct(new(mods4.UserApi), "*"), wire.Struct(new(mods4.DocumentationApi), "*"), wire.Struct(new(mods4.NoticeApi), "*"), wire.Struct(new(mods4.StatisticApi), "*"), wire.Struct(new(mods4.LogsApi), "*"), wire.Struct(new(mods4.DataAuditApi), "*"), wire.Struct(new(common.Common), "*"), wire.Struct(new(user.User), "*"), wire.Struct(new(admin.Admin), "*"), wire.Struct(new(api.Api), "*"))
+
+	ValidatorProviderSet = wire.NewSet(validator.NewValidator)
 
 	ServiceProviderSet = wire.NewSet(wire.Struct(new(service.Core), "*"), wire.Struct(new(admin2.Admin), "*"), wire.Struct(new(user2.User), "*"), wire.Struct(new(common2.Common), "*"), wire.Struct(new(sys.Sys), "*"), mods2.NewDataAuditService, mods2.NewStatisticService, mods2.NewUserService, mods2.NewNoticeService, mods2.NewDocumentationService, mods2.NewLogsService, mods5.NewAuthService, mods5.NewProfileService, mods5.NewDocumentationService, mods5.NewNoticeService, mods5.NewIdempotencyService, mods7.NewDatasetService, mods7.NewStatisticService, mods3.NewLogsService)
 

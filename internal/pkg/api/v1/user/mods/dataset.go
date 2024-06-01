@@ -32,7 +32,11 @@ func (d *DatasetApi) InsertInstructionData(c *fiber.Ctx) error {
 		return errors.InvalidParams(err) // Compare this line with the original one
 	}
 
-	userID, err := primitive.ObjectIDFromHex(ctx.Value(config.UserIDKey).(string))
+	userIDHex, ok := ctx.Value(config.UserIDKey).(string)
+	if !ok {
+		return errors.UserNotFound(fmt.Errorf("user id not found in context")) // TODO
+	}
+	userID, err := primitive.ObjectIDFromHex(userIDHex)
 	if err != nil {
 		return errors.InvalidRequest(err) // TODO: Change to not login error
 	}

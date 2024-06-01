@@ -37,10 +37,9 @@ func (s statisticServiceImpl) GetDataStatistic(
 		approvedStatus = config.InstructionDataStatusApproved
 		rejectedStatus = config.InstructionDataStatusRejected
 		themeField     = "theme"
-		userIDHex      string
-		ok             bool
 	)
-	if userIDHex, ok = ctx.Value(config.UserIDKey).(string); !ok {
+	userIDHex, ok := ctx.Value(config.UserIDKey).(string)
+	if !ok {
 		return nil, errors.UserNotFound(errors.UserNotFound(fmt.Errorf("user id not found in context")))
 	}
 	userID, err := primitive.ObjectIDFromHex(userIDHex)
@@ -82,6 +81,19 @@ func (s statisticServiceImpl) GetDataStatistic(
 	themeCount, err := s.instructionDataDao.AggregateCountInstructionData(ctx, &themeField)
 	if err != nil {
 		return nil, errors.DBError(errors.ReadError(err))
+	}
+
+	if startDate == nil && endDate == nil {
+		__startDate := time.Now().AddDate(0, 0, -6)
+		__endDate := time.Now()
+		startDate = &__startDate
+		endDate = &__endDate
+	} else if startDate == nil {
+		__startDate := endDate.AddDate(0, 0, -6)
+		startDate = &__startDate
+	} else if endDate == nil {
+		__endDate := startDate.AddDate(0, 0, 6)
+		endDate = &__endDate
 	}
 
 	timeRangeStatistic := make([]*user.TimeRangeStatistic, 0, int(endDate.Sub(*startDate).Hours()/24)+1)

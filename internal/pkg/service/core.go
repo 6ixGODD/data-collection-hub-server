@@ -4,7 +4,7 @@ import (
 	"data-collection-hub-server/internal/pkg/config"
 )
 
-// Core is the service core struct.
+// Core contains the core components of the service.
 type Core struct {
 	Config *config.Config
 }

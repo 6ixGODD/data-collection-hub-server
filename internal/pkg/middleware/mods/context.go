@@ -4,7 +4,6 @@ import (
 	"data-collection-hub-server/internal/pkg/config"
 	logging "data-collection-hub-server/pkg/zap"
 	"github.com/gofiber/fiber/v2"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type ContextMiddleware struct {
@@ -19,9 +18,9 @@ func (m *ContextMiddleware) contextMiddleware() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		ctx := c.UserContext()
 		ctx = m.Zap.SetRequestIDInContext(ctx, c.Get(fiber.HeaderXRequestID))
-		userID, ok := c.Locals(config.UserIDKey).(primitive.ObjectID)
+		userID, ok := c.Locals(config.UserIDKey).(string)
 		if ok {
-			ctx = m.Zap.SetUserIDInContext(ctx, userID.Hex())
+			ctx = m.Zap.SetUserIDInContext(ctx, userID)
 		}
 		c.SetUserContext(ctx)
 		return c.Next()

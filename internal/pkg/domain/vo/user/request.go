@@ -15,7 +15,7 @@ type (
 		PageSize        *int64  `query:"page_size" validate:"required,numeric,min=1,max=100"`
 		UpdateStartTime *string `query:"update_start_time" validate:"omitnil,rfc3339,earlierThan=UpdateEndTime"`
 		UpdateEndTime   *string `query:"update_end_time" validate:"omitnil,rfc3339"`
-		Theme           *string `query:"theme" validate:"omitnil,InstructionDataTheme"`
+		Theme           *string `query:"theme" validate:""`
 		Status          *string `query:"status" validate:"omitnil,instructionDataStatus"`
 	}
 
@@ -23,7 +23,7 @@ type (
 		Instruction *string `json:"instruction" validate:"required,max=1000,min=1"`
 		Input       *string `json:"input" validate:"required,max=1000,min=1"`
 		Output      *string `json:"output" validate:"required,max=1000,min=1"`
-		Theme       *string `json:"theme" validate:"required,InstructionDataTheme"`
+		Theme       *string `json:"theme" validate:""`
 		Source      *string `json:"source" validate:"required,max=100"`
 		Note        *string `json:"note" validate:"omitnil,max=1000"`
 	}
@@ -33,7 +33,7 @@ type (
 		Instruction       *string `json:"instruction" validate:"required,max=1000,min=1"`
 		Input             *string `json:"input" validate:"required,max=1000,min=1"`
 		Output            *string `json:"output" validate:"required,max=1000,min=1"`
-		Theme             *string `json:"theme" validate:"required,InstructionDataTheme"`
+		Theme             *string `json:"theme" validate:""`
 		Source            *string `json:"source" validate:"required,max=1000"`
 		Note              *string `json:"note" validate:"omitnil,max=1000"`
 	}

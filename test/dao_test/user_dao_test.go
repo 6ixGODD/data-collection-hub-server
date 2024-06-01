@@ -29,8 +29,8 @@ func TestInsertUser(t *testing.T) {
 		org         = "Data Collection Hub"
 		err         error
 	)
-	username = "Admin"
-	email = "admin@admin.com"
+	username = mock.RandomString(10)
+	email = mock.RandomString(10) + "@gmail.com"
 	assert.NoError(t, err)
 	userID, err = userDao.InsertUser(ctx, username, email, password, role, org)
 	assert.NoError(t, err)
@@ -253,10 +253,10 @@ func TestUpdateUser(t *testing.T) {
 		injector    = wire.GetInjector()
 		ctx         = injector.Ctx
 		userDao     = injector.UserDao
-		username    = "User"
-		email       = "user@user.com"
+		username    = mock.RandomString(10)
+		email       = mock.RandomString(10) + "@gmail.com"
 		role        = "USER"
-		org         = "Data Collection Hub X"
+		org         = "Data Collection Hub"
 		password, _ = crypt.Hash("User@123")
 		err         error
 	)

@@ -16,15 +16,15 @@ type (
 	}
 
 	GetNoticeRequest struct {
-		NoticeID *string `json:"notice_id" validate:"required,mongodb"`
+		NoticeID *string `query:"notice_id" validate:"required,mongodb"`
 	}
 
 	GetNoticeListRequest struct {
-		Page            *int64  `json:"page" validate:"required,numeric,min=1"`
-		PageSize        *int64  `json:"page_size" validate:"required,numeric,min=1,max=100"`
-		NoticeType      *string `json:"notice_type" validate:"omitnil,noticeType"`
-		UpdateStartTime *string `json:"update_start_time" validate:"omitnil,rfc3339,earlierThan=UpdateEndTime"`
-		UpdateEndTime   *string `json:"update_end_time" validate:"omitnil,rfc3339"`
+		Page            *int64  `query:"page" validate:"required,numeric,min=1"`
+		PageSize        *int64  `query:"page_size" validate:"required,numeric,min=1,max=100"`
+		NoticeType      *string `query:"notice_type" validate:"omitnil,noticeType"`
+		UpdateStartTime *string `query:"update_start_time" validate:"omitnil,rfc3339,earlierThan=UpdateEndTime"`
+		UpdateEndTime   *string `query:"update_end_time" validate:"omitnil,rfc3339"`
 	}
 
 	GetDocumentationRequest struct {
@@ -32,9 +32,9 @@ type (
 	}
 
 	GetDocumentationListRequest struct {
-		Page            *int64  `json:"page" validate:"required,numeric,min=1"`
-		PageSize        *int64  `json:"page_size" validate:"required,numeric,min=1,max=100"`
-		UpdateStartTime *string `json:"update_start_time" validate:"omitnil,rfc3339,earlierThan=UpdateEndTime"`
-		UpdateEndTime   *string `json:"update_end_time" validate:"omitnil,rfc3339"`
+		Page            *int64  `query:"page" validate:"required,numeric,min=1"`
+		PageSize        *int64  `query:"page_size" validate:"required,numeric,min=1,max=100"`
+		UpdateStartTime *string `query:"update_start_time" validate:"omitnil,rfc3339,earlierThan=UpdateEndTime"`
+		UpdateEndTime   *string `query:"update_end_time" validate:"omitnil,rfc3339"`
 	}
 )

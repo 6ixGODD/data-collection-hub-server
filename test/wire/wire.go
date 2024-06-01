@@ -24,6 +24,7 @@ import (
 	"data-collection-hub-server/pkg/redis"
 	logging "data-collection-hub-server/pkg/zap"
 	"data-collection-hub-server/test/mock"
+	"github.com/casbin/casbin/v2"
 	"github.com/google/wire"
 )
 
@@ -73,6 +74,9 @@ type Injector struct {
 	// User services
 	UserDatasetService   userservices.DatasetService
 	UserStatisticService userservices.StatisticService
+
+	// Casbin enforcer
+	Enforcer *casbin.Enforcer
 }
 
 var (
@@ -126,6 +130,7 @@ func InitializeTestInjector(ctx context.Context, config *config.Config, n int) (
 		InitializeZap,
 		InitializeJwt,
 		InitializePrometheus,
+		InitializeCasbinEnforcer,
 		MockProviderSet,
 		ServiceProviderSet,
 		DaoProviderSet,

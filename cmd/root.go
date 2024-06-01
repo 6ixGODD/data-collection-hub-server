@@ -191,25 +191,25 @@ func initConfig() {
 	config.Set(cfg)
 	viper.WatchConfig()
 	viper.OnConfigChange(
-		// TODO: refactor this into a function
+		// TODO: refactor into a function and check if it work
 		func(in fsnotify.Event) {
 			if err := viper.Unmarshal(cfg); err != nil {
 				fmt.Printf("error reading config: %s\n", err)
 			}
 			config.Set(cfg)
-			if err := redis.Set(cfg.CacheConfig.RedisConfig.GetRedisOptions()); err != nil {
+			if err := redis.Update(cfg.CacheConfig.RedisConfig.GetRedisOptions()); err != nil {
 				fmt.Printf("error setting redis: %s\n", err)
 			}
 			if err := logging.Set(cfg.ZapConfig.GetZapConfig()); err != nil {
 				fmt.Printf("error setting zap: %s\n", err)
 			}
-			if err := mongo.Set(
+			if err := mongo.Update(
 				context.Background(), cfg.MongoConfig.GetQmgoConfig(), cfg.MongoConfig.PingTimeoutS,
 				cfg.MongoConfig.Database,
 			); err != nil {
 				fmt.Printf("error setting mongo: %s\n", err)
 			}
-			if err := jwt.Set(
+			if err := jwt.Update(
 				nil, cfg.JWTConfig.TokenDuration, cfg.JWTConfig.RefreshDuration, cfg.JWTConfig.RefreshBuffer,
 			); err != nil {
 				fmt.Printf("error setting jwt: %s\n", err)

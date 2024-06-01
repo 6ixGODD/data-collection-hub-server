@@ -55,28 +55,34 @@ func (n *NoticeApi) GetNoticeList(c *fiber.Ctx) error {
 	}
 
 	var (
-		updateBefore, updateAfter *time.Time
-		err                       error
+		updateStartTime, updateEndTime time.Time
+		err                            error
 	)
 
 	if req.UpdateStartTime != nil {
-		*updateBefore, err = time.Parse(time.RFC3339, *req.UpdateStartTime)
+		updateStartTime, err = time.Parse(time.RFC3339, *req.UpdateStartTime)
 		if err != nil {
 			return errors.InvalidRequest(err)
 		}
 	}
 	if req.UpdateEndTime != nil {
-		*updateAfter, err = time.Parse(time.RFC3339, *req.UpdateEndTime)
+		updateEndTime, err = time.Parse(time.RFC3339, *req.UpdateEndTime)
 		if err != nil {
 			return errors.InvalidRequest(err)
 		}
 	}
 
 	resp, err := n.NoticeService.GetNoticeList(
-		c.UserContext(), req.Page, req.PageSize, req.NoticeType, updateBefore, updateAfter,
+		c.UserContext(), req.Page, req.PageSize, req.NoticeType, &updateStartTime, &updateEndTime,
 	)
 	if err != nil {
 		return err
 	}
-	return c.JSON(resp)
+	return c.JSON(
+		vo.Response{
+			Code:    errors.CodeSuccess,
+			Message: errors.MessageSuccess,
+			Data:    resp,
+		},
+	)
 }

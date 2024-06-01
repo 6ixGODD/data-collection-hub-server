@@ -10,7 +10,7 @@ base:
   enable_prometheus: true
 
 casbin:
-  casbin_model_path: "./configs/casbin_model.conf"
+  casbin_model_path: "../../configs/casbin_model.conf"
   casbin_policy_adapter_url: "mongodb://localhost:27017/data-collection-hub-dev"
 
 fiber:

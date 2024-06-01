@@ -13,22 +13,19 @@ type CommonRouter struct {
 
 // RegisterCommonRouter registers the common router.
 func (c *CommonRouter) RegisterCommonRouter(
-	app fiber.Router, api *common.Common, rbac *casbin.Middleware,
+	app fiber.Router, api *common.Common, casbin *casbin.Middleware,
 ) {
 	app.Get(
-		"/ping",
-		func(c *fiber.Ctx) error {
-			return c.SendString("pong")
-		},
+		"/ping", func(c *fiber.Ctx) error { return c.SendString("pong") },
 	)
 	app.Get(
 		"/profile",
-		rbac.RequiresRoles([]string{config.UserRoleAdmin, config.UserRoleUser}),
+		casbin.RequiresRoles([]string{config.UserRoleAdmin, config.UserRoleUser}),
 		api.ProfileApi.GetProfile,
 	)
 	app.Put(
 		"/change-password",
-		rbac.RequiresRoles([]string{config.UserRoleAdmin, config.UserRoleUser}),
+		casbin.RequiresRoles([]string{config.UserRoleAdmin, config.UserRoleUser}),
 		api.AuthApi.ChangePassword,
 	)
 

@@ -12,6 +12,8 @@ import (
 	"data-collection-hub-server/pkg/prometheus"
 	"data-collection-hub-server/pkg/redis"
 	logging "data-collection-hub-server/pkg/zap"
+	"github.com/casbin/casbin/v2"
+	mongodbadapter "github.com/casbin/mongodb-adapter/v3"
 )
 
 // InitializeMongo initializes mongo injection with context and config.
@@ -63,4 +65,17 @@ func InitializePrometheus(config *config.Config) *prometheus.Prometheus {
 	return prometheus.New(
 		config.PrometheusConfig.Namespace, config.PrometheusConfig.Subsystem, config.PrometheusConfig.MetricPath,
 	)
+}
+
+// InitializeCasbinEnforcer initializes casbin enforcer injection with config.
+func InitializeCasbinEnforcer(config *config.Config) (*casbin.Enforcer, error) {
+	adapter, err := mongodbadapter.NewAdapter(config.CasbinConfig.PolicyAdapterUrl)
+	if err != nil {
+		return nil, err
+	}
+	e, err := casbin.NewEnforcer(config.CasbinConfig.ModelPath, adapter)
+	if err != nil {
+		return nil, err
+	}
+	return e, nil
 }

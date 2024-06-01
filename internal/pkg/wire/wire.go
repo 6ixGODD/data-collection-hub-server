@@ -125,6 +125,7 @@ func InitializeApp(ctx context.Context) (*app.App, error) {
 		InitializeZap,
 		InitializeJwt,
 		InitializePrometheus,
+		InitializeCasbinEnforcer,
 		DaoProviderSet,
 		ServiceProviderSet,
 		ValidatorProviderSet,
