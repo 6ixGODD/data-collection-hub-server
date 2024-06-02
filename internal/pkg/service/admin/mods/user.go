@@ -2,6 +2,8 @@ package mods
 
 import (
 	"context"
+	e "errors"
+	"fmt"
 	"time"
 
 	"data-collection-hub-server/internal/pkg/config"
@@ -12,6 +14,8 @@ import (
 	"data-collection-hub-server/pkg/utils/crypt"
 	"github.com/casbin/casbin/v2"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.uber.org/zap"
 )
 
 type UserService interface {
@@ -49,15 +53,21 @@ func (u UserServiceImpl) InsertUser(
 ) (string, error) {
 	passwordHash, err := crypt.Hash(*password)
 	if err != nil {
-		return "", errors.ServiceError(err)
+		u.core.Logger.Error("failed to hash password", zap.Error(err))
+		return "", errors.ServiceError(fmt.Errorf("failed to hash password"))
 	}
 	userID, err := u.userDao.InsertUser(ctx, *username, *email, passwordHash, config.UserRoleUser, *organization)
 	if err != nil {
-		return "", errors.DBError(errors.WriteError(err))
+		if mongo.IsDuplicateKeyError(err) {
+			return "", errors.DuplicateKeyError(fmt.Errorf("user with email %s already exists", *email))
+		} else {
+			return "", errors.OperationFailed(fmt.Errorf("failed to insert user"))
+		}
 	}
 	_, err = u.enforcer.AddRoleForUser(userID.Hex(), config.UserRoleUser)
 	if err != nil {
-		return "", err
+		u.core.Logger.Error("failed to create role for user", zap.Error(err))
+		return "", errors.ServiceError(fmt.Errorf("failed to create role for user"))
 	}
 	return userID.Hex(), nil
 }
@@ -67,7 +77,11 @@ func (u UserServiceImpl) InsertUser(
 func (u UserServiceImpl) GetUser(ctx context.Context, userID *primitive.ObjectID) (*admin.GetUserResponse, error) {
 	user, err := u.userDao.GetUserByID(ctx, *userID)
 	if err != nil {
-		return nil, errors.DBError(errors.ReadError(err))
+		if e.Is(err, mongo.ErrNoDocuments) {
+			return nil, errors.NotFound(fmt.Errorf("user (id: %s) not found", userID.Hex()))
+		} else {
+			return nil, errors.OperationFailed(fmt.Errorf("failed to get user (id: %s)", userID.Hex()))
+		}
 	}
 	return &admin.GetUserResponse{
 		UserID:       user.UserID.Hex(),
@@ -93,7 +107,7 @@ func (u UserServiceImpl) GetUserList(
 		nil, nil, lastLoginBefore, lastLoginAfter, query,
 	)
 	if err != nil {
-		return nil, errors.DBError(errors.ReadError(err))
+		return nil, errors.OperationFailed(fmt.Errorf("failed to get user list"))
 	}
 	resp := make([]*admin.GetUserResponse, 0, len(users))
 	for _, user := range users {
@@ -124,7 +138,13 @@ func (u UserServiceImpl) UpdateUser(
 ) error {
 	err := u.userDao.UpdateUser(ctx, *userID, username, email, nil, role, organization)
 	if err != nil {
-		return errors.DBError(errors.WriteError(err))
+		if mongo.IsDuplicateKeyError(err) {
+			return errors.DuplicateKeyError(fmt.Errorf("user with email %s already exists", *email))
+		} else if e.Is(err, mongo.ErrNoDocuments) {
+			return errors.NotFound(fmt.Errorf("user (id: %s) not found", userID.Hex()))
+		} else {
+			return errors.OperationFailed(fmt.Errorf("failed to update user (id: %s)", userID.Hex()))
+		}
 	}
 	return nil
 }
@@ -134,7 +154,11 @@ func (u UserServiceImpl) UpdateUser(
 func (u UserServiceImpl) DeleteUser(ctx context.Context, userID *primitive.ObjectID) error {
 	err := u.userDao.DeleteUser(ctx, *userID)
 	if err != nil {
-		return errors.DBError(errors.WriteError(err))
+		if e.Is(err, mongo.ErrNoDocuments) {
+			return errors.NotFound(fmt.Errorf("user (id: %s) not found", userID.Hex()))
+		} else {
+			return errors.OperationFailed(fmt.Errorf("failed to delete user (id: %s)", userID.Hex()))
+		}
 	}
 	return nil
 }
@@ -146,7 +170,11 @@ func (u UserServiceImpl) ChangeUserPassword(
 ) error {
 	err := u.userDao.UpdateUser(ctx, *userID, nil, nil, newPassword, nil, nil)
 	if err != nil {
-		return errors.DBError(errors.WriteError(err))
+		if e.Is(err, mongo.ErrNoDocuments) {
+			return errors.NotFound(fmt.Errorf("user (id: %s) not found", userID.Hex()))
+		} else {
+			return errors.OperationFailed(fmt.Errorf("failed to update user (id: %s)", userID.Hex()))
+		}
 	}
 	return nil
 }

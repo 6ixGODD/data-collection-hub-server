@@ -2,36 +2,36 @@ package admin
 
 type (
 	GetDataStatisticRequest struct {
-		StartDate *string `query:"start_date" validate:"omitnil,rfc3339,earlierThan=EndDate"`
-		EndDate   *string `query:"end_date" validate:"omitnil,rfc3339"`
+		StartDate *string `query:"startDate" validate:"omitnil,rfc3339,earlierThan=EndDate"`
+		EndDate   *string `query:"endDate" validate:"omitnil,rfc3339"`
 	}
 
 	GetUserStatisticRequest struct {
-		UserID *string `query:"user_id" validate:"required,mongodb"`
+		UserID *string `query:"userID" validate:"required,mongodb"`
 	}
 
 	GetUserStatisticListRequest struct {
 		Page               *int64  `query:"page" validate:"required,numeric,min=1"`
-		PageSize           *int64  `query:"page_size" validate:"required,numeric,min=1,max=100"`
-		LastLoginStartTime *string `query:"last_login_start_time" validate:"omitnil,rfc3339,earlierThan=LastLoginEndTime"`
-		LastLoginEndTime   *string `query:"last_login_end_time" validate:"omitnil,rfc3339"`
-		CreateStartTime    *string `query:"create_start_time" validate:"omitnil,rfc3339,earlierThan=CreateEndTime"`
-		CreateEndTime      *string `query:"create_end_time" validate:"omitnil,rfc3339"`
+		PageSize           *int64  `query:"pageSize" validate:"required,numeric,min=1,max=100"`
+		LastLoginStartTime *string `query:"lastLoginStartTime" validate:"omitnil,rfc3339,earlierThan=LastLoginEndTime"`
+		LastLoginEndTime   *string `query:"lastLoginEndTime" validate:"omitnil,rfc3339"`
+		CreateStartTime    *string `query:"createStartTime" validate:"omitnil,rfc3339,earlierThan=CreateEndTime"`
+		CreateEndTime      *string `query:"createEndTime" validate:"omitnil,rfc3339"`
 	}
 
 	GetInstructionDataRequest struct {
-		InstructionDataID *string `query:"instruction_data_id" validate:"required,mongodb"`
+		InstructionDataID *string `query:"instructionDataID" validate:"required,mongodb"`
 	}
 
 	GetInstructionDataListRequest struct {
 		Page            *int64  `query:"page" validate:"required,numeric,min=1"`
-		PageSize        *int64  `query:"page_size" validate:"required,numeric,min=1,max=100"`
+		PageSize        *int64  `query:"pageSize" validate:"required,numeric,min=1,max=100"`
 		Desc            *bool   `query:"desc" validate:"required"`
-		UserID          *string `query:"user_id" validate:"omitnil,mongodb"`
-		CreateStartTime *string `query:"create_start_time" validate:"omitnil,rfc3339,earlierThan=CreateEndTime"`
-		CreateEndTime   *string `query:"create_end_time" validate:"omitnil,rfc3339"`
-		UpdateStartTime *string `query:"update_start_time" validate:"omitnil,rfc3339,earlierThan=UpdateEndTime"`
-		UpdateEndTime   *string `query:"update_end_time" validate:"omitnil,rfc3339"`
+		UserID          *string `query:"userID" validate:"omitnil,mongodb"`
+		CreateStartTime *string `query:"createStartTime" validate:"omitnil,rfc3339,earlierThan=CreateEndTime"`
+		CreateEndTime   *string `query:"createEndTime" validate:"omitnil,rfc3339"`
+		UpdateStartTime *string `query:"updateStartTime" validate:"omitnil,rfc3339,earlierThan=UpdateEndTime"`
+		UpdateEndTime   *string `query:"updateEndTime" validate:"omitnil,rfc3339"`
 		Theme           *string `query:"theme" validate:""`
 		Status          *string `query:"status" validate:"omitnil,instructionDataStatus"`
 		Query           *string `query:"query" validate:""`
@@ -59,11 +59,11 @@ type (
 
 	ExportInstructionDataRequest struct {
 		Desc            *bool   `query:"desc" validate:"required"`
-		UserID          *string `query:"user_id" validate:"omitnil,mongodb"`
-		CreateStartTime *string `query:"create_start_time" validate:"omitnil,rfc3339,earlierThan=CreateEndTime"`
-		CreateEndTime   *string `query:"create_end_time" validate:"omitnil,rfc3339"`
-		UpdateStartTime *string `query:"update_start_time" validate:"omitnil,rfc3339,earlierThan=UpdateEndTime"`
-		UpdateEndTime   *string `query:"update_end_time" validate:"omitnil,rfc3339"`
+		UserID          *string `query:"userID" validate:"omitnil,mongodb"`
+		CreateStartTime *string `query:"createStartTime" validate:"omitnil,rfc3339,earlierThan=CreateEndTime"`
+		CreateEndTime   *string `query:"createEndTime" validate:"omitnil,rfc3339"`
+		UpdateStartTime *string `query:"updateStartTime" validate:"omitnil,rfc3339,earlierThan=UpdateEndTime"`
+		UpdateEndTime   *string `query:"updateEndTime" validate:"omitnil,rfc3339"`
 		Theme           *string `query:"theme" validate:""`
 		Status          *string `query:"status" validate:"omitnil,instructionDataStatus"`
 	}
@@ -97,18 +97,18 @@ type (
 	}
 
 	GetUserRequest struct {
-		UserID *string `query:"user_id" validate:"required,mongodb"`
+		UserID *string `query:"userID" validate:"required,mongodb"`
 	}
 
 	GetUserListRequest struct {
 		Page               *int64  `query:"page" validate:"required,numeric,min=1"`
-		PageSize           *int64  `query:"page_size" validate:"required,numeric,min=1,max=100"`
+		PageSize           *int64  `query:"pageSize" validate:"required,numeric,min=1,max=100"`
 		Desc               *bool   `query:"desc" validate:"required"`
 		Role               *string `query:"role" validate:"omitnil,userRole"`
-		LastLoginTimeStart *string `query:"last_login_start_time" validate:"omitnil,rfc3339,earlierThan=LastLoginTimeEnd"`
-		LastLoginTimeEnd   *string `query:"last_login_end_time" validate:"omitnil,rfc3339"`
-		CreateTimeStart    *string `query:"create_start_time" validate:"omitnil,rfc3339,earlierThan=CreateTimeEnd"`
-		CreateTimeEnd      *string `query:"create_end_time" validate:"omitnil,rfc3339"`
+		LastLoginTimeStart *string `query:"lastLoginStartTime" validate:"omitnil,rfc3339,earlierThan=LastLoginTimeEnd"`
+		LastLoginTimeEnd   *string `query:"lastLoginEndTime" validate:"omitnil,rfc3339"`
+		CreateTimeStart    *string `query:"createStartTime" validate:"omitnil,rfc3339,earlierThan=CreateTimeEnd"`
+		CreateTimeEnd      *string `query:"createEndTime" validate:"omitnil,rfc3339"`
 		Query              *string `query:"query" validate:"omitnil,max=100"`
 	}
 
@@ -121,7 +121,7 @@ type (
 	}
 
 	DeleteUserRequest struct {
-		UserID *string `json:"user_id" validate:"required,mongodb"`
+		UserID *string `query:"userID" validate:"required,mongodb"`
 	}
 
 	ChangeUserPasswordRequest struct {
@@ -145,16 +145,16 @@ type (
 	}
 
 	GetLoginLogRequest struct {
-		LoginLogID *string `query:"login_log_id" validate:"required,mongodb"`
+		LoginLogID *string `query:"loginLogID" validate:"required,mongodb"`
 	}
 
 	GetLoginLogListRequest struct {
 		Page            *int64  `query:"page" validate:"required,numeric,min=1"`
-		PageSize        *int64  `query:"page_size" validate:"required,numeric,min=1,max=100"`
+		PageSize        *int64  `query:"pageSize" validate:"required,numeric,min=1,max=100"`
 		Desc            *bool   `query:"desc" validate:"required"`
 		Query           *string `query:"query" validate:"omitnil,max=100"`
-		CreateStartTime *string `query:"create_start_time" validate:"omitnil,rfc3339,earlierThan=CreateEndTime"`
-		CreateEndTime   *string `query:"create_end_time" validate:"omitnil,rfc3339"`
+		CreateStartTime *string `query:"createStartTime" validate:"omitnil,rfc3339,earlierThan=CreateEndTime"`
+		CreateEndTime   *string `query:"createEndTime" validate:"omitnil,rfc3339"`
 	}
 
 	GetOperationLogRequest struct {
@@ -163,25 +163,11 @@ type (
 
 	GetOperationLogListRequest struct {
 		Page            *int64  `query:"page" validate:"required,numeric,min=1"`
-		PageSize        *int64  `query:"page_size" validate:"required,numeric,min=1,max=100"`
+		PageSize        *int64  `query:"pageSize" validate:"required,numeric,min=1,max=100"`
 		Desc            *bool   `query:"desc" validate:"required"`
 		Query           *string `query:"query" validate:"omitnil,max=100"`
 		Operation       *string `query:"operation" validate:"omitnil,operationType"`
-		CreateStartTime *string `query:"create_start_time" validate:"omitnil,rfc3339,earlierThan=CreateEndTime"`
-		CreateEndTime   *string `query:"create_end_time" validate:"omitnil,rfc3339"`
-	}
-
-	GetErrorLogRequest struct {
-		ErrorLogID *string `query:"error_log_id" validate:"required,mongodb"`
-	}
-
-	GetErrorLogListRequest struct {
-		Page            *int64  `query:"page" validate:"required,numeric"`
-		PageSize        *int64  `query:"page_size" validate:"required,numeric,min=1,max=100"`
-		Desc            *bool   `query:"desc" validate:"required"`
-		RequestURL      *string `query:"request_url" validate:"omitnil,uri"`
-		ErrorCode       *string `query:"error_code" validate:"omitnil,numeric,min=1,max=10000"`
-		CreateStartTime *string `query:"create_start_time" validate:"omitnil,rfc3339,earlierThan=CreateEndTime"`
-		CreateEndTime   *string `query:"create_end_time" validate:"omitnil,rfc3339"`
+		CreateStartTime *string `query:"createStartTime" validate:"omitnil,rfc3339,earlierThan=CreateEndTime"`
+		CreateEndTime   *string `query:"createEndTime" validate:"omitnil,rfc3339"`
 	}
 )

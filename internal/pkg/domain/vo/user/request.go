@@ -2,19 +2,19 @@ package user
 
 type (
 	GetDataStatisticRequest struct {
-		StartDate *string `query:"start_date" validate:"omitnil,rfc3339,earlierThan=EndDate"`
-		EndDate   *string `query:"end_date" validate:"omitnil,rfc3339"`
+		StartDate *string `query:"startDate" validate:"omitnil,rfc3339,earlierThan=EndDate"`
+		EndDate   *string `query:"endDate" validate:"omitnil,rfc3339"`
 	}
 
 	GetInstructionDataRequest struct {
-		InstructionDataID *string `query:"instruction_data_id" validate:"required,mongodb"`
+		InstructionDataID *string `query:"instructionDataID" validate:"required,mongodb"`
 	}
 
 	GetInstructionDataListRequest struct {
 		Page            *int64  `query:"page" validate:"required,numeric,min=1"`
-		PageSize        *int64  `query:"page_size" validate:"required,numeric,min=1,max=100"`
-		UpdateStartTime *string `query:"update_start_time" validate:"omitnil,rfc3339,earlierThan=UpdateEndTime"`
-		UpdateEndTime   *string `query:"update_end_time" validate:"omitnil,rfc3339"`
+		PageSize        *int64  `query:"pageSize" validate:"required,numeric,min=1,max=100"`
+		UpdateStartTime *string `query:"updateStartTime" validate:"omitnil,rfc3339,earlierThan=UpdateEndTime"`
+		UpdateEndTime   *string `query:"updateEndTime" validate:"omitnil,rfc3339"`
 		Theme           *string `query:"theme" validate:""`
 		Status          *string `query:"status" validate:"omitnil,instructionDataStatus"`
 	}
@@ -39,6 +39,6 @@ type (
 	}
 
 	DeleteInstructionDataRequest struct {
-		InstructionDataID *string `json:"instruction_data_id" validate:"required,mongodb"`
+		InstructionDataID *string `query:"instructionDataID" validate:"required,mongodb"`
 	}
 )

@@ -2,6 +2,8 @@ package mods
 
 import (
 	"context"
+	e "errors"
+	"fmt"
 	"time"
 
 	dao "data-collection-hub-server/internal/pkg/dao/mods"
@@ -9,6 +11,7 @@ import (
 	"data-collection-hub-server/internal/pkg/service"
 	"data-collection-hub-server/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type LogsService interface {
@@ -45,7 +48,11 @@ func (l LogsServiceImpl) GetLoginLog(
 ) (*admin.GetLoginLogResponse, error) {
 	loginLog, err := l.loginLogDao.GetLoginLogByID(ctx, *loginLogID)
 	if err != nil {
-		return nil, errors.DBError(errors.ReadError(err))
+		if e.Is(err, mongo.ErrNoDocuments) {
+			return nil, errors.NotFound(fmt.Errorf("login log (id: %s) not found", loginLogID.Hex()))
+		} else {
+			return nil, errors.OperationFailed(fmt.Errorf("failed to get login log (id: %s)", loginLogID.Hex()))
+		}
 	}
 	return &admin.GetLoginLogResponse{
 		LoginLogID: loginLog.LoginLogID.Hex(),
@@ -66,7 +73,7 @@ func (l LogsServiceImpl) GetLoginLogList(
 		ctx, offset, *pageSize, *desc, createTimeStart, createTimeEnd, nil, nil, nil, query,
 	)
 	if err != nil {
-		return nil, errors.DBError(errors.ReadError(err))
+		return nil, errors.OperationFailed(fmt.Errorf("failed to get login log list"))
 	}
 	loginLogList := make([]*admin.GetLoginLogResponse, 0, len(loginLogs))
 	for _, loginLog := range loginLogs {
@@ -93,7 +100,11 @@ func (l LogsServiceImpl) GetOperationLog(
 ) (*admin.GetOperationLogResponse, error) {
 	operationLog, err := l.operationLogDao.GetOperationLogByID(ctx, *operationLogID)
 	if err != nil {
-		return nil, errors.DBError(errors.ReadError(err))
+		if e.Is(err, mongo.ErrNoDocuments) {
+			return nil, errors.NotFound(fmt.Errorf("operation log (id: %s) not found", operationLogID.Hex()))
+		} else {
+			return nil, errors.OperationFailed(fmt.Errorf("failed to get operation log (id: %s)", operationLogID.Hex()))
+		}
 	}
 	return &admin.GetOperationLogResponse{
 		OperationLogID: operationLog.OperationLogID.Hex(),
@@ -118,7 +129,7 @@ func (l LogsServiceImpl) GetOperationLogList(
 		nil, operation, nil, nil, query,
 	)
 	if err != nil {
-		return nil, errors.DBError(errors.ReadError(err))
+		return nil, errors.OperationFailed(fmt.Errorf("failed to get operation log list"))
 	}
 	operationLogList := make([]*admin.GetOperationLogResponse, 0, len(operationLogs))
 	for _, operationLog := range operationLogs {

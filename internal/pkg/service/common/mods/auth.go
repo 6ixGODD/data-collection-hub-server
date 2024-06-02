@@ -2,6 +2,7 @@ package mods
 
 import (
 	"context"
+	e "errors"
 	"fmt"
 
 	"data-collection-hub-server/internal/pkg/config"
@@ -13,6 +14,8 @@ import (
 	"data-collection-hub-server/pkg/jwt"
 	"data-collection-hub-server/pkg/utils/crypt"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.uber.org/zap"
 )
 
 type AuthService interface {
@@ -41,22 +44,34 @@ func NewAuthService(core *service.Core, userDao daos.UserDao, cache *dao.Cache, 
 func (a authServiceImpl) Login(ctx context.Context, email, password *string) (*common.LoginResponse, error) {
 	user, err := a.userDao.GetUserByEmail(ctx, *email)
 	if err != nil {
-		return nil, errors.DBError(err) // TODO: Change error type
+		return nil, errors.AuthFailed(fmt.Errorf("user not exist or password wrong"))
 	}
 	if !crypt.Compare(*password, user.Password) {
-		return nil, errors.PasswordWrong(fmt.Errorf("password wrong")) // TODO: Change error type
+		return nil, errors.AuthFailed(fmt.Errorf("user not exist or password wrong"))
 	}
 	accessToken, err := a.jwt.GenerateAccessToken(user.UserID.Hex())
 	if err != nil {
-		return nil, errors.TokenGenerateFailed(err)
+		a.core.Logger.Error("failed to generate access token", zap.Error(err))
+		return nil, errors.ServiceError(fmt.Errorf("failed to generate access token"))
 	}
 	refreshToken, err := a.jwt.GenerateRefreshToken(user.UserID.Hex())
 	if err != nil {
-		return nil, errors.TokenGenerateFailed(err)
+		a.core.Logger.Error("failed to generate refresh token", zap.Error(err))
+		return nil, errors.ServiceError(fmt.Errorf("failed to generate refresh token"))
 	}
 	err = a.userDao.UpdateUserLastLogin(ctx, user.UserID)
 	if err != nil {
-		return nil, errors.DBError(errors.WriteError(err))
+		if mongo.IsDuplicateKeyError(err) {
+			return nil, errors.DuplicateKeyError(fmt.Errorf("user last login already updated"))
+		} else if e.Is(err, mongo.ErrNoDocuments) {
+			return nil, errors.NotFound(fmt.Errorf("user (id: %s) not found", user.UserID.Hex()))
+		} else {
+			return nil, errors.OperationFailed(
+				fmt.Errorf(
+					"failed to update user last login (id: %s)", user.UserID.Hex(),
+				),
+			)
+		}
 	}
 	return &common.LoginResponse{
 		AccessToken:  accessToken,
@@ -84,23 +99,29 @@ func (a authServiceImpl) Login(ctx context.Context, email, password *string) (*c
 func (a authServiceImpl) RefreshToken(ctx context.Context, refreshToken *string) (*common.RefreshTokenResponse, error) {
 	userIDHex, err := a.jwt.VerifyToken(*refreshToken)
 	if err != nil {
-		return nil, errors.InvalidToken(err) // TODO: Change error type
+		return nil, errors.TokenInvalid(fmt.Errorf("refresh token invalid"))
 	}
 	userID, err := primitive.ObjectIDFromHex(userIDHex)
 	if err != nil {
-		return nil, errors.InvalidToken(err) // TODO: Change error type
+		return nil, errors.NotAuthorized(fmt.Errorf("user id invalid"))
 	}
 	user, err := a.userDao.GetUserByID(ctx, userID)
 	if err != nil {
-		return nil, errors.UserNotFound(err)
+		if e.Is(err, mongo.ErrNoDocuments) {
+			return nil, errors.NotFound(fmt.Errorf("user (id: %s) not found", userID.Hex()))
+		} else {
+			return nil, errors.OperationFailed(fmt.Errorf("failed to get user (id: %s)", userID.Hex()))
+		}
 	}
 	accessToken, err := a.jwt.GenerateAccessToken(userID.Hex())
 	if err != nil {
-		return nil, errors.TokenGenerateFailed(err)
+		a.core.Logger.Error("failed to generate access token", zap.Error(err))
+		return nil, errors.ServiceError(fmt.Errorf("failed to generate access token"))
 	}
 	newRefreshToken, err := a.jwt.GenerateRefreshToken(userID.Hex())
 	if err != nil {
-		return nil, errors.TokenGenerateFailed(err)
+		a.core.Logger.Error("failed to generate refresh token", zap.Error(err))
+		return nil, errors.ServiceError(fmt.Errorf("failed to generate refresh token"))
 	}
 	return &common.RefreshTokenResponse{
 		AccessToken:  accessToken,
@@ -130,7 +151,7 @@ func (a authServiceImpl) Logout(ctx context.Context, accessToken *string) error 
 		ctx, fmt.Sprintf("%s:%s", config.TokenBlacklistCachePrefix, crypt.MD5(*accessToken)), config.CacheTrue,
 		&a.core.Config.CacheConfig.TokenBlacklistTTL,
 	); err != nil {
-		return errors.CacheError(err)
+		return errors.OperationFailed(fmt.Errorf("failed to blacklist token"))
 	}
 	return nil
 }
@@ -141,25 +162,36 @@ func (a authServiceImpl) ChangePassword(ctx context.Context, oldPassword, newPas
 		ok        bool
 	)
 	if userIDHex, ok = ctx.Value(config.UserIDKey).(string); !ok {
-		return errors.InvalidToken(fmt.Errorf("user id not found in context")) // TODO: Change error type
+		return errors.NotAuthorized(fmt.Errorf("user id not found in context"))
 	}
 	userID, err := primitive.ObjectIDFromHex(userIDHex)
 	if err != nil {
-		return errors.InvalidToken(err) // TODO: Change error type
+		return errors.NotAuthorized(fmt.Errorf("user id invalid"))
 	}
 	user, err := a.userDao.GetUserByID(ctx, userID)
 	if err != nil {
-		return errors.UserNotFound(err)
+		if e.Is(err, mongo.ErrNoDocuments) {
+			return errors.NotFound(fmt.Errorf("user (id: %s) not found", userID.Hex()))
+		} else {
+			return errors.OperationFailed(fmt.Errorf("failed to get user (id: %s)", userID.Hex()))
+		}
 	}
 	if !crypt.Compare(*oldPassword, user.Password) {
-		return errors.PasswordWrong(err)
+		return errors.AuthFailed(fmt.Errorf("old password wrong"))
 	}
 	hashedPassword, err := crypt.Hash(*newPassword)
 	if err != nil {
-		return errors.ServiceError(err)
+		a.core.Logger.Error("failed to hash password", zap.Error(err))
+		return errors.ServiceError(fmt.Errorf("failed to hash password"))
 	}
 	if err = a.userDao.UpdateUser(ctx, userID, nil, nil, &hashedPassword, nil, nil); err != nil {
-		return errors.DBError(errors.WriteError(err))
+		if mongo.IsDuplicateKeyError(err) {
+			return errors.DuplicateKeyError(fmt.Errorf("user with email %s already exists", user.Email))
+		} else if e.Is(err, mongo.ErrNoDocuments) {
+			return errors.NotFound(fmt.Errorf("user (id: %s) not found", userID.Hex()))
+		} else {
+			return errors.OperationFailed(fmt.Errorf("failed to update user (id: %s)", userID.Hex()))
+		}
 	}
 	return nil
 }

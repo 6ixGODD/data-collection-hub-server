@@ -2,6 +2,8 @@ package mods
 
 import (
 	"context"
+	e "errors"
+	"fmt"
 	"time"
 
 	dao "data-collection-hub-server/internal/pkg/dao/mods"
@@ -9,6 +11,7 @@ import (
 	"data-collection-hub-server/internal/pkg/service"
 	"data-collection-hub-server/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type DocumentationService interface {
@@ -35,7 +38,15 @@ func (d documentationServiceImpl) GetDocumentation(
 ) (*common.GetDocumentationResponse, error) {
 	documentation, err := d.documentationDao.GetDocumentationByID(ctx, *documentationID)
 	if err != nil {
-		return nil, errors.DBError(errors.ReadError(err))
+		if e.Is(err, mongo.ErrNoDocuments) {
+			return nil, errors.NotFound(fmt.Errorf("documentation (id: %s) not found", documentationID.Hex()))
+		} else {
+			return nil, errors.OperationFailed(
+				fmt.Errorf(
+					"failed to get documentation (id: %s)", documentationID.Hex(),
+				),
+			)
+		}
 	}
 	return &common.GetDocumentationResponse{
 		DocumentID: documentation.DocumentID.Hex(),
@@ -54,7 +65,7 @@ func (d documentationServiceImpl) GetDocumentationList(
 		ctx, offset, *pageSize, false, nil, nil, updateBefore, updateAfter,
 	)
 	if err != nil {
-		return nil, errors.DBError(errors.ReadError(err))
+		return nil, errors.OperationFailed(fmt.Errorf("failed to get documentation list"))
 	}
 	resp := make([]*common.DocumentationSummary, 0, len(documentations))
 	for _, documentation := range documentations {

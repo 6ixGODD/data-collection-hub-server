@@ -1,8 +1,10 @@
 package common
 
 import (
+	"fmt"
 	"regexp"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 )
 
@@ -21,4 +23,15 @@ func EscapeSpecialChars(input string) string {
 			return "\\" + s
 		},
 	)
+}
+
+func FormatValidateError(errs error) error {
+	errMessage := fmt.Errorf("failed to validate request")
+	for _, err := range errs.(validator.ValidationErrors) {
+		errMessage = fmt.Errorf(
+			"%s[field: %s] not match the requirement: %s %s, actual: %s",
+			errMessage, err.Field(), err.Tag(), err.Param(), err.Value(),
+		)
+	}
+	return errMessage
 }

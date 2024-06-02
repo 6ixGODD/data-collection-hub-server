@@ -26,7 +26,7 @@ type (
 	}
 
 	GetNoticeResponse struct {
-		NoticeID   string `json:"_id"`
+		NoticeID   string `json:"notice_id"`
 		Title      string `json:"title"`
 		Content    string `json:"content"`
 		NoticeType string `json:"type"`
@@ -35,7 +35,7 @@ type (
 	}
 
 	NoticeSummary struct {
-		NoticeID   string `json:"_id"`
+		NoticeID   string `json:"notice_id"`
 		Title      string `json:"title"`
 		NoticeType string `json:"type"`
 		CreatedAt  string `json:"created_at"`
@@ -47,7 +47,7 @@ type (
 	}
 
 	GetDocumentationResponse struct {
-		DocumentID string `json:"_id"`
+		DocumentID string `json:"document_id"`
 		Title      string `json:"title"`
 		Content    string `json:"content"`
 		CreatedAt  string `json:"created_at"`
@@ -55,7 +55,7 @@ type (
 	}
 
 	DocumentationSummary struct {
-		DocumentID string `json:"_id"`
+		DocumentID string `json:"document_id"`
 		Title      string `json:"title"`
 		CreatedAt  string `json:"created_at"`
 	}
@@ -74,10 +74,5 @@ type (
 		LastLogin    string `json:"last_login"`
 		CreatedAt    string `json:"created_at"`
 		UpdatedAt    string `json:"updated_at"`
-	}
-
-	ErrorResponse struct {
-		Code    int    `json:"code"`
-		Message string `json:"message"`
 	}
 )

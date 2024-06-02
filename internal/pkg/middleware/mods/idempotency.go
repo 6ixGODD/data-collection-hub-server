@@ -19,14 +19,13 @@ func (m *IdempotencyMiddleware) IdempotencyMiddleware() fiber.Handler {
 		ctx := c.UserContext()
 		token := c.Get(m.Config.IdempotencyConfig.IdempotencyTokenHeader)
 		if token != "" {
-			ok, err := m.IdempotencyService.CheckIdempotencyToken(ctx, token)
+			err := m.IdempotencyService.CheckIdempotencyToken(ctx, token)
 			if err != nil {
 				return err
-			}
-			if ok {
+			} else {
 				return c.Next()
 			}
 		}
-		return errors.IdempotencyCheckFailed(fmt.Errorf("idempotency check failed"))
+		return errors.Idempotency(fmt.Errorf("idempotency token missed"))
 	}
 }

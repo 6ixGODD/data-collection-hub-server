@@ -2,11 +2,14 @@ package mods
 
 import (
 	"context"
+	e "errors"
+	"fmt"
 
 	dao "data-collection-hub-server/internal/pkg/dao/mods"
 	"data-collection-hub-server/internal/pkg/service"
 	"data-collection-hub-server/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type NoticeService interface {
@@ -30,7 +33,11 @@ func NewNoticeService(core *service.Core, noticeDao dao.NoticeDao) NoticeService
 func (n NoticeServiceImpl) InsertNotice(ctx context.Context, title, content, noticeType *string) (string, error) {
 	noticeID, err := n.noticeDao.InsertNotice(ctx, *title, *content, *noticeType)
 	if err != nil {
-		return "", errors.DBError(errors.WriteError(err))
+		if mongo.IsDuplicateKeyError(err) {
+			return "", errors.DuplicateKeyError(fmt.Errorf("notice with title %s already exists", *title))
+		} else {
+			return "", errors.OperationFailed(fmt.Errorf("failed to insert notice"))
+		}
 	}
 	return noticeID.Hex(), nil
 }
@@ -40,7 +47,13 @@ func (n NoticeServiceImpl) UpdateNotice(
 ) error {
 	err := n.noticeDao.UpdateNotice(ctx, *noticeID, title, content, noticeType)
 	if err != nil {
-		return errors.DBError(errors.WriteError(err))
+		if mongo.IsDuplicateKeyError(err) {
+			return errors.DuplicateKeyError(fmt.Errorf("notice with title %s already exists", *title))
+		} else if e.Is(err, mongo.ErrNoDocuments) {
+			return errors.NotFound(fmt.Errorf("notice (id: %s) not found", noticeID.Hex()))
+		} else {
+			return errors.OperationFailed(fmt.Errorf("failed to update notice (id: %s)", noticeID.Hex()))
+		}
 	}
 	return nil
 }
@@ -48,7 +61,7 @@ func (n NoticeServiceImpl) UpdateNotice(
 func (n NoticeServiceImpl) DeleteNotice(ctx context.Context, noticeID *primitive.ObjectID) error {
 	err := n.noticeDao.DeleteNotice(ctx, *noticeID)
 	if err != nil {
-		return errors.DBError(errors.WriteError(err))
+		return errors.OperationFailed(fmt.Errorf("failed to delete notice (id: %s)", noticeID.Hex()))
 	}
 	return nil
 }

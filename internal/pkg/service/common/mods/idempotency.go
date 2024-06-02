@@ -2,16 +2,19 @@ package mods
 
 import (
 	"context"
+	"fmt"
 
 	"data-collection-hub-server/internal/pkg/config"
 	"data-collection-hub-server/internal/pkg/dao"
 	"data-collection-hub-server/internal/pkg/service"
+	"data-collection-hub-server/pkg/errors"
 	"data-collection-hub-server/pkg/utils/common"
+	"go.uber.org/zap"
 )
 
 type IdempotencyService interface {
 	GenerateIdempotencyToken(ctx context.Context) (string, error)
-	CheckIdempotencyToken(ctx context.Context, token string) (bool, error)
+	CheckIdempotencyToken(ctx context.Context, token string) error
 }
 
 type idempotencyServiceImpl struct {
@@ -29,21 +32,28 @@ func NewIdempotencyService(core *service.Core, cache *dao.Cache) IdempotencyServ
 func (s *idempotencyServiceImpl) GenerateIdempotencyToken(ctx context.Context) (string, error) {
 	token, err := common.GenerateUUID4()
 	if err != nil {
-		return "", err
+		s.core.Logger.Error("failed to generate idempotency token", zap.Error(err))
+		return "", errors.ServiceError(fmt.Errorf("failed to generate idempotency token"))
 	}
 	if err = s.cache.Set(ctx, token, config.CacheTrue, &s.core.Config.IdempotencyConfig.TTL); err != nil {
-		return "", err
+		s.core.Logger.Error("failed to set idempotency token", zap.Error(err))
+		return "", errors.ServiceError(fmt.Errorf("failed to set idempotency token"))
 	}
 	return token, nil
 }
 
-func (s *idempotencyServiceImpl) CheckIdempotencyToken(ctx context.Context, token string) (bool, error) {
+func (s *idempotencyServiceImpl) CheckIdempotencyToken(ctx context.Context, token string) error {
 	result, err := s.cache.Get(ctx, token)
 	if err != nil {
-		return false, err
+		s.core.Logger.Error("failed to get idempotency token", zap.Error(err))
+		return errors.Idempotency(fmt.Errorf("failed to get idempotency token"))
 	}
 	if err = s.cache.Delete(ctx, token); err != nil {
-		return false, err
+		s.core.Logger.Error("failed to delete idempotency token", zap.Error(err))
+		return errors.Idempotency(fmt.Errorf("failed to delete idempotency token"))
 	}
-	return result != nil, nil
+	if result == nil {
+		return errors.Idempotency(fmt.Errorf("idempotency token not found"))
+	}
+	return nil
 }

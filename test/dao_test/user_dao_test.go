@@ -44,6 +44,9 @@ func TestInsertUser(t *testing.T) {
 	assert.Equal(t, role, user.Role)
 	assert.Equal(t, org, user.Organization)
 	assert.True(t, crypt.Compare("Admin@123", user.Password))
+	_, err = userDao.InsertUser(ctx, username, email, password, role, org)
+	assert.Error(t, err)
+	t.Logf("Error: %v", err)
 }
 
 func TestGetUser(t *testing.T) {

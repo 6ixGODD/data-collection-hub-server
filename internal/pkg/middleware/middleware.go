@@ -1,8 +1,11 @@
 package middleware
 
 import (
+	"fmt"
+
 	"data-collection-hub-server/internal/pkg/config"
 	ware "data-collection-hub-server/internal/pkg/middleware/mods"
+	"data-collection-hub-server/pkg/errors"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
@@ -49,7 +52,9 @@ func (m *Middleware) Register(app *fiber.App) error {
 				Max:               m.Config.MiddlewareConfig.LimiterConfig.Max,
 				Expiration:        m.Config.MiddlewareConfig.LimiterConfig.Expiration,
 				LimiterMiddleware: limiter.SlidingWindow{},
-				// LimitReached: nil,
+				LimitReached: func(c *fiber.Ctx) error {
+					return errors.ServerBusy(fmt.Errorf("too many requests"))
+				},
 			},
 		),
 	)

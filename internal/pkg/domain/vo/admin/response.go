@@ -113,7 +113,7 @@ type (
 	}
 
 	GetLoginLogResponse struct {
-		LoginLogID string `json:"_id"`
+		LoginLogID string `json:"login_log_id"`
 		UserID     string `json:"user_id"`
 		Username   string `json:"username"`
 		Email      string `json:"email"`
@@ -128,7 +128,7 @@ type (
 	}
 
 	GetOperationLogResponse struct {
-		OperationLogID string `json:"_id"`
+		OperationLogID string `json:"operation_log_id"`
 		UserID         string `json:"user_id"`
 		Username       string `json:"username"`
 		Email          string `json:"email"`
@@ -145,14 +145,14 @@ type (
 	}
 
 	GetErrorLogResponse struct {
-		ErrorLogID     string `json:"_id"`
+		ErrorLogID     string `json:"error_log_id"`
 		UserID         string `json:"user_id"`
 		Username       string `json:"username"`
 		IPAddress      string `json:"ip_address"`
 		UserAgent      string `json:"user_agent"`
 		RequestURL     string `json:"request_uri"`
 		RequestMethod  string `json:"request_method"`
-		RequestPayload string `json:"request_payload"`
+		RequestPayload string `json:"request_payload"username\": \"user\", \"password\": \"password\"}"`
 		ErrorCode      string `json:"error_code"`
 		ErrorMsg       string `json:"error_msg"`
 		Stack          string `json:"stack"`

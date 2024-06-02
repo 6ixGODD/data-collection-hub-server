@@ -2,6 +2,8 @@ package mods
 
 import (
 	"context"
+	e "errors"
+	"fmt"
 	"time"
 
 	"data-collection-hub-server/internal/pkg/config"
@@ -10,6 +12,7 @@ import (
 	"data-collection-hub-server/internal/pkg/service"
 	"data-collection-hub-server/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type StatisticService interface {
@@ -52,7 +55,7 @@ func (s StatisticServiceImpl) GetDataStatistic(
 		nil, nil, nil,
 	)
 	if err != nil {
-		return nil, errors.DBError(errors.ReadError(err))
+		return nil, errors.OperationFailed(fmt.Errorf("failed to count instruction data"))
 	}
 
 	pendingCount, err := s.instructionDataDao.CountInstructionData(
@@ -60,7 +63,7 @@ func (s StatisticServiceImpl) GetDataStatistic(
 		nil, nil, nil,
 	)
 	if err != nil {
-		return nil, errors.DBError(errors.ReadError(err))
+		return nil, errors.OperationFailed(fmt.Errorf("failed to count instruction data with status %s", pendingStatus))
 	}
 
 	approvedCount, err := s.instructionDataDao.CountInstructionData(
@@ -68,7 +71,11 @@ func (s StatisticServiceImpl) GetDataStatistic(
 		nil, nil, nil,
 	)
 	if err != nil {
-		return nil, errors.DBError(errors.ReadError(err))
+		return nil, errors.OperationFailed(
+			fmt.Errorf(
+				"failed to count instruction data with status %s", approvedStatus,
+			),
+		)
 	}
 
 	rejectedCount, err := s.instructionDataDao.CountInstructionData(
@@ -76,12 +83,16 @@ func (s StatisticServiceImpl) GetDataStatistic(
 		nil, nil, nil,
 	)
 	if err != nil {
-		return nil, errors.DBError(errors.ReadError(err))
+		return nil, errors.OperationFailed(
+			fmt.Errorf(
+				"failed to count instruction data with status %s", rejectedStatus,
+			),
+		)
 	}
 
 	themeCount, err := s.instructionDataDao.AggregateCountInstructionData(ctx, &themeField)
 	if err != nil {
-		return nil, errors.DBError(errors.ReadError(err))
+		return nil, errors.OperationFailed(fmt.Errorf("failed to count instruction data with field %s", themeField))
 	}
 
 	if startDate == nil && endDate == nil {
@@ -105,7 +116,12 @@ func (s StatisticServiceImpl) GetDataStatistic(
 			nil, nil,
 		)
 		if err != nil {
-			return nil, errors.DBError(errors.ReadError(err))
+			return nil, errors.OperationFailed(
+				fmt.Errorf(
+					"failed to count instruction data in time range %s - %s", start.Format(time.RFC3339),
+					end.Format(time.RFC3339),
+				),
+			)
 		}
 
 		_pendingCount, err := s.instructionDataDao.CountInstructionData(
@@ -113,7 +129,12 @@ func (s StatisticServiceImpl) GetDataStatistic(
 			nil, nil,
 		)
 		if err != nil {
-			return nil, errors.DBError(errors.ReadError(err))
+			return nil, errors.OperationFailed(
+				fmt.Errorf(
+					"failed to count instruction data with status %s in time range %s - %s", pendingStatus,
+					start.Format(time.RFC3339), end.Format(time.RFC3339),
+				),
+			)
 		}
 
 		_approvedCount, err := s.instructionDataDao.CountInstructionData(
@@ -121,7 +142,12 @@ func (s StatisticServiceImpl) GetDataStatistic(
 			nil, nil,
 		)
 		if err != nil {
-			return nil, errors.DBError(errors.ReadError(err))
+			return nil, errors.OperationFailed(
+				fmt.Errorf(
+					"failed to count instruction data with status %s in time range %s - %s", approvedStatus,
+					start.Format(time.RFC3339), end.Format(time.RFC3339),
+				),
+			)
 		}
 
 		_rejectedCount, err := s.instructionDataDao.CountInstructionData(
@@ -129,12 +155,22 @@ func (s StatisticServiceImpl) GetDataStatistic(
 			nil, nil,
 		)
 		if err != nil {
-			return nil, errors.DBError(errors.ReadError(err))
+			return nil, errors.OperationFailed(
+				fmt.Errorf(
+					"failed to count instruction data with status %s in time range %s - %s", rejectedStatus,
+					start.Format(time.RFC3339), end.Format(time.RFC3339),
+				),
+			)
 		}
 
 		_themeCount, err := s.instructionDataDao.AggregateCountInstructionData(ctx, &themeField)
 		if err != nil {
-			return nil, errors.DBError(errors.ReadError(err))
+			return nil, errors.OperationFailed(
+				fmt.Errorf(
+					"failed to count instruction data with field %s in time range %s - %s", themeField,
+					start.Format(time.RFC3339), end.Format(time.RFC3339),
+				),
+			)
 		}
 
 		timeRangeStatistic = append(
@@ -166,14 +202,17 @@ func (s StatisticServiceImpl) GetUserStatistic(
 	rejectedStatus := config.InstructionDataStatusRejected
 	user, err := s.userDao.GetUserByID(ctx, *userID)
 	if err != nil {
-		return nil, errors.DBError(errors.ReadError(err))
+		if e.Is(err, mongo.ErrNoDocuments) {
+			return nil, errors.NotFound(fmt.Errorf("user with id %s not found", userID.Hex()))
+		}
+		return nil, errors.OperationFailed(fmt.Errorf("failed to get user with id %s", userID.Hex()))
 	}
 	total, err := s.instructionDataDao.CountInstructionData(
 		ctx, userID, nil, nil, nil,
 		nil, nil, nil,
 	)
 	if err != nil {
-		return nil, errors.DBError(errors.ReadError(err))
+		return nil, errors.OperationFailed(fmt.Errorf("failed to count instruction data for user %s", userID.Hex()))
 	}
 
 	pendingCount, err := s.instructionDataDao.CountInstructionData(
@@ -181,7 +220,11 @@ func (s StatisticServiceImpl) GetUserStatistic(
 		nil, nil, nil,
 	)
 	if err != nil {
-		return nil, errors.DBError(errors.ReadError(err))
+		return nil, errors.OperationFailed(
+			fmt.Errorf(
+				"failed to count instruction data with status %s for user %s", pendingStatus, userID.Hex(),
+			),
+		)
 	}
 
 	approvedCount, err := s.instructionDataDao.CountInstructionData(
@@ -189,7 +232,11 @@ func (s StatisticServiceImpl) GetUserStatistic(
 		nil, nil, nil,
 	)
 	if err != nil {
-		return nil, errors.DBError(errors.ReadError(err))
+		return nil, errors.OperationFailed(
+			fmt.Errorf(
+				"failed to count instruction data with status %s for user %s", approvedStatus, userID.Hex(),
+			),
+		)
 	}
 
 	rejectedCount, err := s.instructionDataDao.CountInstructionData(
@@ -197,7 +244,11 @@ func (s StatisticServiceImpl) GetUserStatistic(
 		nil, nil, nil,
 	)
 	if err != nil {
-		return nil, errors.DBError(errors.ReadError(err))
+		return nil, errors.OperationFailed(
+			fmt.Errorf(
+				"failed to count instruction data with status %s for user %s", pendingStatus, userID.Hex(),
+			),
+		)
 	}
 
 	return &admin.GetUserStatisticResponse{
@@ -223,7 +274,7 @@ func (s StatisticServiceImpl) GetUserStatisticList(
 		nil, nil, loginBefore, loginAfter, nil,
 	)
 	if err != nil {
-		return nil, errors.DBError(errors.ReadError(err))
+		return nil, errors.OperationFailed(fmt.Errorf("failed to get user list"))
 	}
 	resp := make([]*admin.GetUserStatisticResponse, 0, len(users))
 	for _, user := range users {
@@ -232,7 +283,11 @@ func (s StatisticServiceImpl) GetUserStatisticList(
 			nil, nil, nil,
 		)
 		if err != nil {
-			return nil, errors.DBError(errors.ReadError(err))
+			return nil, errors.OperationFailed(
+				fmt.Errorf(
+					"failed to count instruction data for user %s", user.UserID.Hex(),
+				),
+			)
 		}
 
 		pendingCount, err := s.instructionDataDao.CountInstructionData(
@@ -240,7 +295,11 @@ func (s StatisticServiceImpl) GetUserStatisticList(
 			nil, nil, nil,
 		)
 		if err != nil {
-			return nil, errors.DBError(errors.ReadError(err))
+			return nil, errors.OperationFailed(
+				fmt.Errorf(
+					"failed to count instruction data with status %s for user %s", pendingStatus, user.UserID.Hex(),
+				),
+			)
 		}
 
 		approvedCount, err := s.instructionDataDao.CountInstructionData(
@@ -248,7 +307,11 @@ func (s StatisticServiceImpl) GetUserStatisticList(
 			nil, nil, nil,
 		)
 		if err != nil {
-			return nil, errors.DBError(errors.ReadError(err))
+			return nil, errors.OperationFailed(
+				fmt.Errorf(
+					"failed to count instruction data with status %s for user %s", approvedStatus, user.UserID.Hex(),
+				),
+			)
 		}
 
 		rejectedCount, err := s.instructionDataDao.CountInstructionData(
@@ -256,7 +319,11 @@ func (s StatisticServiceImpl) GetUserStatisticList(
 			nil, nil, nil,
 		)
 		if err != nil {
-			return nil, errors.DBError(errors.ReadError(err))
+			return nil, errors.OperationFailed(
+				fmt.Errorf(
+					"failed to count instruction data with status %s for user %s", rejectedStatus, user.UserID.Hex(),
+				),
+			)
 		}
 
 		resp = append(

@@ -2,9 +2,9 @@ package app
 
 import (
 	"context"
+	"fmt"
 
 	"data-collection-hub-server/internal/pkg/config"
-	"data-collection-hub-server/internal/pkg/domain/vo"
 	"data-collection-hub-server/internal/pkg/errors"
 	"data-collection-hub-server/internal/pkg/middleware"
 	"data-collection-hub-server/internal/pkg/router"
@@ -116,13 +116,7 @@ func (a *App) Init(ctx context.Context) error {
 				return c.Locals(config.UserIDKey).(string)
 			},
 			Forbidden: func(ctx *fiber.Ctx) error {
-				return ctx.Status(fiber.StatusForbidden).JSON(
-					vo.Response{
-						Code:    e.CodePermissionDeny,
-						Message: "Forbidden access",
-						Data:    nil,
-					},
-				)
+				return e.PermissionDeny(fmt.Errorf("permission deny")) // will capture by error handler
 			},
 		},
 	)

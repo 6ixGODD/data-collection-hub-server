@@ -70,7 +70,7 @@ var (
 	)
 
 	ServiceProviderSet = wire.NewSet(
-		wire.Struct(new(service.Core), "*"),
+		service.NewCore,
 		wire.Struct(new(adminservice.Admin), "*"),
 		wire.Struct(new(userservice.User), "*"),
 		wire.Struct(new(commonservice.Common), "*"),

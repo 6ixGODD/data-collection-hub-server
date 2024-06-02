@@ -9,6 +9,7 @@ import (
 	sysservice "data-collection-hub-server/internal/pkg/service/sys/mods"
 	"data-collection-hub-server/pkg/errors"
 	"data-collection-hub-server/pkg/utils/check"
+	utils "data-collection-hub-server/pkg/utils/common"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -20,15 +21,29 @@ type AuthApi struct {
 	Validator   *validator.Validate
 }
 
+// Login logs in the user and returns a token.
+//
+//	@description	Log in the user and return a token.
+//	@id				common-login
+//	@summary		login
+//	@tags			Auth API
+//	@accept			json
+//	@produce		json
+//	@param			common.LoginRequest	body		common.LoginRequest						true	"Login request"
+//	@success		200					{object}	vo.Response{data=common.LoginResponse}	"Success"
+//	@failure		400					{object}	vo.Response{data=nil}					"Invalid request"
+//	@failure		401					{object}	vo.Response{data=nil}					"Unauthorized"
+//	@failure		500					{object}	vo.Response{data=nil}					"Internal server error"
+//	@router			/login																																																												[post]
 func (a *AuthApi) Login(c *fiber.Ctx) error {
 	ctx := c.UserContext()
 	req := new(common.LoginRequest)
 
 	if err := c.BodyParser(req); err != nil {
-		return errors.InvalidRequest(err)
+		return errors.InvalidRequest(fmt.Errorf("failed to parse request"))
 	}
-	if err := a.Validator.Struct(req); err != nil {
-		return errors.InvalidParams(err) // Compare this line with the original one
+	if errs := a.Validator.Struct(req); errs != nil {
+		return errors.InvalidRequest(utils.FormatValidateError(errs))
 	}
 
 	resp, err := a.AuthService.Login(ctx, req.Email, req.Password)
@@ -49,13 +64,26 @@ func (a *AuthApi) Login(c *fiber.Ctx) error {
 	)
 }
 
+// Logout logs out the user.
+//
+//	@description	Log out the user.
+//	@id				common-logout
+//	@summary		logout
+//	@tags			Auth API
+//	@accept			json
+//	@produce		json
+//	@security		Bearer
+//	@success		200		{object}	vo.Response{data=nil}	"Success"
+//	@failure		401		{object}	vo.Response{data=nil}	"Unauthorized"
+//	@failure		500		{object}	vo.Response{data=nil}	"Internal server error"
+//	@router			/logout	[post]
 func (a *AuthApi) Logout(c *fiber.Ctx) error {
 	token := c.Get(fiber.HeaderAuthorization)
 	if token == "" {
 		return errors.TokenMissed(fmt.Errorf("token is missed"))
 	}
 	if !check.IsBearerToken(token) {
-		return errors.InvalidToken(fmt.Errorf("token should start with 'Bearer' or 'bearer'"))
+		return errors.TokenInvalid(fmt.Errorf("token is invalid"))
 	}
 	token = token[7:]
 	err := a.AuthService.Logout(c.UserContext(), &token)
@@ -72,14 +100,29 @@ func (a *AuthApi) Logout(c *fiber.Ctx) error {
 	)
 }
 
+// RefreshToken refreshes the user's token.
+//
+//	@description	Refresh the user's token.
+//	@id				common-refresh-token
+//	@summary		refresh token
+//	@tags			Auth API
+//	@accept			json
+//	@produce		json
+//	@param			common.RefreshTokenRequest	body	common.RefreshTokenRequest	true	"Refresh token request"
+//	@security		Bearer
+//	@success		200				{object}	vo.Response{data=common.RefreshTokenResponse}	"Success"
+//	@failure		400				{object}	vo.Response{data=nil}							"Invalid request"
+//	@failure		401				{object}	vo.Response{data=nil}							"Unauthorized"
+//	@failure		500				{object}	vo.Response{data=nil}							"Internal server error"
+//	@router			/refresh-token	[post]
 func (a *AuthApi) RefreshToken(c *fiber.Ctx) error {
 	req := new(common.RefreshTokenRequest)
 
 	if err := c.BodyParser(req); err != nil {
-		return errors.InvalidRequest(err)
+		return errors.InvalidRequest(fmt.Errorf("failed to parse request"))
 	}
-	if err := a.Validator.Struct(req); err != nil {
-		return errors.InvalidParams(err) // Compare this line with the original one
+	if errs := a.Validator.Struct(req); errs != nil {
+		return errors.InvalidRequest(utils.FormatValidateError(errs))
 	}
 
 	resp, err := a.AuthService.RefreshToken(c.UserContext(), req.RefreshToken)
@@ -96,14 +139,29 @@ func (a *AuthApi) RefreshToken(c *fiber.Ctx) error {
 	)
 }
 
+// ChangePassword changes the user's password.
+//
+//	@description	Change the user's password.
+//	@id				common-change-password
+//	@summary		change password
+//	@tags			Auth API
+//	@accept			json
+//	@produce		json
+//	@param			common.ChangePasswordRequest	body	common.ChangePasswordRequest	true	"Change password request"
+//	@security		Bearer
+//	@success		200					{object}	vo.Response{data=nil}	"Success"
+//	@failure		400					{object}	vo.Response{data=nil}	"Invalid request"
+//	@failure		401					{object}	vo.Response{data=nil}	"Unauthorized"
+//	@failure		500					{object}	vo.Response{data=nil}	"Internal server error"
+//	@router			/change-password	[post]
 func (a *AuthApi) ChangePassword(c *fiber.Ctx) error {
 	req := new(common.ChangePasswordRequest)
 
 	if err := c.BodyParser(req); err != nil {
-		return errors.InvalidRequest(err)
+		return errors.InvalidRequest(fmt.Errorf("failed to parse request"))
 	}
-	if err := a.Validator.Struct(req); err != nil {
-		return errors.InvalidParams(err) // Compare this line with the original one
+	if errs := a.Validator.Struct(req); errs != nil {
+		return errors.InvalidRequest(utils.FormatValidateError(errs))
 	}
 
 	err := a.AuthService.ChangePassword(c.UserContext(), req.OldPassword, req.NewPassword)

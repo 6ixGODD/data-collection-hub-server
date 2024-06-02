@@ -2,6 +2,7 @@ package mods
 
 import (
 	"context"
+	"fmt"
 
 	"data-collection-hub-server/internal/pkg/dao/mods"
 	"data-collection-hub-server/internal/pkg/service"
@@ -46,7 +47,7 @@ func (l logsServiceImpl) InsertLoginLog(
 ) error {
 	_, err := l.loginLogDao.InsertLoginLog(ctx, *userID, *ipAddress, *userAgent)
 	if err != nil {
-		return errors.DBError(errors.WriteError(err))
+		return errors.OperationFailed(fmt.Errorf("failed to insert login log"))
 	}
 	return nil
 }
@@ -56,7 +57,7 @@ func (l logsServiceImpl) CacheLoginLog(
 ) error {
 	err := l.loginLogDao.CacheLoginLog(ctx, *userID, *ipAddress, *userAgent)
 	if err != nil {
-		return errors.CacheError(errors.WriteError(err))
+		return errors.OperationFailed(fmt.Errorf("failed to cache login log"))
 	}
 	return nil
 }
@@ -70,7 +71,7 @@ func (l logsServiceImpl) InsertOperationLog(
 		*status,
 	)
 	if err != nil {
-		return errors.DBError(errors.WriteError(err))
+		return errors.OperationFailed(fmt.Errorf("failed to insert operation log"))
 	}
 	return nil
 }
@@ -83,7 +84,7 @@ func (l logsServiceImpl) CacheOperationLog(
 		ctx, *userID, *entityID, *ipAddress, *userAgent, *operation, *entityType, *description, *status,
 	)
 	if err != nil {
-		return errors.CacheError(errors.WriteError(err))
+		return errors.OperationFailed(fmt.Errorf("failed to cache operation log"))
 	}
 	return nil
 }

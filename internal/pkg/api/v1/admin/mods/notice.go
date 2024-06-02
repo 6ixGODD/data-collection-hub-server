@@ -9,6 +9,7 @@ import (
 	adminservice "data-collection-hub-server/internal/pkg/service/admin/mods"
 	sysservice "data-collection-hub-server/internal/pkg/service/sys/mods"
 	"data-collection-hub-server/pkg/errors"
+	"data-collection-hub-server/pkg/utils/common"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -20,15 +21,31 @@ type NoticeApi struct {
 	Validator     *validator.Validate
 }
 
+// InsertNotice inserts a new notice.
+//
+//	@description	Insert a new notice.
+//	@id				admin-insert-notice
+//	@summary		insert notice
+//	@tags			Admin API
+//	@accept			json
+//	@produce		json
+//	@param			admin.InsertNoticeRequest	body	admin.InsertNoticeRequest	true	"Insert notice request"
+//	@security		Bearer
+//	@success		200				{object}	vo.Response{data=nil}	"Success"
+//	@failure		400				{object}	vo.Response{data=nil}	"Invalid request"
+//	@failure		401				{object}	vo.Response{data=nil}	"Unauthorized"
+//	@failure		403				{object}	vo.Response{data=nil}	"Forbidden"
+//	@failure		500				{object}	vo.Response{data=nil}	"Internal server error"
+//	@router			/admin/notice																																																																		[post]
 func (n *NoticeApi) InsertNotice(c *fiber.Ctx) error {
 	ctx := c.UserContext()
 	req := new(admin.InsertNoticeRequest)
 
 	if err := c.BodyParser(req); err != nil {
-		return errors.InvalidRequest(err)
+		return errors.InvalidRequest(fmt.Errorf("failed to parse request"))
 	}
-	if err := n.Validator.Struct(req); err != nil {
-		return errors.InvalidParams(err) // Compare this line with the original one
+	if errs := n.Validator.Struct(req); errs != nil {
+		return errors.InvalidRequest(common.FormatValidateError(errs))
 	}
 
 	noticeIDHex, err := n.NoticeService.InsertNotice(ctx, req.Title, req.Content, req.NoticeType)
@@ -67,20 +84,36 @@ func (n *NoticeApi) InsertNotice(c *fiber.Ctx) error {
 	)
 }
 
+// UpdateNotice updates the notice.
+//
+//	@description	Update the notice.
+//	@id				admin-update-notice
+//	@summary		update notice
+//	@tags			Admin API
+//	@accept			json
+//	@produce		json
+//	@param			admin.UpdateNoticeRequest	body	admin.UpdateNoticeRequest	true	"Update notice request"
+//	@security		Bearer
+//	@success		200				{object}	vo.Response{data=nil}	"Success"
+//	@failure		400				{object}	vo.Response{data=nil}	"Invalid request"
+//	@failure		401				{object}	vo.Response{data=nil}	"Unauthorized"
+//	@failure		403				{object}	vo.Response{data=nil}	"Forbidden"
+//	@failure		500				{object}	vo.Response{data=nil}	"Internal server error"
+//	@router			/admin/notice																																																																		[put]
 func (n *NoticeApi) UpdateNotice(c *fiber.Ctx) error {
 	ctx := c.UserContext()
 	req := new(admin.UpdateNoticeRequest)
 
 	if err := c.BodyParser(req); err != nil {
-		return errors.InvalidRequest(err)
+		return errors.InvalidRequest(fmt.Errorf("failed to parse request"))
 	}
-	if err := n.Validator.Struct(req); err != nil {
-		return errors.InvalidParams(err) // Compare this line with the original one
+	if errs := n.Validator.Struct(req); errs != nil {
+		return errors.InvalidRequest(common.FormatValidateError(errs))
 	}
 
 	noticeID, err := primitive.ObjectIDFromHex(*req.NoticeID)
 	if err != nil {
-		return errors.InvalidRequest(err)
+		return errors.InvalidRequest(fmt.Errorf("invalid notice id"))
 	}
 	err = n.NoticeService.UpdateNotice(ctx, &noticeID, req.Title, req.Content, req.NoticeType)
 	var (
@@ -118,20 +151,32 @@ func (n *NoticeApi) UpdateNotice(c *fiber.Ctx) error {
 	)
 }
 
+// DeleteNotice deletes the notice.
+//
+//	@description	Delete the notice.
+//	@id				admin-delete-notice
+//	@summary		delete notice
+//	@tags			Admin API
+//	@accept			json
+//	@produce		json
+//	@param			admin.DeleteNoticeRequest	query	admin.DeleteNoticeRequest	true	"Delete notice request"
+//	@security		Bearer
+//	@success		200	{object}	vo.Response{data=nil}	"Success"
+//	@failure		400	{object}	vo.Response{data=nil}	"Invalid request"
 func (n *NoticeApi) DeleteNotice(c *fiber.Ctx) error {
 	ctx := c.UserContext()
 	req := new(admin.DeleteNoticeRequest)
 
 	if err := c.QueryParser(req); err != nil {
-		return errors.InvalidRequest(err)
+		return errors.InvalidRequest(fmt.Errorf("failed to parse request"))
 	}
-	if err := n.Validator.Struct(req); err != nil {
-		return errors.InvalidParams(err) // Compare this line with the original one
+	if errs := n.Validator.Struct(req); errs != nil {
+		return errors.InvalidRequest(common.FormatValidateError(errs))
 	}
 
 	noticeID, err := primitive.ObjectIDFromHex(*req.NoticeID)
 	if err != nil {
-		return errors.InvalidRequest(err)
+		return errors.InvalidRequest(fmt.Errorf("invalid notice id"))
 	}
 
 	var (

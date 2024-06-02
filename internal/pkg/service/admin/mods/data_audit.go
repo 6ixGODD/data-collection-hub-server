@@ -2,6 +2,8 @@ package mods
 
 import (
 	"context"
+	e "errors"
+	"fmt"
 	"time"
 
 	"data-collection-hub-server/internal/pkg/config"
@@ -9,7 +11,9 @@ import (
 	"data-collection-hub-server/internal/pkg/domain/vo/admin"
 	"data-collection-hub-server/internal/pkg/service"
 	"data-collection-hub-server/pkg/errors"
+	"github.com/qiniu/qmgo"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type DataAuditService interface {
@@ -57,7 +61,15 @@ func (d DataAuditServiceImpl) GetInstructionData(
 ) (*admin.GetInstructionDataResponse, error) {
 	instructionData, err := d.instructionDataDao.GetInstructionDataByID(ctx, instructionDataID)
 	if err != nil {
-		return nil, errors.ReadError(err)
+		if e.Is(err, qmgo.ErrNoSuchDocuments) {
+			return nil, errors.NotFound(fmt.Errorf("instruction data (id: %s) not found", instructionDataID.Hex()))
+		} else {
+			return nil, errors.OperationFailed(
+				fmt.Errorf(
+					"failed to get instruction data (id: %s)", instructionDataID.Hex(),
+				),
+			)
+		}
 	}
 	return &admin.GetInstructionDataResponse{
 		InstructionDataID: instructionDataID.Hex(),
@@ -105,7 +117,7 @@ func (d DataAuditServiceImpl) GetInstructionDataList(
 		createTimeStart, createTimeEnd, updateTimeStart, updateTimeEnd, query,
 	)
 	if err != nil {
-		return nil, errors.ReadError(err)
+		return nil, errors.OperationFailed(fmt.Errorf("failed to get instruction data list")) // TODO: Should contain more situation e.g. sometime it's caused by not found or the input is illegal, not only operation failed
 	}
 
 	resp := make([]*admin.GetInstructionDataResponse, 0, len(instructionDataList))
@@ -164,7 +176,15 @@ func (d DataAuditServiceImpl) ApproveInstructionData(ctx context.Context, instru
 		&status, &message,
 	)
 	if err != nil {
-		return errors.DBError(errors.WriteError(err))
+		if e.Is(err, qmgo.ErrNoSuchDocuments) {
+			return errors.NotFound(fmt.Errorf("instruction data (id: %s) not found", instructionDataID.Hex()))
+		} else {
+			return errors.OperationFailed(
+				fmt.Errorf(
+					"failed to approve instruction data (id: %s)", instructionDataID.Hex(),
+				),
+			)
+		}
 	}
 	return nil
 }
@@ -180,7 +200,15 @@ func (d DataAuditServiceImpl) RejectInstructionData(
 		&status, message,
 	)
 	if err != nil {
-		return errors.DBError(errors.WriteError(err))
+		if e.Is(err, qmgo.ErrNoSuchDocuments) {
+			return errors.NotFound(fmt.Errorf("instruction data (id: %s) not found", instructionDataID.Hex()))
+		} else {
+			return errors.OperationFailed(
+				fmt.Errorf(
+					"failed to reject instruction data (id: %s)", instructionDataID.Hex(),
+				),
+			)
+		}
 	}
 	return nil
 }
@@ -195,7 +223,15 @@ func (d DataAuditServiceImpl) UpdateInstructionData(
 		userID, instruction, input, output, theme, source, note, nil, nil,
 	)
 	if err != nil {
-		return errors.DBError(errors.WriteError(err))
+		if e.Is(err, mongo.ErrNoDocuments) {
+			return errors.NotFound(fmt.Errorf("instruction data (id: %s) not found", instructionDataID.Hex()))
+		} else {
+			return errors.OperationFailed(
+				fmt.Errorf(
+					"failed to update instruction data (id: %s)", instructionDataID.Hex(),
+				),
+			)
+		}
 	}
 	return nil
 }
@@ -210,7 +246,7 @@ func (d DataAuditServiceImpl) ExportInstructionData(
 		ctx, 0, 0, *desc, userID, theme, status, createTimeStart, createTimeEnd, updateTimeStart, updateTimeEnd, nil,
 	)
 	if err != nil {
-		return nil, errors.ReadError(err)
+		return nil, errors.OperationFailed(fmt.Errorf("failed to get instruction data list"))
 	}
 
 	for _, instructionData := range _instructionDataList {
@@ -265,7 +301,7 @@ func (d DataAuditServiceImpl) ExportInstructionDataAsAlpaca(
 		ctx, 0, 0, *desc, userID, theme, status, createTimeStart, createTimeEnd, updateTimeStart, updateTimeEnd, nil,
 	)
 	if err != nil {
-		return nil, errors.ReadError(err)
+		return nil, errors.OperationFailed(fmt.Errorf("failed to get instruction data list"))
 	}
 
 	for _, instructionData := range _instructionDataList {
@@ -285,7 +321,10 @@ func (d DataAuditServiceImpl) ExportInstructionDataAsAlpaca(
 func (d DataAuditServiceImpl) DeleteInstructionData(ctx context.Context, instructionDataID *primitive.ObjectID) error {
 	err := d.instructionDataDao.SoftDeleteInstructionData(ctx, *instructionDataID)
 	if err != nil {
-		return errors.DBError(errors.WriteError(err))
+		if e.Is(err, mongo.ErrNoDocuments) {
+			return errors.NotFound(fmt.Errorf("instruction data (id: %s) not found", instructionDataID.Hex()))
+		}
+		return errors.OperationFailed(fmt.Errorf("failed to delete instruction data (id: %s)", instructionDataID.Hex()))
 	}
 	return nil
 }

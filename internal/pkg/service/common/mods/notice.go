@@ -2,6 +2,8 @@ package mods
 
 import (
 	"context"
+	e "errors"
+	"fmt"
 	"time"
 
 	dao "data-collection-hub-server/internal/pkg/dao/mods"
@@ -9,6 +11,7 @@ import (
 	"data-collection-hub-server/internal/pkg/service"
 	"data-collection-hub-server/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type NoticeService interface {
@@ -35,7 +38,11 @@ func (n noticeServiceImpl) GetNotice(ctx context.Context, noticeID *primitive.Ob
 ) {
 	notice, err := n.noticeDao.GetNoticeByID(ctx, *noticeID)
 	if err != nil {
-		return nil, errors.DBError(errors.ReadError(err))
+		if e.Is(err, mongo.ErrNoDocuments) {
+			return nil, errors.NotFound(fmt.Errorf("notice (id: %s) not found", noticeID.Hex()))
+		} else {
+			return nil, errors.OperationFailed(fmt.Errorf("failed to get notice (id: %s)", noticeID.Hex()))
+		}
 	}
 	return &common.GetNoticeResponse{
 		NoticeID:   notice.NoticeID.Hex(),
@@ -55,7 +62,7 @@ func (n noticeServiceImpl) GetNoticeList(
 		ctx, offset, *pageSize, false, nil, nil, updateBefore, updateAfter, noticeType,
 	)
 	if err != nil {
-		return nil, errors.DBError(errors.ReadError(err))
+		return nil, errors.OperationFailed(fmt.Errorf("failed to get notice list"))
 	}
 	resp := make([]*common.NoticeSummary, 0, len(notices))
 	for _, notice := range notices {

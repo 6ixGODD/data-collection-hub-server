@@ -4,94 +4,54 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func UserNotFound(err error) *AppError {
-	return NewAppErrorWithCause(CodeUserNotFound, fiber.StatusNotFound, MessageUserNotFound, err)
+func NotAuthorized(err error) *AppError {
+	return NewAppErrorWithCause(CodeNotAuthorized, fiber.StatusUnauthorized, "Not authorized", err)
 }
 
-func PasswordWrong(err error) *AppError {
-	return NewAppErrorWithCause(CodePasswordWrong, fiber.StatusBadRequest, MessagePasswordWrong, err)
+func AuthFailed(err error) *AppError {
+	return NewAppErrorWithCause(CodeAuthFailed, fiber.StatusUnauthorized, "Authentication failed", err)
 }
 
-func UserExist(err error) *AppError {
-	return NewAppErrorWithCause(CodeUserExist, fiber.StatusBadRequest, MessageUserExist, err)
+func TokenInvalid(err error) *AppError {
+	return NewAppErrorWithCause(CodeTokenInvalid, fiber.StatusUnauthorized, "Token invalid", err)
 }
 
-func InvalidToken(err error) *AppError {
-	return NewAppErrorWithCause(CodeInvalidToken, fiber.StatusUnauthorized, MessageInvalidToken, err)
-}
-
-func ExpiredToken(err error) *AppError {
-	return NewAppErrorWithCause(CodeExpiredToken, fiber.StatusUnauthorized, MessageExpiredToken, err)
+func TokenExpired(err error) *AppError {
+	return NewAppErrorWithCause(CodeTokenExpired, fiber.StatusUnauthorized, "Token expired", err)
 }
 
 func TokenMissed(err error) *AppError {
-	return NewAppErrorWithCause(CodeTokenMissed, fiber.StatusUnauthorized, MessageTokenMissed, err)
-}
-
-func TokenGenerateFailed(err error) *AppError {
-	return NewAppErrorWithCause(
-		CodeTokenGenerateFailed, fiber.StatusInternalServerError, MessageTokenGenerateFailed, err,
-	)
+	return NewAppErrorWithCause(CodeTokenMissed, fiber.StatusUnauthorized, "Token missed", err)
 }
 
 func PermissionDeny(err error) *AppError {
-	return NewAppErrorWithCause(CodePermissionDeny, fiber.StatusForbidden, MessagePermissionDeny, err)
+	return NewAppErrorWithCause(CodePermissionDeny, fiber.StatusForbidden, "Permission deny", err)
 }
 
 func InvalidRequest(err error) *AppError {
-	return NewAppErrorWithCause(CodeInvalidRequest, fiber.StatusBadRequest, MessageInvalidRequest, err)
+	return NewAppErrorWithCause(CodeInvalidRequest, fiber.StatusBadRequest, "Invalid request", err)
 }
 
-func InvalidParams(err error) *AppError {
-	return NewAppErrorWithCause(CodeInvalidParams, fiber.StatusBadRequest, MessageInvalidParams, err)
+func Idempotency(err error) *AppError {
+	return NewAppErrorWithCause(CodeIdempotency, fiber.StatusBadRequest, "Idempotency check failed", err)
 }
 
-func MissingParams(err error) *AppError {
-	return NewAppErrorWithCause(CodeMissingParams, fiber.StatusBadRequest, MessageMissingParams, err)
+func NotFound(err error) *AppError {
+	return NewAppErrorWithCause(CodeNotFound, fiber.StatusNotFound, "Not found", err)
 }
 
-func IdempotencyCheckFailed(err error) *AppError {
-	return NewAppErrorWithCause(
-		CodeIdempotencyCheckFailed, fiber.StatusConflict, MessageIdempotencyCheckFailed, err,
-	)
+func OperationFailed(err error) *AppError {
+	return NewAppErrorWithCause(CodeOperationFailed, fiber.StatusInternalServerError, "Operation failed", err)
 }
 
-func ConnError(err error) *AppError {
-	return NewAppErrorWithCause(CodeConnError, fiber.StatusInternalServerError, MessageConnError, err)
-}
-
-func ReadError(err error) *AppError {
-	return NewAppErrorWithCause(CodeDBReadError, fiber.StatusInternalServerError, MessageReadError, err)
-}
-
-func WriteError(err error) *AppError {
-	return NewAppErrorWithCause(CodeDBWriteError, fiber.StatusInternalServerError, MessageWriteError, err)
-}
-
-func DBError(err error) *AppError {
-	return NewAppErrorWithCause(CodeDBError, fiber.StatusInternalServerError, MessageMongoError, err)
-}
-
-func CacheError(err error) *AppError {
-	return NewAppErrorWithCause(CodeCacheError, fiber.StatusInternalServerError, MessageRedisError, err)
+func DuplicateKeyError(err error) *AppError {
+	return NewAppErrorWithCause(CodeDuplicateKey, fiber.StatusBadRequest, "Duplicate key error", err)
 }
 
 func ServerBusy(err error) *AppError {
-	return NewAppErrorWithCause(CodeServerBusy, fiber.StatusServiceUnavailable, MessageServerBusy, err)
-}
-
-func ServerDown(err error) *AppError {
-	return NewAppErrorWithCause(CodeServerDown, fiber.StatusServiceUnavailable, MessageServerDown, err)
-}
-
-func ServerCrash(err error) *AppError {
-	return NewAppErrorWithCause(CodeServerCrash, fiber.StatusServiceUnavailable, MessageServerCrash, err)
+	return NewAppErrorWithCause(CodeServerBusy, fiber.StatusInternalServerError, "Server busy", err)
 }
 
 func ServiceError(err error) *AppError {
-	return NewAppErrorWithCause(CodeServiceError, fiber.StatusInternalServerError, MessageServiceError, err)
-}
-
-func UnknownError(err error) *AppError {
-	return NewAppErrorWithCause(CodeUnknownError, fiber.StatusInternalServerError, MessageUnknownError, err)
+	return NewAppErrorWithCause(CodeServiceError, fiber.StatusInternalServerError, "Service error", err)
 }

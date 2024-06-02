@@ -6,6 +6,7 @@ const (
 	MongoTag   = "MONGO"
 	RequestTag = "REQUEST"
 	CronTag    = "CRON"
+	ServiceTag = "SERVICE"
 
 	TagKey       = "Tag"
 	RequestIDKey = "RequestID"

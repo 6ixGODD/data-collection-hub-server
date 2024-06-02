@@ -30,20 +30,17 @@ func NewProfileService(core *service.Core, userDao dao.UserDao) ProfileService {
 }
 
 func (p profileServiceImpl) GetProfile(ctx context.Context) (*common.GetProfileResponse, error) {
-	var (
-		userIDHex string
-		ok        bool
-	)
-	if userIDHex, ok = ctx.Value(config.UserIDKey).(string); !ok {
-		return nil, errors.UserNotFound(fmt.Errorf("user id not found")) // TODO: change error type
+	userIDHex, ok := ctx.Value(config.UserIDKey).(string)
+	if !ok {
+		return nil, errors.NotAuthorized(fmt.Errorf("user is not authorized"))
 	}
 	userID, err := primitive.ObjectIDFromHex(userIDHex)
 	if err != nil {
-		return nil, errors.UserNotFound(err) // TODO: change error type
+		return nil, errors.NotAuthorized(fmt.Errorf("user is not authorized"))
 	}
 	user, err := p.userDao.GetUserByID(ctx, userID)
 	if err != nil {
-		return nil, errors.DBError(errors.ReadError(err))
+		return nil, errors.NotAuthorized(fmt.Errorf("user not exist"))
 	}
 	return &common.GetProfileResponse{
 		UserID:       user.UserID.Hex(),

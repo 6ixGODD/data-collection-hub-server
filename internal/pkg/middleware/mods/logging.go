@@ -25,9 +25,6 @@ func (l *LoggingMiddleware) loggingMiddleware() fiber.Handler {
 		)
 		sysLogger, _ = l.Zap.GetLogger(sysCtx)
 		reqLogger, _ = l.Zap.GetLogger(reqCtx)
-		// ctx = l.Zap.SetRequestIDInContext(ctx, c.Get(fiber.HeaderXRequestID))
-		// ctx = l.Zap.SetUserIDInContext(ctx, c.Locals(config.UserIDKey).(string))
-		// c.SetUserContext(ctx)
 		err = c.Next()
 		if err != nil {
 			sysLogger.Warn("Failed to execute request", zap.Error(err))

@@ -40,18 +40,18 @@ func (s statisticServiceImpl) GetDataStatistic(
 	)
 	userIDHex, ok := ctx.Value(config.UserIDKey).(string)
 	if !ok {
-		return nil, errors.UserNotFound(errors.UserNotFound(fmt.Errorf("user id not found in context")))
+		return nil, errors.NotAuthorized(fmt.Errorf("user is not authorized"))
 	}
 	userID, err := primitive.ObjectIDFromHex(userIDHex)
 	if err != nil {
-		return nil, errors.UserNotFound(err) // TODO: change error type
+		return nil, errors.NotAuthorized(fmt.Errorf("user is not authorized"))
 	}
 	total, err := s.instructionDataDao.CountInstructionData(
 		ctx, &userID, nil, nil, nil,
 		nil, nil, nil,
 	)
 	if err != nil {
-		return nil, errors.DBError(errors.ReadError(err))
+		return nil, errors.OperationFailed(fmt.Errorf("failed to count instruction data"))
 	}
 
 	pendingCount, err := s.instructionDataDao.CountInstructionData(
@@ -59,7 +59,7 @@ func (s statisticServiceImpl) GetDataStatistic(
 		nil, nil, nil,
 	)
 	if err != nil {
-		return nil, errors.DBError(errors.ReadError(err))
+		return nil, errors.OperationFailed(fmt.Errorf("failed to count instruction data with status %s", pendingStatus))
 	}
 
 	approvedCount, err := s.instructionDataDao.CountInstructionData(
@@ -67,7 +67,11 @@ func (s statisticServiceImpl) GetDataStatistic(
 		nil, nil, nil,
 	)
 	if err != nil {
-		return nil, errors.DBError(errors.ReadError(err))
+		return nil, errors.OperationFailed(
+			fmt.Errorf(
+				"failed to count instruction data with status %s", approvedStatus,
+			),
+		)
 	}
 
 	rejectedCount, err := s.instructionDataDao.CountInstructionData(
@@ -75,12 +79,16 @@ func (s statisticServiceImpl) GetDataStatistic(
 		nil, nil, nil,
 	)
 	if err != nil {
-		return nil, errors.DBError(errors.ReadError(err))
+		return nil, errors.OperationFailed(
+			fmt.Errorf(
+				"failed to count instruction data with status %s", rejectedStatus,
+			),
+		)
 	}
 
 	themeCount, err := s.instructionDataDao.AggregateCountInstructionData(ctx, &themeField)
 	if err != nil {
-		return nil, errors.DBError(errors.ReadError(err))
+		return nil, errors.OperationFailed(fmt.Errorf("failed to count instruction data by theme"))
 	}
 
 	if startDate == nil && endDate == nil {
@@ -105,7 +113,12 @@ func (s statisticServiceImpl) GetDataStatistic(
 			nil, nil,
 		)
 		if err != nil {
-			return nil, errors.DBError(errors.ReadError(err))
+			return nil, errors.OperationFailed(
+				fmt.Errorf(
+					"failed to count instruction data in time range %s - %s", start.Format(time.RFC3339),
+					end.Format(time.RFC3339),
+				),
+			)
 		}
 
 		_pendingCount, err := s.instructionDataDao.CountInstructionData(
@@ -113,7 +126,12 @@ func (s statisticServiceImpl) GetDataStatistic(
 			nil, nil,
 		)
 		if err != nil {
-			return nil, errors.DBError(errors.ReadError(err))
+			return nil, errors.OperationFailed(
+				fmt.Errorf(
+					"failed to count instruction data with status %s in time range %s - %s", "pending",
+					start.Format(time.RFC3339), end.Format(time.RFC3339),
+				),
+			)
 		}
 
 		_approvedCount, err := s.instructionDataDao.CountInstructionData(
@@ -121,7 +139,12 @@ func (s statisticServiceImpl) GetDataStatistic(
 			nil, nil,
 		)
 		if err != nil {
-			return nil, errors.DBError(errors.ReadError(err))
+			return nil, errors.OperationFailed(
+				fmt.Errorf(
+					"failed to count instruction data with status %s in time range %s - %s", "approved",
+					start.Format(time.RFC3339), end.Format(time.RFC3339),
+				),
+			)
 		}
 
 		_rejectedCount, err := s.instructionDataDao.CountInstructionData(
@@ -129,7 +152,12 @@ func (s statisticServiceImpl) GetDataStatistic(
 			nil, nil,
 		)
 		if err != nil {
-			return nil, errors.DBError(errors.ReadError(err))
+			return nil, errors.OperationFailed(
+				fmt.Errorf(
+					"failed to count instruction data with status %s in time range %s - %s", "rejected",
+					start.Format(time.RFC3339), end.Format(time.RFC3339),
+				),
+			)
 		}
 
 		timeRangeStatistic = append(

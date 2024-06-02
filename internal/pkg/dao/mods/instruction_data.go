@@ -112,7 +112,7 @@ func (i *InstructionDataDaoImpl) GetInstructionDataList(
 		doc["theme"] = *theme
 	}
 	if statusCode != nil {
-		doc["status_code"] = *statusCode
+		doc["status.code"] = *statusCode
 	}
 	if createTimeStart != nil && createTimeEnd != nil {
 		doc["created_time"] = bson.M{"$gte": *createTimeStart, "$lte": *createTimeEnd}
