@@ -28,7 +28,7 @@ type (
 	}
 
 	GetDocumentationRequest struct {
-		DocumentationID *string `json:"documentation_id" validate:"required"`
+		DocumentationID *string `query:"documentationID" validate:"required"`
 	}
 
 	GetDocumentationListRequest struct {
