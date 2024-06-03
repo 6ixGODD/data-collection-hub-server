@@ -48,11 +48,6 @@
 - **RBAC**: Casbin
 - **Monitoring**: Prometheus
 
-## Setup
-```shell
-make setup
-```
-
 ## Reference
 - https://docs.gofiber.io/
 - https://github.com/goccy/go-json
