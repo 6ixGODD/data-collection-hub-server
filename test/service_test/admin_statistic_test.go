@@ -52,13 +52,13 @@ func TestGetUserStatisticList(t *testing.T) {
 		statisticService = injector.AdminStatisticService
 		page             = int64(1)
 		pageSize         = int64(10)
-		loginTimeStart   = time.Now().AddDate(0, 0, -1)
-		loginTimeEnd     = time.Now()
-		createTimeStart  = time.Now().AddDate(0, 0, -1)
-		createTimeEnd    = time.Now()
+		loginStartTime   = time.Now().AddDate(0, 0, -1)
+		loginEndTime     = time.Now()
+		createStartTime  = time.Now().AddDate(0, 0, -1)
+		createEndTime    = time.Now()
 	)
 	resp, err := statisticService.GetUserStatisticList(
-		ctx, &page, &pageSize, &loginTimeStart, &loginTimeEnd, &createTimeStart, &createTimeEnd,
+		ctx, &page, &pageSize, &loginStartTime, &loginEndTime, &createStartTime, &createEndTime,
 	)
 	assert.NoError(t, err)
 	assert.NotNil(t, resp)

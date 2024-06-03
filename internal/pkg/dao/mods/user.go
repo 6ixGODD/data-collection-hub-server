@@ -10,7 +10,6 @@ import (
 	"data-collection-hub-server/internal/pkg/config"
 	"data-collection-hub-server/internal/pkg/dao"
 	"data-collection-hub-server/internal/pkg/domain/entity"
-	"data-collection-hub-server/pkg/utils/check"
 	"data-collection-hub-server/pkg/utils/common"
 	"github.com/goccy/go-json"
 	"github.com/qiniu/qmgo/options"
@@ -209,10 +208,12 @@ func (u *UserDaoImpl) GetUserList(
 	createStartTime, createEndTime, updateStartTime, updateEndTime, lastLoginStartTime, lastLoginEndTime *time.Time,
 	query *string,
 ) ([]entity.UserModel, *int64, error) {
-	var userList []entity.UserModel
-	var err error
+	var (
+		userList []entity.UserModel
+		err      error
+	)
 	doc := bson.M{"deleted": false}
-	key := fmt.Sprintf("%s:offset:%d:limit:%d", config.UserCachePrefix, offset, limit)
+	key := fmt.Sprintf("%s:offset:%d:limit:%d", config.UserCachePrefix, offset, limit) // for caching
 	if organization != nil {
 		doc["organization"] = *organization
 		key += fmt.Sprintf(":organization:%s", *organization)
@@ -222,31 +223,15 @@ func (u *UserDaoImpl) GetUserList(
 		key += fmt.Sprintf(":role:%s", *role)
 	}
 	if createStartTime != nil && createEndTime != nil {
-		if !check.IsValidTimeRange(*createStartTime, *createEndTime) {
-			return nil, nil, fmt.Errorf(
-				"invalid time range: createStartTime=%s, createEndTime=%s", *createStartTime, *createEndTime,
-			) // XXX: Change err type
-		}
 		doc["created_at"] = bson.M{"$gte": createStartTime, "$lte": createEndTime}
 		key += fmt.Sprintf(":createStartTime:%s:createEndTime:%s", createStartTime, createEndTime)
 	}
 	if updateStartTime != nil && updateEndTime != nil {
-		if !check.IsValidTimeRange(*updateStartTime, *updateEndTime) {
-			return nil, nil, fmt.Errorf(
-				"invalid time range: updateStartTime=%s, updateEndTime=%s", *updateStartTime, *updateEndTime,
-			) // XXX: Change err type
-		}
 		doc["updated_at"] = bson.M{"$gte": updateStartTime, "$lte": updateEndTime}
 		key += fmt.Sprintf(":updateStartTime:%s:updateEndTime:%s", updateStartTime, updateEndTime)
 	}
 	if lastLoginStartTime != nil && lastLoginEndTime != nil {
-		if !check.IsValidTimeRange(*lastLoginStartTime, *lastLoginEndTime) {
-			return nil, nil, fmt.Errorf(
-				"invalid time range: lastLoginStartTime=%s, lastLoginEndTime=%s", *lastLoginStartTime,
-				*lastLoginEndTime,
-			) // XXX: Change err type
-		}
-		doc["last_login_at"] = bson.M{"$gte": lastLoginStartTime, "$lte": lastLoginEndTime}
+		doc["last_login"] = bson.M{"$gte": lastLoginStartTime, "$lte": lastLoginEndTime}
 		key += fmt.Sprintf(":lastLoginStartTime:%s:lastLoginEndTime:%s", lastLoginStartTime, lastLoginEndTime)
 	}
 	if query != nil {
@@ -264,18 +249,41 @@ func (u *UserDaoImpl) GetUserList(
 	if desc {
 		key += ":desc"
 	}
-	cache, err := u.Cache.GetList(ctx, key)
+	var cache entity.UserCacheList
+	err = u.Cache.GetList(ctx, key, &cache)
 	if errors.Is(err, dao.CacheNil{}) {
 		u.Core.Logger.Info("UserDaoImpl.GetUserList: cache miss", zap.String("key", key))
 	} else if err != nil {
 		u.Core.Logger.Error("UserDaoImpl.GetUserList: failed to get cache", zap.String("key", key), zap.Error(err))
 	} else {
-		if userList, ok := cache.List.([]entity.UserModel); ok {
-			u.Core.Logger.Info("UserDaoImpl.GetUserList: cache hit", zap.String("key", key))
-			return userList, &cache.Total, nil
-		} else {
-			u.Core.Logger.Error("UserDaoImpl.GetUserList: failed to parse cache", zap.String("key", key))
+		u.Core.Logger.Info("UserDaoImpl.GetUserList: cache hit", zap.String("key", key))
+		// convert cache to userList. cannot use cache directly because of primitive.ObjectID
+		for _, user := range cache.List {
+			userID, err := primitive.ObjectIDFromHex(user.UserID)
+			if err != nil {
+				u.Core.Logger.Error(
+					"UserDaoImpl.GetUserList: failed to parse userID",
+					zap.String("userID", user.UserID), zap.Error(err),
+				)
+				break
+			}
+			userList = append(
+				userList, entity.UserModel{
+					UserID:       userID,
+					Username:     user.Username,
+					Email:        user.Email,
+					Password:     user.Password,
+					Role:         user.Role,
+					Organization: user.Organization,
+					LastLogin:    user.LastLogin,
+					Deleted:      user.Deleted,
+					CreatedAt:    user.CreatedAt,
+					UpdatedAt:    user.UpdatedAt,
+					DeletedAt:    user.DeletedAt,
+				},
+			)
 		}
+		return userList, &cache.Total, nil
 	}
 
 	coll := u.Core.Mongo.MongoClient.Database(u.Core.Mongo.DatabaseName).Collection(config.UserCollectionName)
@@ -305,8 +313,27 @@ func (u *UserDaoImpl) GetUserList(
 		zap.ByteString(config.UserCollectionName, docJSON), zap.Int64("count", count),
 	)
 
+	var userCacheList entity.UserCacheList
+	userCacheList.Total = count
+	for _, user := range userList {
+		userCacheList.List = append(
+			userCacheList.List, entity.UserCache{
+				UserID:       user.UserID.Hex(),
+				Username:     user.Username,
+				Email:        user.Email,
+				Password:     user.Password,
+				Role:         user.Role,
+				Organization: user.Organization,
+				LastLogin:    user.LastLogin,
+				Deleted:      user.Deleted,
+				CreatedAt:    user.CreatedAt,
+				UpdatedAt:    user.UpdatedAt,
+				DeletedAt:    user.DeletedAt,
+			},
+		)
+	}
 	if err := u.Cache.SetList(
-		ctx, key, &entity.CacheList{Total: count, List: userList}, &u.Core.Config.CacheConfig.UserCacheTTL,
+		ctx, key, &userCacheList, &u.Core.Config.CacheConfig.UserCacheTTL,
 	); err != nil {
 		u.Core.Logger.Error(
 			"NoticeDaoImpl.GetUserList: failed to set cache",
@@ -345,7 +372,7 @@ func (u *UserDaoImpl) CountUser(
 		key += fmt.Sprintf(":updateStartTime:%s:updateEndTime:%s", updateStartTime, updateEndTime)
 	}
 	if lastLoginStartTime != nil && lastLoginEndTime != nil {
-		doc["last_login_at"] = bson.M{"$gte": lastLoginStartTime, "$lte": lastLoginEndTime}
+		doc["last_login"] = bson.M{"$gte": lastLoginStartTime, "$lte": lastLoginEndTime}
 		key += fmt.Sprintf(":lastLoginStartTime:%s:lastLoginEndTime:%s", lastLoginStartTime, lastLoginEndTime)
 	}
 	docJSON, _ := json.Marshal(doc)
@@ -387,16 +414,16 @@ func (u *UserDaoImpl) InsertUser(
 ) (primitive.ObjectID, error) {
 	coll := u.Core.Mongo.MongoClient.Database(u.Core.Mongo.DatabaseName).Collection(config.UserCollectionName)
 	doc := bson.M{
-		"username":      username,
-		"email":         email,
-		"password":      password,
-		"role":          role,
-		"organization":  organization,
-		"last_login_at": nil,
-		"deleted":       false,
-		"created_at":    time.Now(),
-		"updated_at":    time.Now(),
-		"deleted_at":    nil,
+		"username":     username,
+		"email":        email,
+		"password":     password,
+		"role":         role,
+		"organization": organization,
+		"last_login":   time.Time{},
+		"deleted":      false,
+		"created_at":   time.Now(),
+		"updated_at":   time.Now(),
+		"deleted_at":   nil,
 	}
 	docJSON, _ := json.Marshal(doc)
 	result, err := coll.InsertOne(ctx, doc)
@@ -464,7 +491,7 @@ func (u *UserDaoImpl) UpdateUser(
 
 func (u *UserDaoImpl) UpdateUserLastLogin(ctx context.Context, userID primitive.ObjectID) error {
 	coll := u.Core.Mongo.MongoClient.Database(u.Core.Mongo.DatabaseName).Collection(config.UserCollectionName)
-	doc := bson.M{"last_login_at": time.Now()}
+	doc := bson.M{"last_login": time.Now()}
 	docJSON, _ := json.Marshal(doc)
 	if err := coll.UpdateId(ctx, userID, bson.M{"$set": doc}); err != nil {
 		u.Core.Logger.Error(
@@ -523,7 +550,7 @@ func (u *UserDaoImpl) SoftDeleteUserList(
 		doc["updated_at"] = bson.M{"$gte": updateStartTime, "$lte": updateEndTime}
 	}
 	if lastLoginStartTime != nil && lastLoginEndTime != nil {
-		doc["last_login_at"] = bson.M{"$gte": lastLoginStartTime, "$lte": lastLoginEndTime}
+		doc["last_login"] = bson.M{"$gte": lastLoginStartTime, "$lte": lastLoginEndTime}
 	}
 	docJSON, _ := json.Marshal(doc)
 	result, err := coll.UpdateAll(ctx, doc, bson.M{"$set": bson.M{"deleted": true, "deleted_at": time.Now()}})
@@ -581,7 +608,7 @@ func (u *UserDaoImpl) DeleteUserList(
 		doc["updated_at"] = bson.M{"$gte": updateStartTime, "$lte": updateEndTime}
 	}
 	if lastLoginStartTime != nil && lastLoginEndTime != nil {
-		doc["last_login_at"] = bson.M{"$gte": lastLoginStartTime, "$lte": lastLoginEndTime}
+		doc["last_login"] = bson.M{"$gte": lastLoginStartTime, "$lte": lastLoginEndTime}
 	}
 	docJSON, _ := json.Marshal(doc)
 	result, err := coll.RemoveAll(ctx, doc)

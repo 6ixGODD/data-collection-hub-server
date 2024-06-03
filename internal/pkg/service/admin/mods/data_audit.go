@@ -22,7 +22,7 @@ type DataAuditService interface {
 	) (*admin.GetInstructionDataResponse, error)
 	GetInstructionDataList(
 		ctx context.Context, page, pageSize *int64, desc *bool, userID *primitive.ObjectID,
-		createTimeStart, createTimeEnd, updateTimeStart, updateTimeEnd *time.Time,
+		createStartTime, createEndTime, updateStartTime, updateEndTime *time.Time,
 		theme, status, query *string,
 	) (*admin.GetInstructionDataListResponse, error)
 	ApproveInstructionData(ctx context.Context, instructionDataID *primitive.ObjectID) error
@@ -33,12 +33,12 @@ type DataAuditService interface {
 	) error
 	ExportInstructionData(
 		ctx context.Context, desc *bool, userID *primitive.ObjectID,
-		createTimeStart, createTimeEnd, updateTimeStart, updateTimeEnd *time.Time,
+		createStartTime, createEndTime, updateStartTime, updateEndTime *time.Time,
 		theme, status *string,
 	) (*admin.InstructionDataList, error)
 	ExportInstructionDataAsAlpaca(
 		ctx context.Context, desc *bool, userID *primitive.ObjectID,
-		createTimeStart, createTimeEnd, updateTimeStart, updateTimeEnd *time.Time,
+		createStartTime, createEndTime, updateStartTime, updateEndTime *time.Time,
 		theme, status *string,
 	) (*admin.InstructionDataAlpacaList, error)
 	DeleteInstructionData(ctx context.Context, instructionDataID *primitive.ObjectID) error
@@ -108,13 +108,13 @@ func (d DataAuditServiceImpl) GetInstructionData(
 
 func (d DataAuditServiceImpl) GetInstructionDataList(
 	ctx context.Context, page, pageSize *int64, desc *bool, userID *primitive.ObjectID,
-	createTimeStart, createTimeEnd, updateTimeStart, updateTimeEnd *time.Time,
+	createStartTime, createEndTime, updateStartTime, updateEndTime *time.Time,
 	theme, status, query *string,
 ) (*admin.GetInstructionDataListResponse, error) {
 	offset := (*page - 1) * *pageSize
 	instructionDataList, count, err := d.instructionDataDao.GetInstructionDataList(
 		ctx, offset, *pageSize, *desc, userID, theme, status,
-		createTimeStart, createTimeEnd, updateTimeStart, updateTimeEnd, query,
+		createStartTime, createEndTime, updateStartTime, updateEndTime, query,
 	)
 	if err != nil {
 		return nil, errors.OperationFailed(fmt.Errorf("failed to get instruction data list")) // TODO: Should contain more situation e.g. sometime it's caused by not found or the input is illegal, not only operation failed
@@ -238,12 +238,12 @@ func (d DataAuditServiceImpl) UpdateInstructionData(
 
 func (d DataAuditServiceImpl) ExportInstructionData(
 	ctx context.Context, desc *bool, userID *primitive.ObjectID,
-	createTimeStart, createTimeEnd, updateTimeStart, updateTimeEnd *time.Time,
+	createStartTime, createEndTime, updateStartTime, updateEndTime *time.Time,
 	theme, status *string,
 ) (*admin.InstructionDataList, error) {
 	var instructionDataList []*admin.InstructionData
 	_instructionDataList, _, err := d.instructionDataDao.GetInstructionDataList(
-		ctx, 0, 0, *desc, userID, theme, status, createTimeStart, createTimeEnd, updateTimeStart, updateTimeEnd, nil,
+		ctx, 0, 0, *desc, userID, theme, status, createStartTime, createEndTime, updateStartTime, updateEndTime, nil,
 	)
 	if err != nil {
 		return nil, errors.OperationFailed(fmt.Errorf("failed to get instruction data list"))
@@ -293,12 +293,12 @@ func (d DataAuditServiceImpl) ExportInstructionData(
 
 func (d DataAuditServiceImpl) ExportInstructionDataAsAlpaca(
 	ctx context.Context, desc *bool, userID *primitive.ObjectID,
-	createTimeStart, createTimeEnd, updateTimeStart, updateTimeEnd *time.Time,
+	createStartTime, createEndTime, updateStartTime, updateEndTime *time.Time,
 	theme, status *string,
 ) (*admin.InstructionDataAlpacaList, error) {
 	var instructionDataList []*admin.InstructionDataAlpaca
 	_instructionDataList, _, err := d.instructionDataDao.GetInstructionDataList(
-		ctx, 0, 0, *desc, userID, theme, status, createTimeStart, createTimeEnd, updateTimeStart, updateTimeEnd, nil,
+		ctx, 0, 0, *desc, userID, theme, status, createStartTime, createEndTime, updateStartTime, updateEndTime, nil,
 	)
 	if err != nil {
 		return nil, errors.OperationFailed(fmt.Errorf("failed to get instruction data list"))

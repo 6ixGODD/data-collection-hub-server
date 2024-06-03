@@ -97,7 +97,7 @@ func (a authServiceImpl) Login(ctx context.Context, email, password *string) (*c
 }
 
 func (a authServiceImpl) RefreshToken(ctx context.Context, refreshToken *string) (*common.RefreshTokenResponse, error) {
-	userIDHex, err := a.jwt.VerifyToken(*refreshToken)
+	userIDHex, err := a.jwt.VerifyRefreshToken(*refreshToken)
 	if err != nil {
 		return nil, errors.TokenInvalid(fmt.Errorf("refresh token invalid"))
 	}
@@ -186,7 +186,11 @@ func (a authServiceImpl) ChangePassword(ctx context.Context, oldPassword, newPas
 	}
 	if err = a.userDao.UpdateUser(ctx, userID, nil, nil, &hashedPassword, nil, nil); err != nil {
 		if mongo.IsDuplicateKeyError(err) {
-			return errors.DuplicateKeyError(fmt.Errorf("user with email %s already exists", user.Email))
+			return errors.DuplicateKeyError(
+				fmt.Errorf(
+					"user with username %s or email %s already exists", user.Username, user.Email,
+				),
+			)
 		} else if e.Is(err, mongo.ErrNoDocuments) {
 			return errors.NotFound(fmt.Errorf("user (id: %s) not found", userID.Hex()))
 		} else {

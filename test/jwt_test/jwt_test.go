@@ -72,13 +72,13 @@ func TestJwtVerifyToken(t *testing.T) {
 	assert.NotEmpty(t, accessToken)
 	t.Logf("access token: %s", accessToken)
 
-	token, err := j.VerifyToken(accessToken)
+	token, err := j.VerifyAccessToken(accessToken)
 	assert.NoError(t, err)
 	assert.Equal(t, sub, token)
 	t.Logf("token: %s", token)
 
 	invalidToken := "Invalid token"
-	token, err = j.VerifyToken(invalidToken)
+	token, err = j.VerifyAccessToken(invalidToken)
 	assert.Error(t, err)
 	assert.Empty(t, token)
 }

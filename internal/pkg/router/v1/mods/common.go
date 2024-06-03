@@ -19,6 +19,11 @@ func (c *CommonRouter) RegisterCommonRouter(
 		"/ping", func(c *fiber.Ctx) error { return c.SendString("pong") },
 	)
 	app.Get(
+		"/idempotency-token",
+		casbin.RequiresRoles([]string{config.UserRoleAdmin, config.UserRoleUser}),
+		api.IdempotencyApi.GenerateIdempotencyToken,
+	)
+	app.Get(
 		"/profile",
 		casbin.RequiresRoles([]string{config.UserRoleAdmin, config.UserRoleUser}),
 		api.ProfileApi.GetProfile,
@@ -34,11 +39,11 @@ func (c *CommonRouter) RegisterCommonRouter(
 		"/login",
 		api.AuthApi.Login,
 	)
-	authGroup.Post(
+	authGroup.Get(
 		"/logout",
 		api.AuthApi.Logout,
 	)
-	authGroup.Get(
+	authGroup.Post(
 		"/refresh",
 		api.AuthApi.RefreshToken,
 	)
@@ -55,11 +60,11 @@ func (c *CommonRouter) RegisterCommonRouter(
 
 	documentationGroup := app.Group("/documentation")
 	documentationGroup.Get(
-		"/documentation",
+		"/",
 		api.DocumentationApi.GetDocumentation,
 	)
 	documentationGroup.Get(
-		"/documentation/list",
+		"/list",
 		api.DocumentationApi.GetDocumentationList,
 	)
 }

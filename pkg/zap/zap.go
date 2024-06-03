@@ -35,7 +35,7 @@ func New(config *zap.Config, options ...zap.Option) (*Zap, error) {
 	return zapInstance, nil
 }
 
-func Set(config *zap.Config, options ...zap.Option) error {
+func Update(config *zap.Config, options ...zap.Option) error {
 	z := &Zap{
 		config: &Config{
 			zapConfig:  config,
@@ -69,7 +69,7 @@ func (z *Zap) Init() error {
 	return nil
 }
 
-func (z *Zap) GetLogger(ctx context.Context) (logger *zap.Logger, err error) {
+func (z *Zap) GetLogger(ctx context.Context) (*zap.Logger, error) {
 	var fields []zap.Field
 	if tag := z.getTagFromContext(ctx); tag != "" {
 		fields = append(fields, zap.String("tag", tag))
@@ -87,9 +87,6 @@ func (z *Zap) GetLogger(ctx context.Context) (logger *zap.Logger, err error) {
 	}
 	newLogger := z.Logger.With(fields...)
 
-	if err != nil {
-		return nil, err
-	}
 	return newLogger, nil
 }
 

@@ -96,10 +96,9 @@ type (
 	}
 
 	GetUserResponse struct {
-		UserID       string `json:"_id"`
+		UserID       string `json:"user_id"`
 		Username     string `json:"username"`
 		Email        string `json:"email"`
-		Password     string `json:"password"`
 		Role         string `json:"role"`
 		Organization string `json:"organization"`
 		LastLogin    string `json:"last_login"`
@@ -136,6 +135,9 @@ type (
 		UserAgent      string `json:"user_agent"`
 		Operation      string `json:"operation"`
 		EntityID       string `json:"entity_id"`
+		EntityType     string `json:"entity_type"`
+		Description    string `json:"description"`
+		Status         string `json:"status"`
 		CreatedAt      string `json:"created_at"`
 	}
 
@@ -152,7 +154,7 @@ type (
 		UserAgent      string `json:"user_agent"`
 		RequestURL     string `json:"request_uri"`
 		RequestMethod  string `json:"request_method"`
-		RequestPayload string `json:"request_payload"username\": \"user\", \"password\": \"password\"}"`
+		RequestPayload string `json:"request_payload"`
 		ErrorCode      string `json:"error_code"`
 		ErrorMsg       string `json:"error_msg"`
 		Stack          string `json:"stack"`

@@ -121,15 +121,21 @@ definitions:
     properties:
       created_at:
         type: string
+      description:
+        type: string
       email:
         type: string
       entity_id:
+        type: string
+      entity_type:
         type: string
       ip_address:
         type: string
       operation:
         type: string
       operation_log_id:
+        type: string
+      status:
         type: string
       user_agent:
         type: string
@@ -149,8 +155,6 @@ definitions:
     type: object
   admin.GetUserResponse:
     properties:
-      _id:
-        type: string
       created_at:
         type: string
       email:
@@ -159,11 +163,11 @@ definitions:
         type: string
       organization:
         type: string
-      password:
-        type: string
       role:
         type: string
       updated_at:
+        type: string
+      user_id:
         type: string
       username:
         type: string
@@ -279,9 +283,7 @@ definitions:
         minLength: 1
         type: string
     required:
-    - content
     - documentation_id
-    - title
     type: object
   admin.UpdateInstructionDataRequest:
     properties:
@@ -327,10 +329,7 @@ definitions:
         minLength: 1
         type: string
     required:
-    - content
     - notice_id
-    - notice_type
-    - title
     type: object
   admin.UpdateUserRequest:
     properties:
@@ -338,8 +337,6 @@ definitions:
         type: string
       organization:
         maxLength: 100
-        type: string
-      role:
         type: string
       user_id:
         type: string
@@ -430,8 +427,6 @@ definitions:
     type: object
   common.GetProfileResponse:
     properties:
-      created_at:
-        type: string
       email:
         type: string
       last_login:
@@ -439,8 +434,6 @@ definitions:
       organization:
         type: string
       role:
-        type: string
-      updated_at:
         type: string
       user_id:
         type: string
@@ -644,11 +637,7 @@ definitions:
       theme:
         type: string
     required:
-    - input
-    - instruction
     - instruction_data_id
-    - output
-    - source
     type: object
   vo.Response:
     properties:
@@ -747,7 +736,7 @@ paths:
       operationId: admin-delete-documentation
       parameters:
       - in: query
-        name: documentation_id
+        name: documentationID
         required: true
         type: string
       produces:
@@ -1547,79 +1536,6 @@ paths:
       summary: update instruction data
       tags:
       - Admin API
-  /admin/login-log:
-    get:
-      consumes:
-      - application/json
-      description: Get the login log by ID.
-      operationId: admin-get-login-log
-      parameters:
-      - in: query
-        name: loginLogID
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Success
-          schema:
-            allOf:
-            - $ref: '#/definitions/vo.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/admin.GetLoginLogResponse'
-              type: object
-        "400":
-          description: Invalid request
-          schema:
-            allOf:
-            - $ref: '#/definitions/vo.Response'
-            - properties:
-                data:
-                  type: object
-              type: object
-        "401":
-          description: Unauthorized
-          schema:
-            allOf:
-            - $ref: '#/definitions/vo.Response'
-            - properties:
-                data:
-                  type: object
-              type: object
-        "403":
-          description: Forbidden
-          schema:
-            allOf:
-            - $ref: '#/definitions/vo.Response'
-            - properties:
-                data:
-                  type: object
-              type: object
-        "404":
-          description: Login log not found
-          schema:
-            allOf:
-            - $ref: '#/definitions/vo.Response'
-            - properties:
-                data:
-                  type: object
-              type: object
-        "500":
-          description: Internal server error
-          schema:
-            allOf:
-            - $ref: '#/definitions/vo.Response'
-            - properties:
-                data:
-                  type: object
-              type: object
-      security:
-      - Bearer: []
-      summary: get login log by ID
-      tags:
-      - Admin API
   /admin/login-log/list:
     get:
       consumes:
@@ -1836,79 +1752,6 @@ paths:
       summary: update notice
       tags:
       - Admin API
-  /admin/operation-log:
-    get:
-      consumes:
-      - application/json
-      description: Get the operation log by ID.
-      operationId: admin-get-operation-log
-      parameters:
-      - in: query
-        name: operationLogID
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Success
-          schema:
-            allOf:
-            - $ref: '#/definitions/vo.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/admin.GetOperationLogResponse'
-              type: object
-        "400":
-          description: Invalid request
-          schema:
-            allOf:
-            - $ref: '#/definitions/vo.Response'
-            - properties:
-                data:
-                  type: object
-              type: object
-        "401":
-          description: Unauthorized
-          schema:
-            allOf:
-            - $ref: '#/definitions/vo.Response'
-            - properties:
-                data:
-                  type: object
-              type: object
-        "403":
-          description: Forbidden
-          schema:
-            allOf:
-            - $ref: '#/definitions/vo.Response'
-            - properties:
-                data:
-                  type: object
-              type: object
-        "404":
-          description: Operation log not found
-          schema:
-            allOf:
-            - $ref: '#/definitions/vo.Response'
-            - properties:
-                data:
-                  type: object
-              type: object
-        "500":
-          description: Internal server error
-          schema:
-            allOf:
-            - $ref: '#/definitions/vo.Response'
-            - properties:
-                data:
-                  type: object
-              type: object
-      security:
-      - Bearer: []
-      summary: get operation log by ID
-      tags:
-      - Admin API
   /admin/operation-log/list:
     get:
       consumes:
@@ -1927,6 +1770,9 @@ paths:
         required: true
         type: boolean
       - in: query
+        name: entityType
+        type: string
+      - in: query
         name: operation
         type: string
       - in: query
@@ -1943,6 +1789,9 @@ paths:
       - in: query
         maxLength: 100
         name: query
+        type: string
+      - in: query
+        name: status
         type: string
       produces:
       - application/json
@@ -2427,20 +2276,20 @@ paths:
       operationId: admin-get-user-list
       parameters:
       - in: query
-        name: createTimeEnd
+        name: createEndTime
         type: string
       - in: query
-        name: createTimeStart
+        name: createStartTime
         type: string
       - in: query
         name: desc
         required: true
         type: boolean
       - in: query
-        name: lastLoginTimeEnd
+        name: lastLoginEndTime
         type: string
       - in: query
-        name: lastLoginTimeStart
+        name: lastLoginStartTime
         type: string
       - in: query
         minimum: 1

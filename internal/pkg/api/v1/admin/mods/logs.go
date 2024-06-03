@@ -11,58 +11,11 @@ import (
 	"data-collection-hub-server/pkg/utils/common"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type LogsApi struct {
 	LogsService adminservice.LogsService
 	Validator   *validator.Validate
-}
-
-// GetLoginLog returns the login log by ID.
-//
-//	@description	Get the login log by ID.
-//	@id				admin-get-login-log
-//	@summary		get login log by ID
-//	@tags			Admin API
-//	@accept			json
-//	@produce		json
-//	@param			admin.GetLoginLogRequest	query	admin.GetLoginLogRequest	true	"Get login log request"
-//	@security		Bearer
-//	@success		200					{object}	vo.Response{data=admin.GetLoginLogResponse}	"Success"
-//	@failure		400					{object}	vo.Response{data=nil}						"Invalid request"
-//	@failure		401					{object}	vo.Response{data=nil}						"Unauthorized"
-//	@failure		403					{object}	vo.Response{data=nil}						"Forbidden"
-//	@failure		404					{object}	vo.Response{data=nil}						"Login log not found"
-//	@failure		500					{object}	vo.Response{data=nil}						"Internal server error"
-//	@router			/admin/login-log																																																																																																																											[get]
-func (l *LogsApi) GetLoginLog(c *fiber.Ctx) error {
-	req := new(admin.GetLoginLogRequest)
-
-	if err := c.QueryParser(req); err != nil {
-		return errors.InvalidRequest(fmt.Errorf("failed to parse request"))
-	}
-
-	if errs := l.Validator.Struct(req); errs != nil {
-		return errors.InvalidRequest(common.FormatValidateError(errs))
-	}
-	loginLogID, err := primitive.ObjectIDFromHex(*req.LoginLogID)
-	if err != nil {
-		return errors.InvalidRequest(fmt.Errorf("invalid login log id"))
-	}
-
-	resp, err := l.LogsService.GetLoginLog(c.UserContext(), &loginLogID)
-	if err != nil {
-		return err
-	}
-
-	return c.JSON(
-		vo.Response{
-			Code:    errors.CodeSuccess,
-			Message: errors.MessageSuccess,
-			Data:    resp,
-		},
-	)
 }
 
 // GetLoginLogList returns the login log list.
@@ -133,52 +86,6 @@ func (l *LogsApi) GetLoginLogList(c *fiber.Ctx) error {
 	)
 }
 
-// GetOperationLog returns the operation log by ID.
-//
-//	@description	Get the operation log by ID.
-//	@id				admin-get-operation-log
-//	@summary		get operation log by ID
-//	@tags			Admin API
-//	@accept			json
-//	@produce		json
-//	@param			admin.GetOperationLogRequest	query	admin.GetOperationLogRequest	true	"Get operation log request"
-//	@security		Bearer
-//	@success		200						{object}	vo.Response{data=admin.GetOperationLogResponse}	"Success"
-//	@failure		400						{object}	vo.Response{data=nil}							"Invalid request"
-//	@failure		401						{object}	vo.Response{data=nil}							"Unauthorized"
-//	@failure		403						{object}	vo.Response{data=nil}							"Forbidden"
-//	@failure		404						{object}	vo.Response{data=nil}							"Operation log not found"
-//	@failure		500						{object}	vo.Response{data=nil}							"Internal server error"
-//	@router			/admin/operation-log																																																																																																																									[get]
-func (l *LogsApi) GetOperationLog(c *fiber.Ctx) error {
-	req := new(admin.GetOperationLogRequest)
-
-	if err := c.QueryParser(req); err != nil {
-		return errors.InvalidRequest(fmt.Errorf("failed to parse request"))
-	}
-	if errs := l.Validator.Struct(req); errs != nil {
-		return errors.InvalidRequest(common.FormatValidateError(errs))
-	}
-
-	operationLogID, err := primitive.ObjectIDFromHex(*req.OperationLogID)
-	if err != nil {
-		return errors.InvalidRequest(fmt.Errorf("invalid operation log id"))
-	}
-
-	resp, err := l.LogsService.GetOperationLog(c.UserContext(), &operationLogID)
-	if err != nil {
-		return err
-	}
-
-	return c.JSON(
-		vo.Response{
-			Code:    errors.CodeSuccess,
-			Message: errors.MessageSuccess,
-			Data:    resp,
-		},
-	)
-}
-
 // GetOperationLogList returns the operation log list.
 //
 //	@description	Get the operation log list.
@@ -232,7 +139,8 @@ func (l *LogsApi) GetOperationLogList(c *fiber.Ctx) error {
 	}
 
 	resp, err := l.LogsService.GetOperationLogList(
-		c.UserContext(), req.Page, req.PageSize, req.Desc, req.Query, req.Operation, createdBefore, createdAfter,
+		c.UserContext(), req.Page, req.PageSize, req.Desc, req.Query, req.Operation, req.EntityType, req.Status,
+		createdBefore, createdAfter,
 	)
 	if err != nil {
 		return err

@@ -31,11 +31,11 @@ func TestGetNoticeList(t *testing.T) {
 		page            = int64(1)
 		pageSize        = int64(10)
 		noticeType      = "URGENT"
-		updateTimeStart = time.Now().AddDate(0, 0, -1)
-		updateTimeEnd   = time.Now()
+		updateStartTime = time.Now().AddDate(0, 0, -1)
+		updateEndTime   = time.Now()
 	)
 
-	resp, err := noticeService.GetNoticeList(ctx, &page, &pageSize, &noticeType, &updateTimeStart, &updateTimeEnd)
+	resp, err := noticeService.GetNoticeList(ctx, &page, &pageSize, &noticeType, &updateStartTime, &updateEndTime)
 	assert.NoError(t, err)
 	assert.NotNil(t, resp)
 

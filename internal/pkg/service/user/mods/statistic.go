@@ -86,7 +86,7 @@ func (s statisticServiceImpl) GetDataStatistic(
 		)
 	}
 
-	themeCount, err := s.instructionDataDao.AggregateCountInstructionData(ctx, &themeField)
+	themeCount, err := s.instructionDataDao.AggregateCountInstructionData(ctx, &themeField, nil, nil)
 	if err != nil {
 		return nil, errors.OperationFailed(fmt.Errorf("failed to count instruction data by theme"))
 	}
@@ -160,6 +160,16 @@ func (s statisticServiceImpl) GetDataStatistic(
 			)
 		}
 
+		_themeCount, err := s.instructionDataDao.AggregateCountInstructionData(ctx, &themeField, &start, &end)
+		if err != nil {
+			return nil, errors.OperationFailed(
+				fmt.Errorf(
+					"failed to count instruction data with field %s in time range %s - %s", themeField,
+					start.Format(time.RFC3339), end.Format(time.RFC3339),
+				),
+			)
+		}
+
 		timeRangeStatistic = append(
 			timeRangeStatistic, &user.TimeRangeStatistic{
 				Date:          start.Format(time.RFC3339),
@@ -167,6 +177,7 @@ func (s statisticServiceImpl) GetDataStatistic(
 				PendingCount:  *_pendingCount,
 				ApprovedCount: *_approvedCount,
 				RejectedCount: *_rejectedCount,
+				ThemeCount:    _themeCount,
 			},
 		)
 	}

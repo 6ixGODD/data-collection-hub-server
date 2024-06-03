@@ -41,7 +41,7 @@ func Update(ctx context.Context, config *qmgo.Config, PingTimeout int64, databas
 	if err := mongoInstance.Close(ctx); err != nil {
 		return err
 	}
-	mongoInstance = &Mongo{
+	*mongoInstance = Mongo{
 		qmgoConfig:   config,
 		pingTimeout:  PingTimeout,
 		DatabaseName: databaseName,

@@ -35,7 +35,8 @@ func (s *idempotencyServiceImpl) GenerateIdempotencyToken(ctx context.Context) (
 		s.core.Logger.Error("failed to generate idempotency token", zap.Error(err))
 		return "", errors.ServiceError(fmt.Errorf("failed to generate idempotency token"))
 	}
-	if err = s.cache.Set(ctx, token, config.CacheTrue, &s.core.Config.IdempotencyConfig.TTL); err != nil {
+	key := fmt.Sprintf("%s:%s", config.IdempotencyCachePrefix, token)
+	if err = s.cache.Set(ctx, key, config.CacheTrue, &s.core.Config.IdempotencyConfig.TTL); err != nil {
 		s.core.Logger.Error("failed to set idempotency token", zap.Error(err))
 		return "", errors.ServiceError(fmt.Errorf("failed to set idempotency token"))
 	}
@@ -43,12 +44,13 @@ func (s *idempotencyServiceImpl) GenerateIdempotencyToken(ctx context.Context) (
 }
 
 func (s *idempotencyServiceImpl) CheckIdempotencyToken(ctx context.Context, token string) error {
-	result, err := s.cache.Get(ctx, token)
+	key := fmt.Sprintf("%s:%s", config.IdempotencyCachePrefix, token)
+	result, err := s.cache.Get(ctx, key)
 	if err != nil {
 		s.core.Logger.Error("failed to get idempotency token", zap.Error(err))
 		return errors.Idempotency(fmt.Errorf("failed to get idempotency token"))
 	}
-	if err = s.cache.Delete(ctx, token); err != nil {
+	if err = s.cache.Delete(ctx, key); err != nil {
 		s.core.Logger.Error("failed to delete idempotency token", zap.Error(err))
 		return errors.Idempotency(fmt.Errorf("failed to delete idempotency token"))
 	}

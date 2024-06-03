@@ -9,4 +9,5 @@ type Common struct {
 	ProfileApi       *mods.ProfileApi
 	DocumentationApi *mods.DocumentationApi
 	NoticeApi        *mods.NoticeApi
+	IdempotencyApi   *mods.IdempotencyApi
 }

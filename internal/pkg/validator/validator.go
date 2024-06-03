@@ -61,6 +61,33 @@ func userRole(fl validator.FieldLevel) bool {
 	}
 }
 
+func operationType(fl validator.FieldLevel) bool {
+	switch fl.Field().String() {
+	case config.OperationTypeCreate, config.OperationTypeUpdate, config.OperationTypeDelete:
+		return true
+	default:
+		return false
+	}
+}
+
+func entityType(fl validator.FieldLevel) bool {
+	switch fl.Field().String() {
+	case config.EntityTypeDocumentation, config.EntityTypeNotice, config.EntityTypeInstruction, config.EntityTypeUser:
+		return true
+	default:
+		return false
+	}
+}
+
+func operationStatus(fl validator.FieldLevel) bool {
+	switch fl.Field().String() {
+	case config.OperationStatusSuccess, config.OperationStatusFailure:
+		return true
+	default:
+		return false
+	}
+}
+
 func NewValidator() (*validator.Validate, error) {
 	var err error
 	once.Do(
@@ -81,6 +108,15 @@ func NewValidator() (*validator.Validate, error) {
 				return
 			}
 			if err = validate.RegisterValidation("userRole", userRole); err != nil {
+				return
+			}
+			if err = validate.RegisterValidation("operationType", operationType); err != nil {
+				return
+			}
+			if err = validate.RegisterValidation("entityType", entityType); err != nil {
+				return
+			}
+			if err = validate.RegisterValidation("operationStatus", operationStatus); err != nil {
 				return
 			}
 			validateInstance = validate

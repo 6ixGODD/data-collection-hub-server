@@ -34,7 +34,7 @@ type NoticeApi struct {
 //	@failure		401		{object}	vo.Response{data=nil}						"Unauthorized"
 //	@failure		404		{object}	vo.Response{data=nil}						"Notice not found"
 //	@failure		500		{object}	vo.Response{data=nil}						"Internal server error"
-//	@router			/notice																																																						[get]
+//	@router			/notice																																																																																																						[get]
 func (n *NoticeApi) GetNotice(c *fiber.Ctx) error {
 	req := new(common.GetNoticeRequest)
 
@@ -76,7 +76,7 @@ func (n *NoticeApi) GetNotice(c *fiber.Ctx) error {
 //	@failure		400				{object}	vo.Response{data=nil}							"Invalid request"
 //	@failure		401				{object}	vo.Response{data=nil}							"Unauthorized"
 //	@failure		500				{object}	vo.Response{data=nil}							"Internal server error"
-//	@router			/notice/list																																																								[get]
+//	@router			/notice/list																																																																																																												[get]
 func (n *NoticeApi) GetNoticeList(c *fiber.Ctx) error {
 	req := new(common.GetNoticeListRequest)
 

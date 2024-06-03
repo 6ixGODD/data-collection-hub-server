@@ -28,7 +28,6 @@ func (u *UserRouter) RegisterUserRouter(
 	group.Get(
 		"/instruction-data",
 		casbin.RequiresRoles([]string{config.UserRoleUser}),
-		idempotencyMiddleware,
 		api.DatasetApi.GetInstructionData,
 	)
 	group.Get(
@@ -39,6 +38,7 @@ func (u *UserRouter) RegisterUserRouter(
 	group.Post(
 		"/instruction-data",
 		casbin.RequiresRoles([]string{config.UserRoleUser}),
+		idempotencyMiddleware,
 		api.DatasetApi.InsertInstructionData,
 	)
 	group.Put(

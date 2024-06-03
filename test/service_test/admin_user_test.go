@@ -17,11 +17,10 @@ func TestInsertUser(t *testing.T) {
 		username     = mock.RandomString(10)
 		email        = mock.RandomString(10) + "@user.com"
 		password     = "User@123"
-		role         = "USER"
 		organization = mock.RandomString(10)
 	)
 
-	userIDHex, err := userService.InsertUser(ctx, &username, &email, &password, &role, &organization)
+	userIDHex, err := userService.InsertUser(ctx, &username, &email, &password, &organization)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, userIDHex)
 
@@ -67,17 +66,15 @@ func TestUpdateUser(t *testing.T) {
 		userID       = injector.UserDaoMock.RandomUserID()
 		username     = mock.RandomString(10)
 		email        = mock.RandomString(10) + "@user.com"
-		role         = "USER"
 		organization = mock.RandomString(10)
 	)
-	err := userService.UpdateUser(ctx, &userID, &username, &email, &role, &organization)
+	err := userService.UpdateUser(ctx, &userID, &username, &email, &organization)
 	assert.NoError(t, err)
 
 	user, err := injector.UserDao.GetUserByID(ctx, userID)
 	assert.NoError(t, err)
 	assert.NotNil(t, user)
 	assert.Equal(t, email, user.Email)
-	assert.Equal(t, role, user.Role)
 	assert.Equal(t, organization, user.Organization)
 
 	t.Logf("User: %+v", user)

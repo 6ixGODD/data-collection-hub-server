@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"data-collection-hub-server/internal/app"
 	"data-collection-hub-server/internal/pkg/config"
 	"data-collection-hub-server/internal/pkg/wire"
 	"data-collection-hub-server/pkg/jwt"
@@ -26,6 +27,7 @@ var (
 	tls         bool   // enable tls
 	tlsCertFile string // tls cert file path
 	tlsKeyFile  string // tls key file path (default is "")
+	fiberApp    *app.App
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -34,9 +36,10 @@ var rootCmd = &cobra.Command{
 	Short: "Data Collection Hub Server",
 	Long:  `Data Collection Hub Server designed to collect instruction data in Stanford Alpaca format.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		var err error
 		ctx := context.Background()
 		// Start the app
-		fiberApp, err := wire.InitializeApp(ctx)
+		fiberApp, err = wire.InitializeApp(ctx)
 
 		if err != nil {
 			panic(err)
@@ -191,16 +194,19 @@ func initConfig() {
 	config.Set(cfg)
 	viper.WatchConfig()
 	viper.OnConfigChange(
-		// TODO: refactor into a function and check if it work
 		func(in fsnotify.Event) {
+			fmt.Printf("Reloading config file: %s ...\n", in.Name)
+
 			if err := viper.Unmarshal(cfg); err != nil {
 				fmt.Printf("error reading config: %s\n", err)
 			}
 			config.Set(cfg)
-			if err := redis.Update(cfg.CacheConfig.RedisConfig.GetRedisOptions()); err != nil {
+
+			// Reload singletons
+			if err := redis.Update(context.Background(), cfg.CacheConfig.RedisConfig.GetRedisOptions()); err != nil {
 				fmt.Printf("error setting redis: %s\n", err)
 			}
-			if err := logging.Set(cfg.ZapConfig.GetZapConfig()); err != nil {
+			if err := logging.Update(cfg.ZapConfig.GetZapConfig()); err != nil {
 				fmt.Printf("error setting zap: %s\n", err)
 			}
 			if err := mongo.Update(
@@ -214,6 +220,8 @@ func initConfig() {
 			); err != nil {
 				fmt.Printf("error setting jwt: %s\n", err)
 			}
+
+			fmt.Printf("Config file: %s reloaded\n", in.Name)
 		},
 	)
 }

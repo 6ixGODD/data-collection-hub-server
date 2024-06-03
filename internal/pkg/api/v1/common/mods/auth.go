@@ -34,7 +34,7 @@ type AuthApi struct {
 //	@failure		400					{object}	vo.Response{data=nil}					"Invalid request"
 //	@failure		401					{object}	vo.Response{data=nil}					"Unauthorized"
 //	@failure		500					{object}	vo.Response{data=nil}					"Internal server error"
-//	@router			/login																																																												[post]
+//	@router			/login																																																																																																																				[post]
 func (a *AuthApi) Login(c *fiber.Ctx) error {
 	ctx := c.UserContext()
 	req := new(common.LoginRequest)

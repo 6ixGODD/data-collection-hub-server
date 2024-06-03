@@ -36,7 +36,7 @@ type NoticeApi struct {
 //	@failure		401				{object}	vo.Response{data=nil}	"Unauthorized"
 //	@failure		403				{object}	vo.Response{data=nil}	"Forbidden"
 //	@failure		500				{object}	vo.Response{data=nil}	"Internal server error"
-//	@router			/admin/notice																																																																		[post]
+//	@router			/admin/notice																																																																																														[post]
 func (n *NoticeApi) InsertNotice(c *fiber.Ctx) error {
 	ctx := c.UserContext()
 	req := new(admin.InsertNoticeRequest)
@@ -99,7 +99,7 @@ func (n *NoticeApi) InsertNotice(c *fiber.Ctx) error {
 //	@failure		401				{object}	vo.Response{data=nil}	"Unauthorized"
 //	@failure		403				{object}	vo.Response{data=nil}	"Forbidden"
 //	@failure		500				{object}	vo.Response{data=nil}	"Internal server error"
-//	@router			/admin/notice																																																																		[put]
+//	@router			/admin/notice																																																																																														[put]
 func (n *NoticeApi) UpdateNotice(c *fiber.Ctx) error {
 	ctx := c.UserContext()
 	req := new(admin.UpdateNoticeRequest)

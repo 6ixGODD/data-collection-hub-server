@@ -3,7 +3,7 @@
 ```
 .
 ├── main.go             # Entry point
-├── api                 # API documentation
+├── docs                # Swagger API documentation
 ├── cmd                 # Command line interface
 ├── configs             # Configuration files
 ├── internal            # Source code
@@ -20,6 +20,7 @@
 │       ├── router      # Router Layer
 │       ├── service     # Business Logic Layer
 │       ├── tasks       # Scheduled tasks
+│       ├── validator   # Request validation
 │       └── wire        # Dependency Injection
 ├── pkg                 # Common packages
 │   ├── cron            # Cron encapsulation

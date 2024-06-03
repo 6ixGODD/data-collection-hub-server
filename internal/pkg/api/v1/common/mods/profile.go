@@ -24,7 +24,7 @@ type ProfileApi struct {
 //	@failure		400			{object}	vo.Response{data=nil}						"Invalid request"
 //	@failure		401			{object}	vo.Response{data=nil}						"Unauthorized"
 //	@failure		500			{object}	vo.Response{data=nil}						"Internal server error"
-//	@router			/profile																												[get]
+//	@router			/profile																																																																												[get]
 func (api *ProfileApi) GetProfile(c *fiber.Ctx) error {
 	resp, err := api.ProfileService.GetProfile(c.UserContext())
 	if err != nil {

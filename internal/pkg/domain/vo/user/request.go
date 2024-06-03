@@ -30,11 +30,11 @@ type (
 
 	UpdateInstructionDataRequest struct {
 		InstructionDataID *string `json:"instruction_data_id" validate:"required,mongodb"`
-		Instruction       *string `json:"instruction" validate:"required,max=1000,min=1"`
-		Input             *string `json:"input" validate:"required,max=1000,min=1"`
-		Output            *string `json:"output" validate:"required,max=1000,min=1"`
+		Instruction       *string `json:"instruction" validate:"omitnil,max=1000,min=1"`
+		Input             *string `json:"input" validate:"omitnil,max=1000,min=1"`
+		Output            *string `json:"output" validate:"omitnil,max=1000,min=1"`
 		Theme             *string `json:"theme" validate:""`
-		Source            *string `json:"source" validate:"required,max=1000"`
+		Source            *string `json:"source" validate:"omitnil,max=1000"`
 		Note              *string `json:"note" validate:"omitnil,max=1000"`
 	}
 

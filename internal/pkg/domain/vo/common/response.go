@@ -72,7 +72,5 @@ type (
 		Role         string `json:"role"`
 		Organization string `json:"organization"`
 		LastLogin    string `json:"last_login"`
-		CreatedAt    string `json:"created_at"`
-		UpdatedAt    string `json:"updated_at"`
 	}
 )

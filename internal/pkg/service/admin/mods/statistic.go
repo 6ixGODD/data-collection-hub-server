@@ -59,16 +59,14 @@ func (s StatisticServiceImpl) GetDataStatistic(
 	}
 
 	pendingCount, err := s.instructionDataDao.CountInstructionData(
-		ctx, nil, nil, &pendingStatus, nil,
-		nil, nil, nil,
+		ctx, nil, nil, &pendingStatus, nil, nil, nil, nil,
 	)
 	if err != nil {
 		return nil, errors.OperationFailed(fmt.Errorf("failed to count instruction data with status %s", pendingStatus))
 	}
 
 	approvedCount, err := s.instructionDataDao.CountInstructionData(
-		ctx, nil, nil, &approvedStatus, nil,
-		nil, nil, nil,
+		ctx, nil, nil, &approvedStatus, nil, nil, nil, nil,
 	)
 	if err != nil {
 		return nil, errors.OperationFailed(
@@ -90,7 +88,7 @@ func (s StatisticServiceImpl) GetDataStatistic(
 		)
 	}
 
-	themeCount, err := s.instructionDataDao.AggregateCountInstructionData(ctx, &themeField)
+	themeCount, err := s.instructionDataDao.AggregateCountInstructionData(ctx, &themeField, nil, nil)
 	if err != nil {
 		return nil, errors.OperationFailed(fmt.Errorf("failed to count instruction data with field %s", themeField))
 	}
@@ -163,7 +161,7 @@ func (s StatisticServiceImpl) GetDataStatistic(
 			)
 		}
 
-		_themeCount, err := s.instructionDataDao.AggregateCountInstructionData(ctx, &themeField)
+		_themeCount, err := s.instructionDataDao.AggregateCountInstructionData(ctx, &themeField, &start, &end)
 		if err != nil {
 			return nil, errors.OperationFailed(
 				fmt.Errorf(

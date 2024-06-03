@@ -124,12 +124,12 @@ func TestGetUserList(t *testing.T) {
 		userDao            = injector.UserDao
 		organization       = "FOO"
 		role               = "USER"
-		createTimeStart    = time.Now().Add(-time.Hour)
-		createTimeEnd      = time.Now()
-		updateTimeStart    = time.Now().Add(-time.Hour)
-		updateTimeEnd      = time.Now()
-		lastLoginTimeStart = time.Now().Add(-time.Hour)
-		lastLoginTimeEnd   = time.Now()
+		createStartTime    = time.Now().Add(-time.Hour)
+		createEndTime      = time.Now()
+		updateStartTime    = time.Now().Add(-time.Hour)
+		updateEndTime      = time.Now()
+		lastLoginStartTime = time.Now().Add(-time.Hour)
+		lastLoginEndTime   = time.Now()
 		query              = "Fo"
 	)
 	userList, count, err := userDao.GetUserList(
@@ -174,43 +174,43 @@ func TestGetUserList(t *testing.T) {
 	t.Logf("=====================================")
 
 	userList, count, err = userDao.GetUserList(
-		ctx, 0, 10, false, nil, nil, &createTimeStart,
-		&createTimeEnd, nil, nil, nil,
+		ctx, 0, 10, false, nil, nil, &createStartTime,
+		&createEndTime, nil, nil, nil,
 		nil, nil,
 	)
 	assert.NoError(t, err)
 	assert.NotNil(t, count)
 	assert.NotNil(t, userList)
-	t.Logf("Create time start: %v", createTimeStart)
-	t.Logf("Create time end: %v", createTimeEnd)
+	t.Logf("Create time start: %v", createStartTime)
+	t.Logf("Create time end: %v", createEndTime)
 	t.Logf("User count: %d", *count)
 	t.Logf("User list: %v", userList)
 	t.Logf("=====================================")
 
 	userList, count, err = userDao.GetUserList(
 		ctx, 0, 10, false, nil, nil, nil,
-		nil, &updateTimeStart, &updateTimeEnd, nil,
+		nil, &updateStartTime, &updateEndTime, nil,
 		nil, nil,
 	)
 	assert.NoError(t, err)
 	assert.NotNil(t, count)
 	assert.NotNil(t, userList)
-	t.Logf("Update time start: %v", updateTimeStart)
-	t.Logf("Update time end: %v", updateTimeEnd)
+	t.Logf("Update time start: %v", updateStartTime)
+	t.Logf("Update time end: %v", updateEndTime)
 	t.Logf("User count: %d", *count)
 	t.Logf("User list: %v", userList)
 	t.Logf("=====================================")
 
 	userList, count, err = userDao.GetUserList(
 		ctx, 0, 10, false, nil, nil, nil,
-		nil, nil, nil, &lastLoginTimeStart,
-		&lastLoginTimeEnd, nil,
+		nil, nil, nil, &lastLoginStartTime,
+		&lastLoginEndTime, nil,
 	)
 	assert.NoError(t, err)
 	assert.NotNil(t, count)
 	assert.NotNil(t, userList)
-	t.Logf("Last login time start: %v", lastLoginTimeStart)
-	t.Logf("Last login time end: %v", lastLoginTimeEnd)
+	t.Logf("Last login time start: %v", lastLoginStartTime)
+	t.Logf("Last login time end: %v", lastLoginEndTime)
 	t.Logf("User count: %d", *count)
 	t.Logf("User list: %v", userList)
 	t.Logf("=====================================")
@@ -229,21 +229,21 @@ func TestGetUserList(t *testing.T) {
 	t.Logf("=====================================")
 
 	userList, count, err = userDao.GetUserList(
-		ctx, 0, 10, false, &organization, &role, &createTimeStart,
-		&createTimeEnd, &updateTimeStart, &updateTimeEnd, &lastLoginTimeStart,
-		&lastLoginTimeEnd, &query,
+		ctx, 0, 10, false, &organization, &role, &createStartTime,
+		&createEndTime, &updateStartTime, &updateEndTime, &lastLoginStartTime,
+		&lastLoginEndTime, &query,
 	)
 	assert.NoError(t, err)
 	assert.NotNil(t, count)
 	assert.NotNil(t, userList)
 	t.Logf("Organization: %s", organization)
 	t.Logf("Role: %s", role)
-	t.Logf("Create time start: %v", createTimeStart)
-	t.Logf("Create time end: %v", createTimeEnd)
-	t.Logf("Update time start: %v", updateTimeStart)
-	t.Logf("Update time end: %v", updateTimeEnd)
-	t.Logf("Last login time start: %v", lastLoginTimeStart)
-	t.Logf("Last login time end: %v", lastLoginTimeEnd)
+	t.Logf("Create time start: %v", createStartTime)
+	t.Logf("Create time end: %v", createEndTime)
+	t.Logf("Update time start: %v", updateStartTime)
+	t.Logf("Update time end: %v", updateEndTime)
+	t.Logf("Last login time start: %v", lastLoginStartTime)
+	t.Logf("Last login time end: %v", lastLoginEndTime)
 	t.Logf("Query: %s", query)
 	t.Logf("User count: %d", *count)
 	t.Logf("User list: %v", userList)

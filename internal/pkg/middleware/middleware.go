@@ -23,7 +23,14 @@ type Middleware struct {
 
 func (m *Middleware) Register(app *fiber.App) error {
 	// Register RequestID Middleware
-	app.Use(requestid.New())
+	app.Use(
+		requestid.New(
+			requestid.Config{
+				Header:     fiber.HeaderXRequestID,
+				ContextKey: config.RequestIDKey,
+			},
+		),
+	)
 
 	// Register Logging Middleware
 	m.LoggingMiddleware.Register(app)

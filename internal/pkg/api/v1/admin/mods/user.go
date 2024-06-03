@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"time"
 
+	"data-collection-hub-server/internal/pkg/config"
 	"data-collection-hub-server/internal/pkg/domain/vo"
 	"data-collection-hub-server/internal/pkg/domain/vo/admin"
 	adminservice "data-collection-hub-server/internal/pkg/service/admin/mods"
+	sysservice "data-collection-hub-server/internal/pkg/service/sys/mods"
 	"data-collection-hub-server/pkg/errors"
 	"data-collection-hub-server/pkg/utils/common"
 	"github.com/go-playground/validator/v10"
@@ -16,6 +18,7 @@ import (
 
 type UserApi struct {
 	UserService adminservice.UserService
+	LogsService sysservice.LogsService
 	Validator   *validator.Validate
 }
 
@@ -34,8 +37,9 @@ type UserApi struct {
 //	@failure		401			{object}	vo.Response{data=nil}	"Unauthorized"
 //	@failure		403			{object}	vo.Response{data=nil}	"Forbidden"
 //	@failure		500			{object}	vo.Response{data=nil}	"Internal server error"
-//	@router			/admin/user																																																																		[post]
+//	@router			/admin/user																																																																																														[post]
 func (u *UserApi) InsertUser(c *fiber.Ctx) error {
+	ctx := c.UserContext()
 	req := new(admin.InsertUserRequest)
 
 	if err := c.BodyParser(req); err != nil {
@@ -45,13 +49,35 @@ func (u *UserApi) InsertUser(c *fiber.Ctx) error {
 		return errors.InvalidRequest(common.FormatValidateError(errs))
 	}
 
-	_, err := u.UserService.InsertUser(
-		c.UserContext(), req.Username, req.Email, req.Password, req.Organization,
+	userIDHex, err := u.UserService.InsertUser(
+		ctx, req.Username, req.Email, req.Password, req.Organization,
+	)
+	userID, _ := primitive.ObjectIDFromHex(userIDHex)
+	var (
+		operatorID, _ = primitive.ObjectIDFromHex(ctx.Value(config.UserIDKey).(string))
+		ipAddr        = c.IP()
+		userAgent     = c.Get(fiber.HeaderUserAgent)
+		operation     = config.OperationTypeCreate
+		entityType    = config.EntityTypeUser
 	)
 	if err != nil {
+		var (
+			description = fmt.Sprintf("Failed to insert user %s", *req.Username)
+			status      = config.OperationStatusFailure
+		)
+		_ = u.LogsService.CacheOperationLog(
+			ctx, &operatorID, &userID, &ipAddr, &userAgent, &operation, &entityType, &description, &status,
+		)
 		return err
 	}
 
+	var (
+		description = fmt.Sprintf("Insert user %s", *req.Username)
+		status      = config.OperationStatusSuccess
+	)
+	_ = u.LogsService.CacheOperationLog(
+		c.UserContext(), &operatorID, &userID, &ipAddr, &userAgent, &operation, &entityType, &description, &status,
+	)
 	return c.JSON(
 		vo.Response{
 			Code:    errors.CodeSuccess,
@@ -77,7 +103,7 @@ func (u *UserApi) InsertUser(c *fiber.Ctx) error {
 //	@failure		403			{object}	vo.Response{data=nil}					"Forbidden"
 //	@failure		404			{object}	vo.Response{data=nil}					"User not found"
 //	@failure		500			{object}	vo.Response{data=nil}					"Internal server error"
-//	@router			/admin/user																																																																																													[get]
+//	@router			/admin/user																																																																																																																																									[get]
 func (u *UserApi) GetUser(c *fiber.Ctx) error {
 	req := new(admin.GetUserRequest)
 
@@ -122,7 +148,7 @@ func (u *UserApi) GetUser(c *fiber.Ctx) error {
 //	@failure		401					{object}	vo.Response{data=nil}						"Unauthorized"
 //	@failure		403					{object}	vo.Response{data=nil}						"Forbidden"
 //	@failure		500					{object}	vo.Response{data=nil}						"Internal server error"
-//	@router			/admin/user/list																																																																																																				[get]
+//	@router			/admin/user/list																																																																																																																																																				[get]
 func (u *UserApi) GetUserList(c *fiber.Ctx) error {
 	req := new(admin.GetUserListRequest)
 
@@ -141,40 +167,40 @@ func (u *UserApi) GetUserList(c *fiber.Ctx) error {
 		err error
 	)
 
-	if req.LastLoginTimeStart != nil && req.LastLoginTimeEnd != nil {
-		lastLoginStartTime, err = time.Parse(time.RFC3339, *req.LastLoginTimeStart)
+	if req.LastLoginStartTime != nil && req.LastLoginEndTime != nil {
+		lastLoginStartTime, err = time.Parse(time.RFC3339, *req.LastLoginStartTime)
 		if err != nil {
 			return errors.InvalidRequest(
 				fmt.Errorf(
-					"invalid last login time start %s (should be in RFC3339 format)", *req.LastLoginTimeStart,
+					"invalid last login time start %s (should be in RFC3339 format)", *req.LastLoginStartTime,
 				),
 			)
 		}
-		lastLoginEndTime, err = time.Parse(time.RFC3339, *req.LastLoginTimeEnd)
+		lastLoginEndTime, err = time.Parse(time.RFC3339, *req.LastLoginEndTime)
 		if err != nil {
 			return errors.InvalidRequest(
 				fmt.Errorf(
-					"invalid last login time end %s (should be in RFC3339 format)", *req.LastLoginTimeEnd,
+					"invalid last login time end %s (should be in RFC3339 format)", *req.LastLoginEndTime,
 				),
 			)
 		}
 		lastLoginStartTimePtr = &lastLoginStartTime
 		lastLoginEndTimePtr = &lastLoginEndTime
 	}
-	if req.CreateTimeStart != nil && req.CreateTimeEnd != nil {
-		createdStartTime, err = time.Parse(time.RFC3339, *req.CreateTimeStart)
+	if req.CreateStartTime != nil && req.CreateEndTime != nil {
+		createdStartTime, err = time.Parse(time.RFC3339, *req.CreateStartTime)
 		if err != nil {
 			return errors.InvalidRequest(
 				fmt.Errorf(
-					"invalid create time start %s (should be in RFC3339 format)", *req.CreateTimeStart,
+					"invalid create time start %s (should be in RFC3339 format)", *req.CreateStartTime,
 				),
 			)
 		}
-		createdEndTime, err = time.Parse(time.RFC3339, *req.CreateTimeEnd)
+		createdEndTime, err = time.Parse(time.RFC3339, *req.CreateEndTime)
 		if err != nil {
 			return errors.InvalidRequest(
 				fmt.Errorf(
-					"invalid create time end %s (should be in RFC3339 format)", *req.CreateTimeEnd,
+					"invalid create time end %s (should be in RFC3339 format)", *req.CreateEndTime,
 				),
 			)
 		}
@@ -214,8 +240,9 @@ func (u *UserApi) GetUserList(c *fiber.Ctx) error {
 //	@failure		401			{object}	vo.Response{data=nil}	"Unauthorized"
 //	@failure		403			{object}	vo.Response{data=nil}	"Forbidden"
 //	@failure		500			{object}	vo.Response{data=nil}	"Internal server error"
-//	@router			/admin/user																																																																		[put]
+//	@router			/admin/user																																																																																														[put]
 func (u *UserApi) UpdateUser(c *fiber.Ctx) error {
+	ctx := c.UserContext()
 	req := new(admin.UpdateUserRequest)
 
 	if err := c.BodyParser(req); err != nil {
@@ -230,11 +257,34 @@ func (u *UserApi) UpdateUser(c *fiber.Ctx) error {
 		return errors.InvalidRequest(fmt.Errorf("invalid user id"))
 	}
 
-	err = u.UserService.UpdateUser(c.UserContext(), &userID, req.Username, req.Email, req.Role, req.Organization)
+	err = u.UserService.UpdateUser(ctx, &userID, req.Username, req.Email, req.Organization)
+
+	var (
+		operatorID, _ = primitive.ObjectIDFromHex(ctx.Value(config.UserIDKey).(string))
+		ipAddr        = c.IP()
+		userAgent     = c.Get(fiber.HeaderUserAgent)
+		operation     = config.OperationTypeUpdate
+		entityType    = config.EntityTypeUser
+	)
+
 	if err != nil {
+		var (
+			description = fmt.Sprintf("Failed to update user %s", *req.Username)
+			status      = config.OperationStatusFailure
+		)
+		_ = u.LogsService.CacheOperationLog(
+			ctx, &operatorID, &userID, &ipAddr, &userAgent, &operation, &entityType, &description, &status,
+		)
 		return err
 	}
 
+	var (
+		description = fmt.Sprintf("Update user %s", *req.Username)
+		status      = config.OperationStatusSuccess
+	)
+	_ = u.LogsService.CacheOperationLog(
+		ctx, &operatorID, &userID, &ipAddr, &userAgent, &operation, &entityType, &description, &status,
+	)
 	return c.JSON(
 		vo.Response{
 			Code:    errors.CodeSuccess,
@@ -259,8 +309,9 @@ func (u *UserApi) UpdateUser(c *fiber.Ctx) error {
 //	@failure		401			{object}	vo.Response{data=nil}	"Unauthorized"
 //	@failure		403			{object}	vo.Response{data=nil}	"Forbidden"
 //	@failure		500			{object}	vo.Response{data=nil}	"Internal server error"
-//	@router			/admin/user																																																																					[delete]
+//	@router			/admin/user																																																																																																	[delete]
 func (u *UserApi) DeleteUser(c *fiber.Ctx) error {
+	ctx := c.UserContext()
 	req := new(admin.DeleteUserRequest)
 
 	if err := c.QueryParser(req); err != nil {
@@ -274,11 +325,34 @@ func (u *UserApi) DeleteUser(c *fiber.Ctx) error {
 	if err != nil {
 		return errors.InvalidRequest(fmt.Errorf("invalid user id"))
 	}
-	err = u.UserService.DeleteUser(c.UserContext(), &userID)
+	err = u.UserService.DeleteUser(ctx, &userID)
+
+	var (
+		operatorID, _ = primitive.ObjectIDFromHex(ctx.Value(config.UserIDKey).(string))
+		ipAddr        = c.IP()
+		userAgent     = c.Get(fiber.HeaderUserAgent)
+		operation     = config.OperationTypeDelete
+		entityType    = config.EntityTypeUser
+	)
+
 	if err != nil {
+		var (
+			description = fmt.Sprintf("Failed to delete user %s", *req.UserID)
+			status      = config.OperationStatusFailure
+		)
+		_ = u.LogsService.CacheOperationLog(
+			ctx, &operatorID, &userID, &ipAddr, &userAgent, &operation, &entityType, &description, &status,
+		)
 		return err
 	}
 
+	var (
+		description = fmt.Sprintf("Delete user %s", *req.UserID)
+		status      = config.OperationStatusSuccess
+	)
+	_ = u.LogsService.CacheOperationLog(
+		ctx, &operatorID, &userID, &ipAddr, &userAgent, &operation, &entityType, &description, &status,
+	)
 	return c.JSON(
 		vo.Response{
 			Code:    errors.CodeSuccess,
@@ -303,7 +377,7 @@ func (u *UserApi) DeleteUser(c *fiber.Ctx) error {
 //	@failure		401						{object}	vo.Response{data=nil}	"Unauthorized"
 //	@failure		403						{object}	vo.Response{data=nil}	"Forbidden"
 //	@failure		500						{object}	vo.Response{data=nil}	"Internal server error"
-//	@router			/admin/user/password																																																																[put]
+//	@router			/admin/user/password	[put]
 func (u *UserApi) ChangeUserPassword(c *fiber.Ctx) error {
 	req := new(admin.ChangeUserPasswordRequest)
 

@@ -17,7 +17,10 @@ func (m *ContextMiddleware) Register(app *fiber.App) {
 func (m *ContextMiddleware) contextMiddleware() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		ctx := c.UserContext()
-		ctx = m.Zap.SetRequestIDInContext(ctx, c.Get(fiber.HeaderXRequestID))
+		rid, ok := c.Locals(config.RequestIDKey).(string)
+		if ok {
+			ctx = m.Zap.SetRequestIDInContext(ctx, rid)
+		}
 		userID, ok := c.Locals(config.UserIDKey).(string)
 		if ok {
 			ctx = m.Zap.SetUserIDInContext(ctx, userID)

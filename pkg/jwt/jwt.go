@@ -11,6 +11,11 @@ import (
 	"github.com/golang-jwt/jwt"
 )
 
+const (
+	AccessAudience  = "access"
+	RefreshAudience = "refresh"
+)
+
 var (
 	jwtInstance *Jwt
 	once        sync.Once
@@ -102,6 +107,7 @@ func (j *Jwt) GenerateAccessToken(subject string) (string, error) {
 	token := jwt.NewWithClaims(
 		jwt.SigningMethodES256, &jwt.StandardClaims{
 			Subject:   subject,
+			Audience:  AccessAudience,
 			IssuedAt:  time.Now().Unix(),
 			ExpiresAt: time.Now().Add(j.tokenDuration).Unix(),
 			NotBefore: time.Now().Unix(),
@@ -123,6 +129,7 @@ func (j *Jwt) GenerateRefreshToken(subject string) (string, error) {
 	token := jwt.NewWithClaims(
 		jwt.SigningMethodES256, &jwt.StandardClaims{
 			Subject:   subject,
+			Audience:  RefreshAudience,
 			IssuedAt:  time.Now().Unix(),
 			ExpiresAt: time.Now().Add(j.refreshDuration).Unix(),
 			NotBefore: time.Now().Unix(),
@@ -174,11 +181,26 @@ func (j *Jwt) ExtractClaims(token string) (map[string]interface{}, error) {
 	return claims, nil
 }
 
-func (j *Jwt) VerifyToken(token string) (string, error) {
+func (j *Jwt) VerifyAccessToken(token string) (string, error) {
 	claims, err := j.ExtractClaims(token)
 	if err != nil {
 		return "", err
 	}
 
+	if claims["aud"] != AccessAudience {
+		return "", fmt.Errorf("invalid audience")
+	}
+	return claims["sub"].(string), nil
+}
+
+func (j *Jwt) VerifyRefreshToken(token string) (string, error) {
+	claims, err := j.ExtractClaims(token)
+	if err != nil {
+		return "", err
+	}
+
+	if claims["aud"] != RefreshAudience {
+		return "", fmt.Errorf("invalid audience")
+	}
 	return claims["sub"].(string), nil
 }

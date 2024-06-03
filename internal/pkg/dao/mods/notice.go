@@ -2,6 +2,7 @@ package mods
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -58,16 +59,45 @@ func NewNoticeDao(ctx context.Context, core *dao.Core, cache *dao.Cache) (Notice
 }
 
 func (n *NoticeDaoImpl) GetNoticeByID(ctx context.Context, noticeID primitive.ObjectID) (*entity.NoticeModel, error) {
-	collection := n.core.Mongo.MongoClient.Database(n.core.Mongo.DatabaseName).Collection(config.NoticeCollectionName)
 	var notice entity.NoticeModel
-	err := collection.Find(ctx, bson.M{"_id": noticeID}).One(&notice)
-	if err != nil {
+	key := fmt.Sprintf("%s:noticeID:%s", config.NoticeCachePrefix, noticeID.Hex())
+	cache, err := n.cache.Get(ctx, key)
+	if errors.Is(err, dao.CacheNil{}) {
+		n.core.Logger.Info("NoticeDaoImpl.GetNoticeByID: cache miss", zap.String("noticeID", noticeID.Hex()))
+	} else if err != nil {
+		n.core.Logger.Error("NoticeDaoImpl.GetNoticeByID: failed to get cache", zap.Error(err), zap.String("key", key))
+	} else {
+		n.core.Logger.Info("NoticeDaoImpl.GetNoticeByID: cache hit", zap.String("noticeID", noticeID.Hex()))
+		err = json.Unmarshal([]byte(*cache), &notice)
+		if err != nil {
+			n.core.Logger.Error(
+				"NoticeDaoImpl.GetNoticeByID: failed to unmarshal cache", zap.Error(err),
+				zap.String("noticeID", noticeID.Hex()), zap.String("cache", *cache),
+			)
+			return nil, err
+		}
+		return &notice, nil
+	}
+	coll := n.core.Mongo.MongoClient.Database(n.core.Mongo.DatabaseName).Collection(config.NoticeCollectionName)
+	if err = coll.Find(ctx, bson.M{"_id": noticeID}).One(&notice); err != nil {
 		n.core.Logger.Error(
 			"NoticeDaoImpl.GetNoticeByID: failed to find notice", zap.Error(err),
 			zap.String("noticeID", noticeID.Hex()),
 		)
 		return nil, err
 	} else {
+		docJSON, _ := json.Marshal(notice)
+		if err := n.cache.Set(ctx, key, string(docJSON), &n.core.Config.CacheConfig.NoticeCacheTTL); err != nil {
+			n.core.Logger.Error(
+				"NoticeDaoImpl.GetNoticeByID: failed to set cache", zap.Error(err),
+				zap.String("key", key), zap.ByteString(config.NoticeCollectionName, docJSON),
+			)
+		} else {
+			n.core.Logger.Info(
+				"NoticeDaoImpl.GetNoticeByID: cache set", zap.String("key", key),
+				zap.ByteString(config.NoticeCollectionName, docJSON),
+			)
+		}
 		n.core.Logger.Info("NoticeDaoImpl.GetNoticeByID: success", zap.String("noticeID", noticeID.Hex()))
 		return &notice, nil
 	}
@@ -103,20 +133,36 @@ func (n *NoticeDaoImpl) GetNoticeList(
 	if desc {
 		key += ":desc"
 	}
-	cache, err := n.cache.GetList(ctx, key)
-	if err != nil {
+	// cache, err := n.cache.GetList(ctx, key)
+	var cache entity.NoticeCacheList
+	err = n.cache.GetList(ctx, key, &cache)
+	if errors.Is(err, dao.CacheNil{}) {
+		n.core.Logger.Info("NoticeDaoImpl.GetNoticeList: cache miss", zap.String("key", key))
+	} else if err != nil {
 		n.core.Logger.Error("NoticeDaoImpl.GetNoticeList: failed to get cache", zap.Error(err), zap.String("key", key))
-	} else if cache != nil {
-		if noticeList, ok := cache.List.([]entity.NoticeModel); ok {
-			n.core.Logger.Info("NoticeDaoImpl.GetNoticeList: cache hit", zap.String("key", key))
-			return noticeList, &cache.Total, nil
-		} else {
-			n.core.Logger.Error(
-				"NoticeDaoImpl.GetNoticeList: failed to cast cache", zap.String("key", key),
+	} else {
+		n.core.Logger.Info("NoticeDaoImpl.GetNoticeList: cache hit", zap.String("key", key))
+		for _, noticeCache := range cache.List {
+			noticeID, err := primitive.ObjectIDFromHex(noticeCache.NoticeID)
+			if err != nil {
+				n.core.Logger.Error(
+					"NoticeDaoImpl.GetNoticeList: failed to parse ObjectID", zap.Error(err),
+					zap.String("noticeID", noticeCache.NoticeID),
+				)
+				break
+			}
+			noticeList = append(
+				noticeList, entity.NoticeModel{
+					NoticeID:   noticeID,
+					Title:      noticeCache.Title,
+					Content:    noticeCache.Content,
+					NoticeType: noticeCache.NoticeType,
+					CreatedAt:  noticeCache.CreatedAt,
+					UpdatedAt:  noticeCache.UpdatedAt,
+				},
 			)
 		}
-	} else {
-		n.core.Logger.Info("NoticeDaoImpl.GetNoticeList: cache miss", zap.String("key", key))
+		return noticeList, &cache.Total, nil
 	}
 
 	collection := n.core.Mongo.MongoClient.Database(n.core.Mongo.DatabaseName).Collection(config.NoticeCollectionName)
@@ -145,8 +191,21 @@ func (n *NoticeDaoImpl) GetNoticeList(
 		zap.Int64("count", count), zap.ByteString(config.NoticeCollectionName, docJSON),
 	)
 
+	var noticeCacheList []entity.NoticeCache
+	for _, notice := range noticeList {
+		noticeCacheList = append(
+			noticeCacheList, entity.NoticeCache{
+				NoticeID:   notice.NoticeID.Hex(),
+				Title:      notice.Title,
+				Content:    notice.Content,
+				NoticeType: notice.NoticeType,
+				CreatedAt:  notice.CreatedAt,
+				UpdatedAt:  notice.UpdatedAt,
+			},
+		)
+	}
 	if err := n.cache.SetList(
-		ctx, key, &entity.CacheList{Total: count, List: noticeList}, &n.core.Config.CacheConfig.NoticeCacheTTL,
+		ctx, key, &entity.CacheList{Total: count, List: noticeCacheList}, &n.core.Config.CacheConfig.NoticeCacheTTL,
 	); err != nil {
 		n.core.Logger.Error(
 			"NoticeDaoImpl.GetNoticeList: failed to set cache",

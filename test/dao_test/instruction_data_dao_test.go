@@ -87,10 +87,10 @@ func TestGetInstructionDataList(t *testing.T) {
 		userID             = injector.UserDaoMock.RandomUserID()
 		theme              = "THEME1"
 		statusCode         = "PENDING"
-		createTimeStart    = time.Now().AddDate(0, 0, -1)
-		createTimeEnd      = time.Now().AddDate(0, 0, 1)
-		updateTimeStart    = time.Now().AddDate(0, 0, -1)
-		updateTimeEnd      = time.Now().AddDate(0, 0, 1)
+		createStartTime    = time.Now().AddDate(0, 0, -1)
+		createEndTime      = time.Now().AddDate(0, 0, 1)
+		updateStartTime    = time.Now().AddDate(0, 0, -1)
+		updateEndTime      = time.Now().AddDate(0, 0, 1)
 		query              = "a"
 		err                error
 	)
@@ -142,24 +142,24 @@ func TestGetInstructionDataList(t *testing.T) {
 
 	instructionDataList, count, err = instructionDataDao.GetInstructionDataList(
 		ctx, 0, 10, false, nil, nil, nil,
-		&createTimeStart, &createTimeEnd, nil, nil, nil,
+		&createStartTime, &createEndTime, nil, nil, nil,
 	)
 	assert.NoError(t, err)
 	assert.NotNil(t, count)
-	t.Logf("Create time start: %v", createTimeStart)
-	t.Logf("Create time end: %v", createTimeEnd)
+	t.Logf("Create time start: %v", createStartTime)
+	t.Logf("Create time end: %v", createEndTime)
 	t.Logf("Instruction data count: %d", *count)
 	t.Logf("Instruction data list: %v", instructionDataList)
 	t.Logf("=====================================")
 
 	instructionDataList, count, err = instructionDataDao.GetInstructionDataList(
 		ctx, 0, 10, false, nil, nil, nil,
-		nil, nil, &updateTimeStart, &updateTimeEnd, nil,
+		nil, nil, &updateStartTime, &updateEndTime, nil,
 	)
 	assert.NoError(t, err)
 	assert.NotNil(t, count)
-	t.Logf("Update time start: %v", updateTimeStart)
-	t.Logf("Update time end: %v", updateTimeEnd)
+	t.Logf("Update time start: %v", updateStartTime)
+	t.Logf("Update time end: %v", updateEndTime)
 	t.Logf("Instruction data count: %d", *count)
 	t.Logf("Instruction data list: %v", instructionDataList)
 	t.Logf("=====================================")
@@ -177,17 +177,17 @@ func TestGetInstructionDataList(t *testing.T) {
 
 	instructionDataList, count, err = instructionDataDao.GetInstructionDataList(
 		ctx, 0, 10, false, &userID, &theme, &statusCode,
-		&createTimeStart, &createTimeEnd, &updateTimeStart, &updateTimeEnd, &query,
+		&createStartTime, &createEndTime, &updateStartTime, &updateEndTime, &query,
 	)
 	assert.NoError(t, err)
 	assert.NotNil(t, count)
 	t.Logf("User ID: %s", userID)
 	t.Logf("Theme: %s", theme)
 	t.Logf("Status code: %s", statusCode)
-	t.Logf("Create time start: %v", createTimeStart)
-	t.Logf("Create time end: %v", createTimeEnd)
-	t.Logf("Update time start: %v", updateTimeStart)
-	t.Logf("Update time end: %v", updateTimeEnd)
+	t.Logf("Create time start: %v", createStartTime)
+	t.Logf("Create time end: %v", createEndTime)
+	t.Logf("Update time start: %v", updateStartTime)
+	t.Logf("Update time end: %v", updateEndTime)
 	t.Logf("Query: %s", query)
 	t.Logf("Instruction data count: %d", *count)
 	t.Logf("Instruction data list: %v", instructionDataList)
@@ -202,10 +202,10 @@ func TestCountInstructionData(t *testing.T) {
 		userID             = injector.UserDaoMock.RandomUserID()
 		theme              = "THEME1"
 		statusCode         = "PENDING"
-		createTimeStart    = time.Now().AddDate(0, 0, -1)
-		createTimeEnd      = time.Now().AddDate(0, 0, 1)
-		updateTimeStart    = time.Now().AddDate(0, 0, -1)
-		updateTimeEnd      = time.Now().AddDate(0, 0, 1)
+		createStartTime    = time.Now().AddDate(0, 0, -1)
+		createEndTime      = time.Now().AddDate(0, 0, 1)
+		updateStartTime    = time.Now().AddDate(0, 0, -1)
+		updateEndTime      = time.Now().AddDate(0, 0, 1)
 		err                error
 	)
 	count, err := instructionDataDao.CountInstructionData(
@@ -217,7 +217,7 @@ func TestCountInstructionData(t *testing.T) {
 	t.Logf("=====================================")
 
 	groupBy := "theme"
-	aggregateCount, err := instructionDataDao.AggregateCountInstructionData(ctx, &groupBy)
+	aggregateCount, err := instructionDataDao.AggregateCountInstructionData(ctx, &groupBy, nil, nil)
 	assert.NoError(t, err)
 	assert.NotNil(t, aggregateCount)
 	t.Logf("Group by: %s", groupBy)
@@ -225,7 +225,7 @@ func TestCountInstructionData(t *testing.T) {
 	t.Logf("=====================================")
 
 	groupBy = "status.code"
-	aggregateCount, err = instructionDataDao.AggregateCountInstructionData(ctx, &groupBy)
+	aggregateCount, err = instructionDataDao.AggregateCountInstructionData(ctx, &groupBy, nil, nil)
 	assert.NoError(t, err)
 	assert.NotNil(t, aggregateCount)
 	t.Logf("Group by: %s", groupBy)
@@ -233,17 +233,17 @@ func TestCountInstructionData(t *testing.T) {
 	t.Logf("=====================================")
 
 	count, err = instructionDataDao.CountInstructionData(
-		ctx, &userID, &theme, &statusCode, &createTimeStart, &createTimeEnd, &updateTimeStart, &updateTimeEnd,
+		ctx, &userID, &theme, &statusCode, &createStartTime, &createEndTime, &updateStartTime, &updateEndTime,
 	)
 	assert.NoError(t, err)
 	assert.NotNil(t, count)
 	t.Logf("User ID: %s", userID)
 	t.Logf("Theme: %s", theme)
 	t.Logf("Status code: %s", statusCode)
-	t.Logf("Create time start: %v", createTimeStart)
-	t.Logf("Create time end: %v", createTimeEnd)
-	t.Logf("Update time start: %v", updateTimeStart)
-	t.Logf("Update time end: %v", updateTimeEnd)
+	t.Logf("Create time start: %v", createStartTime)
+	t.Logf("Create time end: %v", createEndTime)
+	t.Logf("Update time start: %v", updateStartTime)
+	t.Logf("Update time end: %v", updateEndTime)
 	t.Logf("Instruction data count: %d", *count)
 	t.Logf("=====================================")
 }

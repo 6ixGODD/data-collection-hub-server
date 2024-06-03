@@ -33,7 +33,6 @@ func (l *LoggingMiddleware) loggingMiddleware() fiber.Handler {
 		if c.Response().StatusCode() >= fiber.StatusInternalServerError {
 			reqLogger.Error(
 				"Request",
-				zap.String("requestID", c.Get(fiber.HeaderXRequestID)),
 				zap.String("path", c.Path()),
 				zap.String("method", c.Method()),
 				zap.String("ip", c.IP()),
@@ -47,7 +46,6 @@ func (l *LoggingMiddleware) loggingMiddleware() fiber.Handler {
 		} else if c.Response().StatusCode() >= fiber.StatusBadRequest {
 			reqLogger.Warn(
 				"Request",
-				zap.String("requestID", c.Get(fiber.HeaderXRequestID)),
 				zap.String("path", c.Path()),
 				zap.String("method", c.Method()),
 				zap.String("ip", c.IP()),
@@ -61,7 +59,6 @@ func (l *LoggingMiddleware) loggingMiddleware() fiber.Handler {
 		} else {
 			reqLogger.Info(
 				"Request",
-				zap.String("requestID", c.Get(fiber.HeaderXRequestID)),
 				zap.String("path", c.Path()),
 				zap.String("method", c.Method()),
 				zap.String("ip", c.IP()),

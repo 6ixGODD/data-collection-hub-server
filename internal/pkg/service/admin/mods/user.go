@@ -25,7 +25,7 @@ type UserService interface {
 		ctx context.Context, page, pageSize *int64, desc *bool, role *string,
 		lastLoginBefore, lastLoginAfter, createdBefore, createdAfter *time.Time, query *string,
 	) (*admin.GetUserListResponse, error)
-	UpdateUser(ctx context.Context, userID *primitive.ObjectID, username, email, role, organization *string) error
+	UpdateUser(ctx context.Context, userID *primitive.ObjectID, username, email, organization *string) error
 	DeleteUser(ctx context.Context, userID *primitive.ObjectID) error
 	ChangeUserPassword(ctx context.Context, userID *primitive.ObjectID, newPassword *string) error
 }
@@ -87,7 +87,6 @@ func (u UserServiceImpl) GetUser(ctx context.Context, userID *primitive.ObjectID
 		UserID:       user.UserID.Hex(),
 		Username:     user.Username,
 		Email:        user.Email,
-		Password:     user.Password,
 		Role:         user.Role,
 		Organization: user.Organization,
 		LastLogin:    user.LastLogin.Format(time.RFC3339),
@@ -102,8 +101,9 @@ func (u UserServiceImpl) GetUserList(
 	ctx context.Context, page, pageSize *int64, desc *bool, role *string,
 	lastLoginBefore, lastLoginAfter, createdBefore, createdAfter *time.Time, query *string,
 ) (*admin.GetUserListResponse, error) {
+	offset := (*page - 1) * *pageSize
 	users, count, err := u.userDao.GetUserList(
-		ctx, *page, *pageSize, *desc, nil, role, createdBefore, createdAfter,
+		ctx, offset, *pageSize, *desc, nil, role, createdBefore, createdAfter,
 		nil, nil, lastLoginBefore, lastLoginAfter, query,
 	)
 	if err != nil {
@@ -116,7 +116,6 @@ func (u UserServiceImpl) GetUserList(
 				UserID:       user.UserID.Hex(),
 				Username:     user.Username,
 				Email:        user.Email,
-				Password:     user.Password,
 				Role:         user.Role,
 				Organization: user.Organization,
 				LastLogin:    user.LastLogin.Format(time.RFC3339),
@@ -134,9 +133,9 @@ func (u UserServiceImpl) GetUserList(
 // UpdateUser updates a user's information.
 // Returns nil if successful.
 func (u UserServiceImpl) UpdateUser(
-	ctx context.Context, userID *primitive.ObjectID, username, email, role, organization *string,
+	ctx context.Context, userID *primitive.ObjectID, username, email, organization *string,
 ) error {
-	err := u.userDao.UpdateUser(ctx, *userID, username, email, nil, role, organization)
+	err := u.userDao.UpdateUser(ctx, *userID, username, email, nil, nil, organization)
 	if err != nil {
 		if mongo.IsDuplicateKeyError(err) {
 			return errors.DuplicateKeyError(fmt.Errorf("user with email %s already exists", *email))
@@ -168,7 +167,12 @@ func (u UserServiceImpl) DeleteUser(ctx context.Context, userID *primitive.Objec
 func (u UserServiceImpl) ChangeUserPassword(
 	ctx context.Context, userID *primitive.ObjectID, newPassword *string,
 ) error {
-	err := u.userDao.UpdateUser(ctx, *userID, nil, nil, newPassword, nil, nil)
+	newPasswordHash, err := crypt.Hash(*newPassword)
+	if err != nil {
+		u.core.Logger.Error("failed to hash password", zap.Error(err))
+		return errors.ServiceError(fmt.Errorf("failed to hash password"))
+	}
+	err = u.userDao.UpdateUser(ctx, *userID, nil, nil, &newPasswordHash, nil, nil)
 	if err != nil {
 		if e.Is(err, mongo.ErrNoDocuments) {
 			return errors.NotFound(fmt.Errorf("user (id: %s) not found", userID.Hex()))

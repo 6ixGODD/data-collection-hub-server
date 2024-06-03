@@ -7,8 +7,7 @@ import (
 // Context Key
 const (
 	UserIDKey    = zap.UserIDKey
-	KeyRole      = "Role"
-	KeyRequestID = zap.RequestIDKey
+	RequestIDKey = zap.RequestIDKey
 )
 
 // Enum Values
@@ -52,10 +51,10 @@ const (
 	UserCachePrefix           = "dao:user"
 	DocumentationCachePrefix  = "dao:documentation"
 	TokenBlacklistCachePrefix = "token:blacklist"
+	IdempotencyCachePrefix    = "idempotency"
 
 	LoginLogCacheKey     = "log:login"
 	OperationLogCacheKey = "log:operation"
 
-	CacheTrue  = "1"
-	CacheFalse = "0"
+	CacheTrue = "1"
 )

@@ -2,7 +2,6 @@ package mods
 
 import (
 	"context"
-	e "errors"
 	"fmt"
 	"time"
 
@@ -10,20 +9,16 @@ import (
 	"data-collection-hub-server/internal/pkg/domain/vo/admin"
 	"data-collection-hub-server/internal/pkg/service"
 	"data-collection-hub-server/pkg/errors"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type LogsService interface {
-	GetLoginLog(ctx context.Context, loginLogID *primitive.ObjectID) (*admin.GetLoginLogResponse, error)
 	GetLoginLogList(
 		ctx context.Context, page, pageSize *int64, desc *bool, query *string,
-		createTimeStart, createTimeEnd *time.Time,
+		createStartTime, createEndTime *time.Time,
 	) (*admin.GetLoginLogListResponse, error)
-	GetOperationLog(ctx context.Context, operationLogID *primitive.ObjectID) (*admin.GetOperationLogResponse, error)
 	GetOperationLogList(
-		ctx context.Context, page, pageSize *int64, desc *bool, query, operation *string,
-		createTimeStart, createTimeEnd *time.Time,
+		ctx context.Context, page, pageSize *int64, desc *bool, query, operation, entityType, status *string,
+		createStartTime, createEndTime *time.Time,
 	) (*admin.GetOperationLogListResponse, error)
 }
 
@@ -43,34 +38,13 @@ func NewLogsService(
 	}
 }
 
-func (l LogsServiceImpl) GetLoginLog(
-	ctx context.Context, loginLogID *primitive.ObjectID,
-) (*admin.GetLoginLogResponse, error) {
-	loginLog, err := l.loginLogDao.GetLoginLogByID(ctx, *loginLogID)
-	if err != nil {
-		if e.Is(err, mongo.ErrNoDocuments) {
-			return nil, errors.NotFound(fmt.Errorf("login log (id: %s) not found", loginLogID.Hex()))
-		} else {
-			return nil, errors.OperationFailed(fmt.Errorf("failed to get login log (id: %s)", loginLogID.Hex()))
-		}
-	}
-	return &admin.GetLoginLogResponse{
-		LoginLogID: loginLog.LoginLogID.Hex(),
-		UserID:     loginLog.UserID.Hex(),
-		Username:   loginLog.Username,
-		Email:      loginLog.Email,
-		IPAddress:  loginLog.IPAddress,
-		UserAgent:  loginLog.UserAgent,
-		CreatedAt:  loginLog.CreatedAt.Format(time.RFC3339),
-	}, nil
-}
-
 func (l LogsServiceImpl) GetLoginLogList(
-	ctx context.Context, page, pageSize *int64, desc *bool, query *string, createTimeStart, createTimeEnd *time.Time,
+	ctx context.Context, page, pageSize *int64, desc *bool, query *string, createStartTime, createEndTime *time.Time,
 ) (*admin.GetLoginLogListResponse, error) {
+	l.loginLogDao.SyncLoginLog(ctx) // Sync log before querying
 	offset := (*page - 1) * *pageSize
 	loginLogs, total, err := l.loginLogDao.GetLoginLogList(
-		ctx, offset, *pageSize, *desc, createTimeStart, createTimeEnd, nil, nil, nil, query,
+		ctx, offset, *pageSize, *desc, createStartTime, createEndTime, nil, nil, nil, query,
 	)
 	if err != nil {
 		return nil, errors.OperationFailed(fmt.Errorf("failed to get login log list"))
@@ -95,38 +69,15 @@ func (l LogsServiceImpl) GetLoginLogList(
 	}, nil
 }
 
-func (l LogsServiceImpl) GetOperationLog(
-	ctx context.Context, operationLogID *primitive.ObjectID,
-) (*admin.GetOperationLogResponse, error) {
-	operationLog, err := l.operationLogDao.GetOperationLogByID(ctx, *operationLogID)
-	if err != nil {
-		if e.Is(err, mongo.ErrNoDocuments) {
-			return nil, errors.NotFound(fmt.Errorf("operation log (id: %s) not found", operationLogID.Hex()))
-		} else {
-			return nil, errors.OperationFailed(fmt.Errorf("failed to get operation log (id: %s)", operationLogID.Hex()))
-		}
-	}
-	return &admin.GetOperationLogResponse{
-		OperationLogID: operationLog.OperationLogID.Hex(),
-		UserID:         operationLog.UserID.Hex(),
-		Username:       operationLog.Username,
-		Email:          operationLog.Email,
-		IPAddress:      operationLog.IPAddress,
-		UserAgent:      operationLog.UserAgent,
-		Operation:      operationLog.Operation,
-		EntityID:       operationLog.EntityID.Hex(),
-		CreatedAt:      operationLog.CreatedAt.Format(time.RFC3339),
-	}, nil
-}
-
 func (l LogsServiceImpl) GetOperationLogList(
-	ctx context.Context, page, pageSize *int64, desc *bool, query, operation *string,
-	createTimeStart, createTimeEnd *time.Time,
+	ctx context.Context, page, pageSize *int64, desc *bool, query, operation, entityType, status *string,
+	createStartTime, createEndTime *time.Time,
 ) (*admin.GetOperationLogListResponse, error) {
+	l.operationLogDao.SyncOperationLog(ctx) // Sync log before querying
 	offset := (*page - 1) * *pageSize
 	operationLogs, total, err := l.operationLogDao.GetOperationLogList(
-		ctx, offset, *pageSize, *desc, createTimeStart, createTimeEnd, nil, nil,
-		nil, operation, nil, nil, query,
+		ctx, offset, *pageSize, *desc, createStartTime, createEndTime, nil, nil,
+		nil, operation, entityType, status, query,
 	)
 	if err != nil {
 		return nil, errors.OperationFailed(fmt.Errorf("failed to get operation log list"))
@@ -143,6 +94,9 @@ func (l LogsServiceImpl) GetOperationLogList(
 				UserAgent:      operationLog.UserAgent,
 				Operation:      operationLog.Operation,
 				EntityID:       operationLog.EntityID.Hex(),
+				EntityType:     operationLog.EntityType,
+				Description:    operationLog.Description,
+				Status:         operationLog.Status,
 				CreatedAt:      operationLog.CreatedAt.Format(time.RFC3339),
 			},
 		)

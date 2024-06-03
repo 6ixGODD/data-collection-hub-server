@@ -3,7 +3,6 @@ package check
 import (
 	"net"
 	"strconv"
-	"time"
 )
 
 func IsValidAppHost(host string) bool {
@@ -28,14 +27,6 @@ func IsValidLogLevel(level string) bool {
 	// Check if the log level is valid
 	switch level {
 	case "debug", "info", "warn", "error", "dpanic", "panic", "fatal":
-		return true
-	}
-	return false
-}
-
-func IsValidTimeRange(start, end time.Time) bool {
-	// Check if the time range is valid
-	if start.Before(end) {
 		return true
 	}
 	return false

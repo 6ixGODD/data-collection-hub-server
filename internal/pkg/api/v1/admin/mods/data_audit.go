@@ -110,7 +110,7 @@ func (d *DataAuditApi) GetInstructionDataList(c *fiber.Ctx) error {
 		}
 		userIDPtr = &userID
 	}
-	if req.CreateStartTime != nil {
+	if req.CreateStartTime != nil && req.CreateEndTime != nil {
 		createStartTime, err = time.Parse(time.RFC3339, *req.CreateStartTime)
 		if err != nil {
 			return errors.InvalidRequest(
@@ -119,9 +119,6 @@ func (d *DataAuditApi) GetInstructionDataList(c *fiber.Ctx) error {
 				),
 			)
 		}
-		createStartTimePtr = &createStartTime
-	}
-	if req.CreateEndTime != nil {
 		createEndTime, err = time.Parse(time.RFC3339, *req.CreateEndTime)
 		if err != nil {
 			return errors.InvalidRequest(
@@ -130,9 +127,10 @@ func (d *DataAuditApi) GetInstructionDataList(c *fiber.Ctx) error {
 				),
 			)
 		}
+		createStartTimePtr = &createStartTime
 		createEndTimePtr = &createEndTime
 	}
-	if req.UpdateStartTime != nil {
+	if req.UpdateStartTime != nil && req.UpdateEndTime != nil {
 		updateStartTime, err = time.Parse(time.RFC3339, *req.UpdateStartTime)
 		if err != nil {
 			return errors.InvalidRequest(
@@ -141,9 +139,6 @@ func (d *DataAuditApi) GetInstructionDataList(c *fiber.Ctx) error {
 				),
 			)
 		}
-		updateStartTimePtr = &updateStartTime
-	}
-	if req.UpdateEndTime != nil {
 		updateEndTime, err = time.Parse(time.RFC3339, *req.UpdateEndTime)
 		if err != nil {
 			return errors.InvalidRequest(
@@ -152,6 +147,7 @@ func (d *DataAuditApi) GetInstructionDataList(c *fiber.Ctx) error {
 				),
 			)
 		}
+		updateStartTimePtr = &updateStartTime
 		updateEndTimePtr = &updateEndTime
 	}
 	resp, err := d.DataAuditService.GetInstructionDataList(

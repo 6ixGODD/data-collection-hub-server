@@ -69,7 +69,7 @@ type (
 	}
 
 	DeleteInstructionDataRequest struct {
-		InstructionDataID *string `query:"instruction_data_id" validate:"required,mongodb"`
+		InstructionDataID *string `query:"instructionDataID" validate:"required,mongodb"`
 	}
 
 	InsertNoticeRequest struct {
@@ -80,13 +80,13 @@ type (
 
 	UpdateNoticeRequest struct {
 		NoticeID   *string `json:"notice_id" validate:"required,mongodb"`
-		Title      *string `json:"title" validate:"required,max=100,min=1"`
-		Content    *string `json:"content" validate:"required,max=10000,min=1"`
-		NoticeType *string `json:"notice_type" validate:"required,noticeType"`
+		Title      *string `json:"title" validate:"omitnil,max=100,min=1"`
+		Content    *string `json:"content" validate:"omitnil,max=10000,min=1"`
+		NoticeType *string `json:"notice_type" validate:"omitnil,noticeType"`
 	}
 
 	DeleteNoticeRequest struct {
-		NoticeID *string `query:"notice_id" validate:"required,mongodb"`
+		NoticeID *string `query:"noticeID" validate:"required,mongodb"`
 	}
 
 	InsertUserRequest struct {
@@ -105,10 +105,10 @@ type (
 		PageSize           *int64  `query:"pageSize" validate:"required,numeric,min=1,max=100"`
 		Desc               *bool   `query:"desc" validate:"required"`
 		Role               *string `query:"role" validate:"omitnil,userRole"`
-		LastLoginTimeStart *string `query:"lastLoginStartTime" validate:"omitnil,rfc3339,earlierThan=LastLoginTimeEnd"`
-		LastLoginTimeEnd   *string `query:"lastLoginEndTime" validate:"omitnil,rfc3339"`
-		CreateTimeStart    *string `query:"createStartTime" validate:"omitnil,rfc3339,earlierThan=CreateTimeEnd"`
-		CreateTimeEnd      *string `query:"createEndTime" validate:"omitnil,rfc3339"`
+		LastLoginStartTime *string `query:"lastLoginStartTime" validate:"omitnil,rfc3339,earlierThan=LastLoginEndTime"`
+		LastLoginEndTime   *string `query:"lastLoginEndTime" validate:"omitnil,rfc3339"`
+		CreateStartTime    *string `query:"createStartTime" validate:"omitnil,rfc3339,earlierThan=CreateEndTime"`
+		CreateEndTime      *string `query:"createEndTime" validate:"omitnil,rfc3339"`
 		Query              *string `query:"query" validate:"omitnil,max=100"`
 	}
 
@@ -116,7 +116,6 @@ type (
 		UserID       *string `json:"user_id" validate:"required"`
 		Username     *string `json:"username" validate:"omitnil,min=3,max=20"`
 		Email        *string `json:"email" validate:"omitnil,email"`
-		Role         *string `json:"role" validate:"omitnil,userRole"`
 		Organization *string `json:"organization" validate:"omitnil,max=100"`
 	}
 
@@ -136,16 +135,12 @@ type (
 
 	UpdateDocumentationRequest struct {
 		DocumentationID *string `json:"documentation_id" validate:"required,mongodb"`
-		Title           *string `json:"title" validate:"required,max=100,min=1"`
-		Content         *string `json:"content" validate:"required,max=10000,min=1"`
+		Title           *string `json:"title" validate:"omitnil,max=100,min=1"`
+		Content         *string `json:"content" validate:"omitnil,max=10000,min=1"`
 	}
 
 	DeleteDocumentationRequest struct {
-		DocumentationID *string `json:"documentation_id" validate:"required,mongodb"`
-	}
-
-	GetLoginLogRequest struct {
-		LoginLogID *string `query:"loginLogID" validate:"required,mongodb"`
+		DocumentationID *string `query:"documentationID" validate:"required,mongodb"`
 	}
 
 	GetLoginLogListRequest struct {
@@ -157,16 +152,14 @@ type (
 		CreateEndTime   *string `query:"createEndTime" validate:"omitnil,rfc3339"`
 	}
 
-	GetOperationLogRequest struct {
-		OperationLogID *string `query:"operation_log_id" validate:"required,mongodb"`
-	}
-
 	GetOperationLogListRequest struct {
 		Page            *int64  `query:"page" validate:"required,numeric,min=1"`
 		PageSize        *int64  `query:"pageSize" validate:"required,numeric,min=1,max=100"`
 		Desc            *bool   `query:"desc" validate:"required"`
 		Query           *string `query:"query" validate:"omitnil,max=100"`
 		Operation       *string `query:"operation" validate:"omitnil,operationType"`
+		EntityType      *string `query:"entityType" validate:"omitnil,entityType"`
+		Status          *string `query:"status" validate:"omitnil,operationStatus"`
 		CreateStartTime *string `query:"createStartTime" validate:"omitnil,rfc3339,earlierThan=CreateEndTime"`
 		CreateEndTime   *string `query:"createEndTime" validate:"omitnil,rfc3339"`
 	}

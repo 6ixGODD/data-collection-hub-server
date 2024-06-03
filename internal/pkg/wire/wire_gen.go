@@ -47,8 +47,9 @@ func InitializeApp(ctx context.Context) (*app.App, error) {
 	if err != nil {
 		return nil, err
 	}
-	core := &service.Core{
-		Config: configConfig,
+	core, err := service.NewCore(ctx, configConfig, zap)
+	if err != nil {
+		return nil, err
 	}
 	mongo, err := InitializeMongo(ctx, configConfig)
 	if err != nil {
@@ -102,6 +103,7 @@ func InitializeApp(ctx context.Context) (*app.App, error) {
 	userService := mods2.NewUserService(core, userDao, enforcer)
 	userApi := &mods4.UserApi{
 		UserService: userService,
+		LogsService: logsService,
 		Validator:   validate,
 	}
 	noticeDao, err := mods.NewNoticeDao(ctx, daoCore, cache)
@@ -161,11 +163,16 @@ func InitializeApp(ctx context.Context) (*app.App, error) {
 		NoticeService: modsNoticeService,
 		Validator:     validate,
 	}
+	idempotencyService := mods5.NewIdempotencyService(core, cache)
+	idempotencyApi := &mods6.IdempotencyApi{
+		IdempotencyService: idempotencyService,
+	}
 	commonCommon := &common.Common{
 		AuthApi:          authApi,
 		ProfileApi:       profileApi,
 		DocumentationApi: modsDocumentationApi,
 		NoticeApi:        modsNoticeApi,
+		IdempotencyApi:   idempotencyApi,
 	}
 	datasetService := mods7.NewDatasetService(core, instructionDataDao, operationLogDao)
 	datasetApi := &mods8.DatasetApi{
@@ -217,7 +224,6 @@ func InitializeApp(ctx context.Context) (*app.App, error) {
 	contextMiddleware := &mods10.ContextMiddleware{
 		Zap: zap,
 	}
-	idempotencyService := mods5.NewIdempotencyService(core, cache)
 	idempotencyMiddleware := &mods10.IdempotencyMiddleware{
 		IdempotencyService: idempotencyService,
 		Config:             configConfig,
@@ -250,7 +256,7 @@ var (
 
 	ValidatorProviderSet = wire.NewSet(validator.NewValidator)
 
-	ServiceProviderSet = wire.NewSet(wire.Struct(new(service.Core), "*"), wire.Struct(new(admin2.Admin), "*"), wire.Struct(new(user2.User), "*"), wire.Struct(new(common2.Common), "*"), wire.Struct(new(sys.Sys), "*"), mods2.NewDataAuditService, mods2.NewStatisticService, mods2.NewUserService, mods2.NewNoticeService, mods2.NewDocumentationService, mods2.NewLogsService, mods5.NewAuthService, mods5.NewProfileService, mods5.NewDocumentationService, mods5.NewNoticeService, mods5.NewIdempotencyService, mods7.NewDatasetService, mods7.NewStatisticService, mods3.NewLogsService)
+	ServiceProviderSet = wire.NewSet(service.NewCore, wire.Struct(new(admin2.Admin), "*"), wire.Struct(new(user2.User), "*"), wire.Struct(new(common2.Common), "*"), wire.Struct(new(sys.Sys), "*"), mods2.NewDataAuditService, mods2.NewStatisticService, mods2.NewUserService, mods2.NewNoticeService, mods2.NewDocumentationService, mods2.NewLogsService, mods5.NewAuthService, mods5.NewProfileService, mods5.NewDocumentationService, mods5.NewNoticeService, mods5.NewIdempotencyService, mods7.NewDatasetService, mods7.NewStatisticService, mods3.NewLogsService)
 
 	DaoProviderSet = wire.NewSet(dao.NewCore, dao.NewCache, mods.NewUserDao, mods.NewInstructionDataDao, mods.NewNoticeDao, mods.NewLoginLogDao, mods.NewOperationLogDao, mods.NewDocumentationDao)
 

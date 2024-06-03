@@ -29,11 +29,11 @@ func TestGetDocumentationList(t *testing.T) {
 		documentationService = injector.CommonDocumentationService
 		page                 = int64(1)
 		pageSize             = int64(10)
-		updateTimeStart      = time.Now().AddDate(0, 0, -1)
-		updateTimeEnd        = time.Now()
+		updateStartTime      = time.Now().AddDate(0, 0, -1)
+		updateEndTime        = time.Now()
 	)
 
-	resp, err := documentationService.GetDocumentationList(ctx, &page, &pageSize, &updateTimeStart, &updateTimeEnd)
+	resp, err := documentationService.GetDocumentationList(ctx, &page, &pageSize, &updateStartTime, &updateEndTime)
 	assert.NoError(t, err)
 	assert.NotNil(t, resp)
 

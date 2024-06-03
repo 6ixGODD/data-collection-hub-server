@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"data-collection-hub-server/internal/pkg/config"
-	"data-collection-hub-server/internal/pkg/domain/entity"
 	rds "data-collection-hub-server/pkg/redis"
 	"github.com/goccy/go-json"
 	"github.com/redis/go-redis/v9"
@@ -49,22 +48,21 @@ func (c *Cache) Set(ctx context.Context, key string, value string, ttl *time.Dur
 	return c.Redis.RedisClient.Set(ctx, key, value, *ttl).Err()
 }
 
-func (c *Cache) GetList(ctx context.Context, key string) (*entity.CacheList, error) {
+func (c *Cache) GetList(ctx context.Context, key string, cacheList interface{}) error {
 	result, err := c.Redis.RedisClient.Get(ctx, key).Result()
 	if errors.Is(err, redis.Nil) {
-		return nil, c.Nil
+		return c.Nil
 	} else if err != nil {
-		return nil, err
+		return err
 	}
-	var cacheList entity.CacheList
-	err = json.Unmarshal([]byte(result), &cacheList)
+	err = json.Unmarshal([]byte(result), cacheList)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return &cacheList, nil
+	return nil
 }
 
-func (c *Cache) SetList(ctx context.Context, key string, cacheList *entity.CacheList, ttl *time.Duration) error {
+func (c *Cache) SetList(ctx context.Context, key string, cacheList interface{}, ttl *time.Duration) error {
 	if ttl == nil {
 		ttl = &c.Config.CacheConfig.DefaultTTL
 	}

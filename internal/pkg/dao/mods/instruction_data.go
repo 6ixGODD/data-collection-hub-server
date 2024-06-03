@@ -22,13 +22,15 @@ type InstructionDataDao interface {
 	) (*entity.InstructionDataModel, error)
 	GetInstructionDataList(
 		ctx context.Context, offset, limit int64, desc bool, userID *primitive.ObjectID, theme, statusCode *string,
-		createTimeStart, createTimeEnd, updateTimeStart, updateTimeEnd *time.Time, query *string,
+		createStartTime, createEndTime, updateStartTime, updateEndTime *time.Time, query *string,
 	) ([]entity.InstructionDataModel, *int64, error)
 	CountInstructionData(
 		ctx context.Context, userID *primitive.ObjectID, theme, statusCode *string,
-		createTimeStart, createTimeEnd, updateTimeStart, updateTimeEnd *time.Time,
+		createStartTime, createEndTime, updateStartTime, updateEndTime *time.Time,
 	) (*int64, error)
-	AggregateCountInstructionData(ctx context.Context, groupBy *string) (map[string]int64, error)
+	AggregateCountInstructionData(
+		ctx context.Context, groupBy *string, createStartTime, createEndTime *time.Time,
+	) (map[string]int64, error)
 	InsertInstructionData(
 		ctx context.Context,
 		userID primitive.ObjectID,
@@ -41,12 +43,12 @@ type InstructionDataDao interface {
 	SoftDeleteInstructionData(ctx context.Context, instructionDataID primitive.ObjectID) error
 	SoftDeleteInstructionDataList(
 		ctx context.Context, userID *primitive.ObjectID, theme, statusCode *string,
-		createTimeStart, createTimeEnd, updateTimeStart, updateTimeEnd *time.Time,
+		createStartTime, createEndTime, updateStartTime, updateEndTime *time.Time,
 	) (*int64, error)
 	DeleteInstructionData(ctx context.Context, instructionDataID primitive.ObjectID) error
 	DeleteInstructionDataList(
 		ctx context.Context, userID *primitive.ObjectID, theme, statusCode *string,
-		createTimeStart, createTimeEnd, updateTimeStart, updateTimeEnd *time.Time,
+		createStartTime, createEndTime, updateStartTime, updateEndTime *time.Time,
 	) (*int64, error)
 }
 
@@ -60,7 +62,7 @@ func NewInstructionDataDao(ctx context.Context, core *dao.Core, userDao UserDao)
 	collection := core.Mongo.MongoClient.Database(core.Mongo.DatabaseName).Collection(config.InstructionDataCollectionName)
 	err := collection.CreateIndexes(
 		ctx, []options.IndexModel{
-			{Key: []string{"user_id"}}, {Key: []string{"theme"}}, {Key: []string{"status_code"}},
+			{Key: []string{"user_id"}}, {Key: []string{"theme"}}, {Key: []string{"status.code"}},
 			{Key: []string{"created_at"}}, {Key: []string{"updated_at"}},
 		},
 	)
@@ -98,7 +100,7 @@ func (i *InstructionDataDaoImpl) GetInstructionDataByID(
 func (i *InstructionDataDaoImpl) GetInstructionDataList(
 	ctx context.Context, offset, limit int64, desc bool, userID *primitive.ObjectID,
 	theme, statusCode *string,
-	createTimeStart, createTimeEnd, updateTimeStart, updateTimeEnd *time.Time, query *string,
+	createStartTime, createEndTime, updateStartTime, updateEndTime *time.Time, query *string,
 ) ([]entity.InstructionDataModel, *int64, error) {
 	var instructionDataList []entity.InstructionDataModel
 	var err error
@@ -114,11 +116,11 @@ func (i *InstructionDataDaoImpl) GetInstructionDataList(
 	if statusCode != nil {
 		doc["status.code"] = *statusCode
 	}
-	if createTimeStart != nil && createTimeEnd != nil {
-		doc["created_time"] = bson.M{"$gte": *createTimeStart, "$lte": *createTimeEnd}
+	if createStartTime != nil && createEndTime != nil {
+		doc["created_at"] = bson.M{"$gte": *createStartTime, "$lte": *createEndTime}
 	}
-	if updateTimeStart != nil && updateTimeEnd != nil {
-		doc["updated_time"] = bson.M{"$gte": *updateTimeStart, "$lte": *updateTimeEnd}
+	if updateStartTime != nil && updateEndTime != nil {
+		doc["updated_at"] = bson.M{"$gte": *updateStartTime, "$lte": *updateEndTime}
 	}
 	if query != nil {
 		safetyQuery := common.EscapeSpecialChars(*query)
@@ -138,7 +140,7 @@ func (i *InstructionDataDaoImpl) GetInstructionDataList(
 		return nil, nil, err
 	}
 	if desc {
-		err = cursor.Sort("-created_time").Skip(offset).Limit(limit).All(&instructionDataList)
+		err = cursor.Sort("-created_at").Skip(offset).Limit(limit).All(&instructionDataList)
 	} else {
 		err = cursor.Skip(offset).Limit(limit).All(&instructionDataList)
 	}
@@ -160,7 +162,7 @@ func (i *InstructionDataDaoImpl) GetInstructionDataList(
 
 func (i *InstructionDataDaoImpl) CountInstructionData(
 	ctx context.Context, userID *primitive.ObjectID, theme, statusCode *string,
-	createTimeStart, createTimeEnd, updateTimeStart, updateTimeEnd *time.Time,
+	createStartTime, createEndTime, updateStartTime, updateEndTime *time.Time,
 ) (*int64, error) {
 	collection := i.Dao.Mongo.MongoClient.Database(i.Dao.Mongo.DatabaseName).Collection(config.InstructionDataCollectionName)
 	doc := bson.M{"deleted": false}
@@ -171,13 +173,13 @@ func (i *InstructionDataDaoImpl) CountInstructionData(
 		doc["theme"] = *theme
 	}
 	if statusCode != nil {
-		doc["status_code"] = *statusCode
+		doc["status.code"] = *statusCode
 	}
-	if createTimeStart != nil && createTimeEnd != nil {
-		doc["created_time"] = bson.M{"$gte": *createTimeStart, "$lte": *createTimeEnd}
+	if createStartTime != nil && createEndTime != nil {
+		doc["created_at"] = bson.M{"$gte": *createStartTime, "$lte": *createEndTime}
 	}
-	if updateTimeStart != nil && updateTimeEnd != nil {
-		doc["updated_time"] = bson.M{"$gte": *updateTimeStart, "$lte": *updateTimeEnd}
+	if updateStartTime != nil && updateEndTime != nil {
+		doc["updated_at"] = bson.M{"$gte": *updateStartTime, "$lte": *updateEndTime}
 	}
 	docJSON, _ := json.Marshal(doc)
 
@@ -197,11 +199,15 @@ func (i *InstructionDataDaoImpl) CountInstructionData(
 }
 
 func (i *InstructionDataDaoImpl) AggregateCountInstructionData(
-	ctx context.Context, groupBy *string,
+	ctx context.Context, groupBy *string, createStartTime, createEndTime *time.Time,
 ) (map[string]int64, error) {
 	collection := i.Dao.Mongo.MongoClient.Database(i.Dao.Mongo.DatabaseName).Collection(config.InstructionDataCollectionName)
+	match := bson.M{"deleted": false}
+	if createStartTime != nil && createEndTime != nil {
+		match["created_at"] = bson.M{"$gte": *createStartTime, "$lte": *createEndTime}
+	}
 	pipeline := []bson.M{
-		{"$match": bson.M{"deleted": false}},
+		{"$match": match},
 		{"$group": bson.M{"_id": "$" + *groupBy, "count": bson.M{"$sum": 1}}},
 	}
 	cursor := collection.Aggregate(ctx, pipeline)
@@ -365,7 +371,7 @@ func (i *InstructionDataDaoImpl) SoftDeleteInstructionData(
 
 func (i *InstructionDataDaoImpl) SoftDeleteInstructionDataList(
 	ctx context.Context, userID *primitive.ObjectID, theme, statusCode *string,
-	createTimeStart, createTimeEnd, updateTimeStart, updateTimeEnd *time.Time,
+	createStartTime, createEndTime, updateStartTime, updateEndTime *time.Time,
 ) (*int64, error) {
 	collection := i.Dao.Mongo.MongoClient.Database(i.Dao.Mongo.DatabaseName).Collection(config.InstructionDataCollectionName)
 	doc := bson.M{"deleted": false}
@@ -376,13 +382,13 @@ func (i *InstructionDataDaoImpl) SoftDeleteInstructionDataList(
 		doc["theme"] = *theme
 	}
 	if statusCode != nil {
-		doc["status_code"] = *statusCode
+		doc["status.code"] = *statusCode
 	}
-	if createTimeStart != nil && createTimeEnd != nil {
-		doc["created_time"] = bson.M{"$gte": *createTimeStart, "$lte": *createTimeEnd}
+	if createStartTime != nil && createEndTime != nil {
+		doc["created_at"] = bson.M{"$gte": *createStartTime, "$lte": *createEndTime}
 	}
-	if updateTimeStart != nil && updateTimeEnd != nil {
-		doc["updated_time"] = bson.M{"$gte": *updateTimeStart, "$lte": *updateTimeEnd}
+	if updateStartTime != nil && updateEndTime != nil {
+		doc["updated_at"] = bson.M{"$gte": *updateStartTime, "$lte": *updateEndTime}
 	}
 	docJSON, _ := json.Marshal(doc)
 
@@ -422,7 +428,7 @@ func (i *InstructionDataDaoImpl) DeleteInstructionData(
 
 func (i *InstructionDataDaoImpl) DeleteInstructionDataList(
 	ctx context.Context, userID *primitive.ObjectID, theme, statusCode *string,
-	createTimeStart, createTimeEnd, updateTimeStart, updateTimeEnd *time.Time,
+	createStartTime, createEndTime, updateStartTime, updateEndTime *time.Time,
 ) (*int64, error) {
 	coll := i.Dao.Mongo.MongoClient.Database(i.Dao.Mongo.DatabaseName).Collection(config.InstructionDataCollectionName)
 	doc := bson.M{}
@@ -433,13 +439,13 @@ func (i *InstructionDataDaoImpl) DeleteInstructionDataList(
 		doc["theme"] = *theme
 	}
 	if statusCode != nil {
-		doc["status_code"] = *statusCode
+		doc["status.code"] = *statusCode
 	}
-	if createTimeStart != nil && createTimeEnd != nil {
-		doc["created_time"] = bson.M{"$gte": *createTimeStart, "$lte": *createTimeEnd}
+	if createStartTime != nil && createEndTime != nil {
+		doc["created_at"] = bson.M{"$gte": *createStartTime, "$lte": *createEndTime}
 	}
-	if updateTimeStart != nil && updateTimeEnd != nil {
-		doc["updated_time"] = bson.M{"$gte": *updateTimeStart, "$lte": *updateTimeEnd}
+	if updateStartTime != nil && updateEndTime != nil {
+		doc["updated_at"] = bson.M{"$gte": *updateStartTime, "$lte": *updateEndTime}
 	}
 	docJSON, _ := json.Marshal(doc)
 

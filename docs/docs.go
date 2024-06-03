@@ -442,7 +442,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "name": "documentation_id",
+                        "name": "documentationID",
                         "in": "query",
                         "required": true
                     }
@@ -1667,145 +1667,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/admin/login-log": {
-            "get": {
-                "security": [
-                    {
-                        "Bearer": []
-                    }
-                ],
-                "description": "Get the login log by ID.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Admin API"
-                ],
-                "summary": "get login log by ID",
-                "operationId": "admin-get-login-log",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "name": "loginLogID",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Success",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/vo.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/admin.GetLoginLogResponse"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid request",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/vo.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "object"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/vo.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "object"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/vo.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "object"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "404": {
-                        "description": "Login log not found",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/vo.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "object"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/vo.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "object"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                }
-            }
-        },
         "/admin/login-log/list": {
             "get": {
                 "security": [
@@ -2204,145 +2065,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/admin/operation-log": {
-            "get": {
-                "security": [
-                    {
-                        "Bearer": []
-                    }
-                ],
-                "description": "Get the operation log by ID.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Admin API"
-                ],
-                "summary": "get operation log by ID",
-                "operationId": "admin-get-operation-log",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "name": "operationLogID",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Success",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/vo.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/admin.GetOperationLogResponse"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid request",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/vo.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "object"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/vo.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "object"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/vo.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "object"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "404": {
-                        "description": "Operation log not found",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/vo.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "object"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/vo.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "object"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                }
-            }
-        },
         "/admin/operation-log/list": {
             "get": {
                 "security": [
@@ -2381,6 +2103,11 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "name": "entityType",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
                         "name": "operation",
                         "in": "query"
                     },
@@ -2403,6 +2130,11 @@ const docTemplate = `{
                         "maxLength": 100,
                         "type": "string",
                         "name": "query",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "status",
                         "in": "query"
                     }
                 ],
@@ -3313,12 +3045,12 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "name": "createTimeEnd",
+                        "name": "createEndTime",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "name": "createTimeStart",
+                        "name": "createStartTime",
                         "in": "query"
                     },
                     {
@@ -3329,12 +3061,12 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "name": "lastLoginTimeEnd",
+                        "name": "lastLoginEndTime",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "name": "lastLoginTimeStart",
+                        "name": "lastLoginStartTime",
                         "in": "query"
                     },
                     {
@@ -5599,10 +5331,16 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
+                "description": {
+                    "type": "string"
+                },
                 "email": {
                     "type": "string"
                 },
                 "entity_id": {
+                    "type": "string"
+                },
+                "entity_type": {
                     "type": "string"
                 },
                 "ip_address": {
@@ -5612,6 +5350,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "operation_log_id": {
+                    "type": "string"
+                },
+                "status": {
                     "type": "string"
                 },
                 "user_agent": {
@@ -5642,9 +5383,6 @@ const docTemplate = `{
         "admin.GetUserResponse": {
             "type": "object",
             "properties": {
-                "_id": {
-                    "type": "string"
-                },
                 "created_at": {
                     "type": "string"
                 },
@@ -5657,13 +5395,13 @@ const docTemplate = `{
                 "organization": {
                     "type": "string"
                 },
-                "password": {
-                    "type": "string"
-                },
                 "role": {
                     "type": "string"
                 },
                 "updated_at": {
+                    "type": "string"
+                },
+                "user_id": {
                     "type": "string"
                 },
                 "username": {
@@ -5813,9 +5551,7 @@ const docTemplate = `{
         "admin.UpdateDocumentationRequest": {
             "type": "object",
             "required": [
-                "content",
-                "documentation_id",
-                "title"
+                "documentation_id"
             ],
             "properties": {
                 "content": {
@@ -5876,10 +5612,7 @@ const docTemplate = `{
         "admin.UpdateNoticeRequest": {
             "type": "object",
             "required": [
-                "content",
-                "notice_id",
-                "notice_type",
-                "title"
+                "notice_id"
             ],
             "properties": {
                 "content": {
@@ -5912,9 +5645,6 @@ const docTemplate = `{
                 "organization": {
                     "type": "string",
                     "maxLength": 100
-                },
-                "role": {
-                    "type": "string"
                 },
                 "user_id": {
                     "type": "string"
@@ -6048,9 +5778,6 @@ const docTemplate = `{
         "common.GetProfileResponse": {
             "type": "object",
             "properties": {
-                "created_at": {
-                    "type": "string"
-                },
                 "email": {
                     "type": "string"
                 },
@@ -6061,9 +5788,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "role": {
-                    "type": "string"
-                },
-                "updated_at": {
                     "type": "string"
                 },
                 "user_id": {
@@ -6336,11 +6060,7 @@ const docTemplate = `{
         "user.UpdateInstructionDataRequest": {
             "type": "object",
             "required": [
-                "input",
-                "instruction",
-                "instruction_data_id",
-                "output",
-                "source"
+                "instruction_data_id"
             ],
             "properties": {
                 "input": {

@@ -49,7 +49,5 @@ func (p profileServiceImpl) GetProfile(ctx context.Context) (*common.GetProfileR
 		Role:         user.Role,
 		Organization: user.Organization,
 		LastLogin:    user.LastLogin.Format(time.RFC3339),
-		CreatedAt:    user.CreatedAt.Format(time.RFC3339),
-		UpdatedAt:    user.UpdatedAt.Format(time.RFC3339),
 	}, nil
 }

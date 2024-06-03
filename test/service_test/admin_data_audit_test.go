@@ -29,16 +29,16 @@ func TestGetInstructionDataList(t *testing.T) {
 		pageSize         = int64(10)
 		desc             = false
 		userID           = injector.UserDaoMock.RandomUserID()
-		createTimeStart  = time.Now().AddDate(0, 0, -1)
-		createTimeEnd    = time.Now()
-		updateTimeStart  = time.Now().AddDate(0, 0, -1)
-		updateTimeEnd    = time.Now()
+		createStartTime  = time.Now().AddDate(0, 0, -1)
+		createEndTime    = time.Now()
+		updateStartTime  = time.Now().AddDate(0, 0, -1)
+		updateEndTime    = time.Now()
 		theme            = "THEME1"
 		status           = "PENDING"
 		query            = "a"
 	)
 	resp, err := dataAuditService.GetInstructionDataList(
-		ctx, &page, &pageSize, &desc, &userID, &createTimeStart, &createTimeEnd, &updateTimeStart, &updateTimeEnd,
+		ctx, &page, &pageSize, &desc, &userID, &createStartTime, &createEndTime, &updateStartTime, &updateEndTime,
 		&theme, &status, &query,
 	)
 	assert.NoError(t, err)
@@ -133,15 +133,15 @@ func TestExportInstructionData(t *testing.T) {
 		dataAuditService = injector.AdminDataAuditService
 		desc             = false
 		userID           = injector.UserDaoMock.RandomUserID()
-		createTimeStart  = time.Now().AddDate(0, 0, -1)
-		createTimeEnd    = time.Now()
-		updateTimeStart  = time.Now().AddDate(0, 0, -1)
-		updateTimeEnd    = time.Now()
+		createStartTime  = time.Now().AddDate(0, 0, -1)
+		createEndTime    = time.Now()
+		updateStartTime  = time.Now().AddDate(0, 0, -1)
+		updateEndTime    = time.Now()
 		theme            = "THEME1"
 		status           = "PENDING"
 	)
 	resp, err := dataAuditService.ExportInstructionData(
-		ctx, &desc, &userID, &createTimeStart, &createTimeEnd, &updateTimeStart, &updateTimeEnd, &theme, &status,
+		ctx, &desc, &userID, &createStartTime, &createEndTime, &updateStartTime, &updateEndTime, &theme, &status,
 	)
 	assert.NoError(t, err)
 	assert.NotNil(t, resp)
@@ -162,15 +162,15 @@ func TestExportInstructionDataAsAlpaca(t *testing.T) {
 		dataAuditService = injector.AdminDataAuditService
 		desc             = false
 		userID           = injector.UserDaoMock.RandomUserID()
-		createTimeStart  = time.Now().AddDate(0, 0, -1)
-		createTimeEnd    = time.Now()
-		updateTimeStart  = time.Now().AddDate(0, 0, -1)
-		updateTimeEnd    = time.Now()
+		createStartTime  = time.Now().AddDate(0, 0, -1)
+		createEndTime    = time.Now()
+		updateStartTime  = time.Now().AddDate(0, 0, -1)
+		updateEndTime    = time.Now()
 		theme            = "THEME1"
 		status           = "PENDING"
 	)
 	resp, err := dataAuditService.ExportInstructionDataAsAlpaca(
-		ctx, &desc, &userID, &createTimeStart, &createTimeEnd, &updateTimeStart, &updateTimeEnd, &theme, &status,
+		ctx, &desc, &userID, &createStartTime, &createEndTime, &updateStartTime, &updateEndTime, &theme, &status,
 	)
 	assert.NoError(t, err)
 	assert.NotNil(t, resp)

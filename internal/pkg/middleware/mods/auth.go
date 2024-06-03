@@ -39,10 +39,11 @@ func (a *AuthMiddleware) authMiddleware() fiber.Handler {
 			return errors.TokenInvalid(fmt.Errorf("token should be bearer token (start with 'Bearer ' or 'bearer ')"))
 		}
 		token = token[7:] // remove 'Bearer '
-		if ok, err := a.Cache.Get(c.Context(), crypt.MD5(token)); err == nil && *ok == config.CacheTrue {
+		blacklistKey := fmt.Sprintf("%s:%s", config.TokenBlacklistCachePrefix, crypt.MD5(token))
+		if ok, err := a.Cache.Get(c.Context(), blacklistKey); err == nil && *ok == config.CacheTrue {
 			return errors.TokenInvalid(fmt.Errorf("token has been revoked"))
 		}
-		sub, err := a.Jwt.VerifyToken(token)
+		sub, err := a.Jwt.VerifyAccessToken(token)
 		if err != nil {
 			var ve *jwt.ValidationError
 			if e.As(err, &ve) {

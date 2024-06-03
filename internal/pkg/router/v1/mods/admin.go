@@ -43,12 +43,12 @@ func (a *AdminRouter) RegisterAdminRouter(
 		casbin.RequiresRoles([]string{config.UserRoleAdmin}),
 		api.DataAuditApi.GetInstructionDataList,
 	)
-	group.Get(
+	group.Put(
 		"instruction-data/approve",
 		casbin.RequiresRoles([]string{config.UserRoleAdmin}),
 		api.DataAuditApi.ApproveInstructionData,
 	)
-	group.Get(
+	group.Put(
 		"/instruction-data/reject",
 		casbin.RequiresRoles([]string{config.UserRoleAdmin}),
 		api.DataAuditApi.RejectInstructionData,
@@ -117,7 +117,7 @@ func (a *AdminRouter) RegisterAdminRouter(
 		casbin.RequiresRoles([]string{config.UserRoleAdmin}),
 		api.UserApi.DeleteUser,
 	)
-	group.Post(
+	group.Put(
 		"/user/password",
 		casbin.RequiresRoles([]string{config.UserRoleAdmin}),
 		api.UserApi.ChangeUserPassword,
@@ -140,19 +140,9 @@ func (a *AdminRouter) RegisterAdminRouter(
 	)
 
 	group.Get(
-		"/login-log",
-		casbin.RequiresRoles([]string{config.UserRoleAdmin}),
-		api.LogsApi.GetLoginLog,
-	)
-	group.Get(
 		"/login-log/list",
 		casbin.RequiresRoles([]string{config.UserRoleAdmin}),
 		api.LogsApi.GetLoginLogList,
-	)
-	group.Get(
-		"/operation-log",
-		casbin.RequiresRoles([]string{config.UserRoleAdmin}),
-		api.LogsApi.GetOperationLog,
 	)
 	group.Get(
 		"/operation-log/list",

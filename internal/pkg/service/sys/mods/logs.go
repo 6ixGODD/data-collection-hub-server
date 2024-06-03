@@ -80,8 +80,12 @@ func (l logsServiceImpl) CacheOperationLog(
 	ctx context.Context, userID, entityID *primitive.ObjectID, ipAddress, userAgent *string,
 	operation, entityType, description, status *string,
 ) error {
+	var _entityID primitive.ObjectID
+	if entityID == nil {
+		_entityID = primitive.NilObjectID
+	}
 	err := l.operationLogDao.CacheOperationLog(
-		ctx, *userID, *entityID, *ipAddress, *userAgent, *operation, *entityType, *description, *status,
+		ctx, *userID, _entityID, *ipAddress, *userAgent, *operation, *entityType, *description, *status,
 	)
 	if err != nil {
 		return errors.OperationFailed(fmt.Errorf("failed to cache operation log"))

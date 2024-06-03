@@ -1,7 +1,6 @@
 package redis
 
 import (
-	"fmt"
 	"sync"
 
 	"github.com/redis/go-redis/v9"
@@ -12,7 +11,6 @@ type Redis struct {
 	RedisClient *redis.Client
 	redisConfig *Config
 	mu          sync.Mutex
-	ctx         context.Context
 }
 
 type Config struct {
@@ -32,9 +30,8 @@ func New(ctx context.Context, options *redis.Options) (*Redis, error) {
 				redisConfig: &Config{
 					redisOptions: options,
 				},
-				ctx: ctx,
 			}
-			if err = r.Init(); err != nil {
+			if err = r.Init(ctx); err != nil {
 				return
 			}
 			redisInstance = r
@@ -43,23 +40,23 @@ func New(ctx context.Context, options *redis.Options) (*Redis, error) {
 	return redisInstance, err
 }
 
-func Update(options *redis.Options) error {
+func Update(ctx context.Context, options *redis.Options) error {
 	var err error
-	if err := redisInstance.Close(); err != nil {
+	if err := redisInstance.RedisClient.Close(); err != nil {
 		return err
 	}
-	redisInstance = &Redis{
+	*redisInstance = Redis{
 		redisConfig: &Config{
 			redisOptions: options,
 		},
 	}
-	if err = redisInstance.Init(); err != nil {
+	if err = redisInstance.Init(ctx); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (r *Redis) Init() error {
+func (r *Redis) Init(ctx context.Context) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -67,10 +64,7 @@ func (r *Redis) Init() error {
 		return nil
 	}
 	client := redis.NewClient(r.redisConfig.redisOptions)
-	if client == nil {
-		return fmt.Errorf("failed to init redis client")
-	}
-	if _, err := client.Ping(r.ctx).Result(); err != nil {
+	if _, err := client.Ping(ctx).Result(); err != nil {
 		return err
 	}
 	r.RedisClient = client
@@ -82,7 +76,7 @@ func (r *Redis) GetClient() (client *redis.Client, err error) {
 	defer r.mu.Unlock()
 
 	if r.RedisClient == nil {
-		if err = r.Init(); err != nil {
+		if err = r.Init(context.Background()); err != nil {
 			return nil, err
 		}
 	}

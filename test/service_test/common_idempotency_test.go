@@ -29,8 +29,6 @@ func TestCheckIdempotencyToken(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, token)
 
-	resp, err := idempotencyService.CheckIdempotencyToken(ctx, token)
+	err = idempotencyService.CheckIdempotencyToken(ctx, token)
 	assert.NoError(t, err)
-	assert.NotNil(t, resp)
-	t.Logf("Response Data: %+v", resp)
 }
