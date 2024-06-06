@@ -3537,7 +3537,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "name": "documentation_id",
+                        "name": "documentationID",
                         "in": "query",
                         "required": true
                     }
@@ -3860,7 +3860,7 @@ const docTemplate = `{
             }
         },
         "/logout": {
-            "post": {
+            "get": {
                 "security": [
                     {
                         "Bearer": []

@@ -76,7 +76,7 @@ func (a *AuthApi) Login(c *fiber.Ctx) error {
 //	@success		200		{object}	vo.Response{data=nil}	"Success"
 //	@failure		401		{object}	vo.Response{data=nil}	"Unauthorized"
 //	@failure		500		{object}	vo.Response{data=nil}	"Internal server error"
-//	@router			/logout	[post]
+//	@router			/logout	[get]
 func (a *AuthApi) Logout(c *fiber.Ctx) error {
 	token := c.Get(fiber.HeaderAuthorization)
 	if token == "" {

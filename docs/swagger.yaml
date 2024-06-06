@@ -2543,7 +2543,7 @@ paths:
       operationId: common-get-documentation
       parameters:
       - in: query
-        name: documentation_id
+        name: documentationID
         required: true
         type: string
       produces:
@@ -2723,7 +2723,7 @@ paths:
       tags:
       - Auth API
   /logout:
-    post:
+    get:
       consumes:
       - application/json
       description: Log out the user.

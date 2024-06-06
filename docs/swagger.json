@@ -3530,7 +3530,7 @@
                 "parameters": [
                     {
                         "type": "string",
-                        "name": "documentation_id",
+                        "name": "documentationID",
                         "in": "query",
                         "required": true
                     }
@@ -3853,7 +3853,7 @@
             }
         },
         "/logout": {
-            "post": {
+            "get": {
                 "security": [
                     {
                         "Bearer": []
